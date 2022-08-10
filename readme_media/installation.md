@@ -1,0 +1,29 @@
+## Installation
+
+Recommended: install git and [Anaconda](https://docs.anaconda.com/anaconda/install/) and run the following.
+
+This was tested on Ubuntu 20.04 (AM), Windows 10 and MacOS 10.15.7 (LK). 
+
+```bash
+git clone https://github.com/amathislab/classic_annotation
+cd classic_annotation
+conda env create -f AnnotationGUI.yaml
+``` 
+
+### Updating
+
+To download the latest release, you should go to the ```classic_annotation``` folder and run these commands.
+```bash
+git pull
+conda activate base
+conda env update -f AnnotationGUI.yaml
+``` 
+
+### Troubleshooting
+
+- In case you get the following error you likely need to reinstall the `libxcb` package.
+```
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "" even though it was found.
+```
+
+Back to main [readme](../README.md).
