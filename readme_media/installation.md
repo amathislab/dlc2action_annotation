@@ -5,14 +5,14 @@ Recommended: install git and [Anaconda](https://docs.anaconda.com/anaconda/insta
 This was tested on Ubuntu 20.04 (AM), Windows 10 and MacOS 10.15.7 (LK). 
 
 ```bash
-git clone https://github.com/amathislab/classic_annotation
-cd classic_annotation
+git clone https://github.com/amathislab/dlc2action_annotation
+cd dlc2action_annotation
 conda env create -f AnnotationGUI.yaml
 ``` 
 
 ### Updating
 
-To download the latest release, you should go to the ```classic_annotation``` folder and run these commands.
+To download the latest release, you should go to the ```dlc2action_annotation``` folder and run these commands.
 ```bash
 git pull
 conda activate base
