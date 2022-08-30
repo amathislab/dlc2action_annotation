@@ -15,13 +15,14 @@ from PyQt5.QtWidgets import (
     QSpinBox,
     QSlider,
     QScrollArea,
-    QMessageBox
+    QMessageBox,
 )
 from qtwidgets import Toggle
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
 from ruamel.yaml import YAML
 import os
+
 
 class MultipleInputWidget(QWidget):
     def __init__(self, values):
@@ -46,7 +47,7 @@ class MultipleInputWidget(QWidget):
             self.lines.append(QLineEdit(value))
             self.lines_layout.addWidget(self.lines[-1])
             self.lines[-1].setMinimumHeight(20)
-        self.button = QPushButton('Add')
+        self.button = QPushButton("Add")
         self.button.clicked.connect(self.add_line)
         self.layout.addLayout(self.lines_layout)
         self.layout.addWidget(self.button)
@@ -57,7 +58,7 @@ class MultipleInputWidget(QWidget):
         self.lines[-1].setMinimumHeight(20)
 
     def values(self):
-        return [line.text() for line in self.lines if line.text() != '']
+        return [line.text() for line in self.lines if line.text() != ""]
 
 
 class MultipleDoubleInputWidget(QWidget):
@@ -84,7 +85,7 @@ class MultipleDoubleInputWidget(QWidget):
             line.addWidget(QLabel(", "))
             line.addWidget(self.lines[-1][1])
             self.lines_layout.addLayout(line)
-        self.button = QPushButton('Add')
+        self.button = QPushButton("Add")
         self.button.clicked.connect(self.add_line)
         self.layout.addLayout(self.lines_layout)
         self.layout.addWidget(self.button)
@@ -98,7 +99,11 @@ class MultipleDoubleInputWidget(QWidget):
         self.lines_layout.addLayout(line)
 
     def values(self):
-        return [[line[0].text(), line[1].text()] for line in self.lines if line[0].text() != '' and line[1].text() != '']
+        return [
+            [line[0].text(), line[1].text()]
+            for line in self.lines
+            if line[0].text() != "" and line[1].text() != ""
+        ]
 
 
 class CategoryInputWidget(QWidget):
@@ -128,7 +133,7 @@ class CategoryInputWidget(QWidget):
             line.addWidget(QLabel(": "))
             line.addWidget(self.lines[-1][1])
             self.lines_layout.addLayout(line)
-        self.button = QPushButton('Add')
+        self.button = QPushButton("Add")
         self.button.clicked.connect(self.add_line)
         self.layout.addLayout(self.lines_layout)
         self.layout.addWidget(self.button)
@@ -144,8 +149,11 @@ class CategoryInputWidget(QWidget):
         self.lines_layout.addLayout(line)
 
     def values(self):
-        return {line[0].text(): list(map(lambda x: x.strip(), line[1].text().split(','))) for line in self.lines if
-                line[0].text() != '' and line[1].text() != ''}
+        return {
+            line[0].text(): list(map(lambda x: x.strip(), line[1].text().split(",")))
+            for line in self.lines
+            if line[0].text() != "" and line[1].text() != ""
+        }
 
 
 class SettingsWindow(QDialog):
@@ -164,7 +172,12 @@ class SettingsWindow(QDialog):
         self.layout.addWidget(self.tabs)
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
-        self.functions = [self.collect_general, self.collect_display, self.collect_al, self.collect_fp]
+        self.functions = [
+            self.collect_general,
+            self.collect_display,
+            self.collect_al,
+            self.collect_fp,
+        ]
         self.create_general_tab()
         self.set_general_tab()
         self.create_display_tab()
@@ -322,7 +335,9 @@ class SettingsWindow(QDialog):
         self.general_layout.addRow("Max number of frames in RAM: ", self.max_loaded_le)
         self.general_layout.addRow("Load chunk (frames): ", self.chunk_le)
         self.general_layout.addRow("Load buffer (frames): ", self.buffer_le)
-        self.general_layout.addRow("Minimum tracklet length (frames): ", self.min_frames_le)
+        self.general_layout.addRow(
+            "Minimum tracklet length (frames): ", self.min_frames_le
+        )
 
     def set_general_tab_data(self):
         self.annotator = self.set_le("annotator", set_int=False)
@@ -346,12 +361,18 @@ class SettingsWindow(QDialog):
         self.display_layout.addRow("Skeleton marker size: ", self.skeleton_size_slider)
         self.display_layout.addRow("Console width: ", self.console_width_slider)
         self.display_layout.addRow("Action bar width: ", self.actionbar_width_slider)
-        self.display_layout.addRow("Default update frequency: ", self.default_freq_slider)
+        self.display_layout.addRow(
+            "Default update frequency: ", self.default_freq_slider
+        )
         self.display_layout.addRow("Backend: ", self.backend_combo)
         self.display_layout.addRow("Canvas size: ", self.canvas_size_le)
-        self.display_layout.addRow("Detection update frequency: ", self.detection_update_freq_slider)
+        self.display_layout.addRow(
+            "Detection update frequency: ", self.detection_update_freq_slider
+        )
         self.display_layout.addRow("Mask opacity: ", self.mask_opacity_slider)
-        self.display_layout.addRow("Loading segmentation policy: ", self.load_segmentation_combo)
+        self.display_layout.addRow(
+            "Loading segmentation policy: ", self.load_segmentation_combo
+        )
         self.display_layout.addRow("Likelihood cutoff: ", self.likelihood_cutoff_slider)
         self.display_layout.addRow("3D bodyparts: ", self.bp_3d)
         self.display_layout.addRow("Skeleton edges: ", self.skeleton)
@@ -361,7 +382,9 @@ class SettingsWindow(QDialog):
         self.console_width_slider = self.set_spinbox("console_width", 100, 500, 25)
         self.actionbar_width_slider = self.set_spinbox("actionbar_width", 50, 400, 25)
         self.default_freq_slider = self.set_spinbox("default_frequency", 10, 100, 10)
-        self.backend_combo = self.set_combo("backend", ["pyav_fast", "pyav", "cv2", "decord"])
+        self.backend_combo = self.set_combo(
+            "backend", ["pyav_fast", "pyav", "cv2", "decord"]
+        )
         self.canvas_size_le = QHBoxLayout()
         self.canvas_size_le_w = QLineEdit(str(self.settings["canvas_size"][0]))
         self.canvas_size_le_w.setValidator(QIntValidator())
@@ -370,12 +393,18 @@ class SettingsWindow(QDialog):
         self.canvas_size_le_h = QLineEdit(str(self.settings["canvas_size"][1]))
         self.canvas_size_le_h.setValidator(QIntValidator())
         self.canvas_size_le.addWidget(self.canvas_size_le_h)
-        self.detection_update_freq_slider = self.set_spinbox("detection_update_freq", 1, 5)
+        self.detection_update_freq_slider = self.set_spinbox(
+            "detection_update_freq", 1, 5
+        )
         self.mask_opacity_slider = QSlider(Qt.Horizontal)
         self.mask_opacity_slider = self.set_slider("mask_opacity", 0, 1, percent=True)
-        self.load_segmentation_combo = self.set_combo("load_segmentation", ["ask", "never", "always"])
+        self.load_segmentation_combo = self.set_combo(
+            "load_segmentation", ["ask", "never", "always"]
+        )
         self.likelihood_cutoff_slider = QSlider(Qt.Horizontal)
-        self.likelihood_cutoff_slider = self.set_slider("likelihood_cutoff", 0, 1, percent=True)
+        self.likelihood_cutoff_slider = self.set_slider(
+            "likelihood_cutoff", 0, 1, percent=True
+        )
         self.bp_3d = self.set_multiple_input("3d_bodyparts")
         self.skeleton = self.set_multiple_input("skeleton", type="double")
 
@@ -424,7 +453,9 @@ class SettingsWindow(QDialog):
         self.settings["max_loaded_frames"] = int(self.max_loaded_le.text())
         self.settings["load_chunk"] = int(self.chunk_le.text())
         self.settings["load_buffer"] = int(self.buffer_le.text())
-        self.settings["actions"] = self.behaviors.values() if len(self.behaviors.values()) > 0 else None
+        self.settings["actions"] = (
+            self.behaviors.values() if len(self.behaviors.values()) > 0 else None
+        )
         self.settings["min_length_frames"] = int(self.min_frames_le.text())
 
     def collect_al(self):
@@ -433,7 +464,9 @@ class SettingsWindow(QDialog):
         self.settings["load_buffer_al"] = int(self.load_buffer_al_le.text())
         self.settings["al_window_num"] = int(self.al_window_num_le.text())
         self.settings["al_buffer"] = int(self.al_buffer_le.text())
-        self.settings["hard_negative_classes"] = [item.text() for item in self.hn_ms.selectedItems()]
+        self.settings["hard_negative_classes"] = [
+            item.text() for item in self.hn_ms.selectedItems()
+        ]
         self.settings["assessment_n"] = int(self.assessment_n_le.text())
 
     def collect_display(self):
@@ -442,13 +475,22 @@ class SettingsWindow(QDialog):
         self.settings["console_width"] = self.console_width_slider.value()
         self.settings["actionbar_width"] = self.actionbar_width_slider.value()
         self.settings["default_frequency"] = self.default_freq_slider.value()
-        self.settings["canvas_size"] = [int(self.canvas_size_le_w.text()), int(self.canvas_size_le_h.text())]
-        self.settings["detection_update_freq"] = self.detection_update_freq_slider.value()
+        self.settings["canvas_size"] = [
+            int(self.canvas_size_le_w.text()),
+            int(self.canvas_size_le_h.text()),
+        ]
+        self.settings[
+            "detection_update_freq"
+        ] = self.detection_update_freq_slider.value()
         self.settings["mask_opacity"] = self.mask_opacity_slider.value() / 100
         self.settings["load_segmentation"] = self.load_segmentation_combo.currentText()
         self.settings["likelihood_cutoff"] = self.likelihood_cutoff_slider.value() / 100
-        self.settings["3d_bodyparts"] = self.bp_3d.values() if len(self.bp_3d.values()) > 0 else None
-        self.settings["skeleton"] = self.skeleton.values() if len(self.skeleton.values()) > 0 else None
+        self.settings["3d_bodyparts"] = (
+            self.bp_3d.values() if len(self.bp_3d.values()) > 0 else None
+        )
+        self.settings["skeleton"] = (
+            self.skeleton.values() if len(self.skeleton.values()) > 0 else None
+        )
 
     def collect_fp(self):
         self.settings["3d_suffix"] = self.suffix_3d_le.text()

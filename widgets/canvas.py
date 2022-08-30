@@ -537,7 +537,7 @@ class VideoCanvas(SceneCanvas):
                         correct_mode=correct_mode,
                         data_2d=self.data_2d[n],
                         skeleton=self.skeleton,
-                        bodyparts_3d=self.bodyparts_3d
+                        bodyparts_3d=self.bodyparts_3d,
                     )
                     self.grid.add_widget(vb, i, j)
                     vb.initialize(self.current, mask_opacity)
@@ -632,7 +632,7 @@ class VideoCanvas(SceneCanvas):
             self.window.on_minus()
         elif event.key.name == "=":
             self.window.on_plus()
-        elif event.key.name == 'Z':
+        elif event.key.name == "Z":
             if "Control" in [key.name for key in event.modifiers]:
                 self.window.on_z()
         elif event.key.name in self.window.active_shortcuts():

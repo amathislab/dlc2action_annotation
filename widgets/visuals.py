@@ -77,11 +77,10 @@ class BoxVisual:
 
 
 class AnimalMarkers(vispy.scene.visuals.Markers):
-    def __init__(self, vb, animal, edge_color, pos, color_order=None, rainbow=False, **kwargs):
-        super(AnimalMarkers, self).__init__(
-            edge_color=edge_color,
-            pos=pos, **kwargs
-        )
+    def __init__(
+        self, vb, animal, edge_color, pos, color_order=None, rainbow=False, **kwargs
+    ):
+        super(AnimalMarkers, self).__init__(edge_color=edge_color, pos=pos, **kwargs)
         self.unfreeze()
         self.color = edge_color
         self.vb = vb
@@ -116,10 +115,7 @@ class AnimalMarkers(vispy.scene.visuals.Markers):
                 edge_color = None
 
         super(AnimalMarkers, self).set_data(
-            pos=pos,
-            edge_color=edge_color,
-            face_color=face_color,
-            size=size
+            pos=pos, edge_color=edge_color, face_color=face_color, size=size
         )
 
 

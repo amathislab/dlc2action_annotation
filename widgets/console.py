@@ -83,9 +83,8 @@ class Console(QWidget):
 
         self.speed_form = QFormLayout()
         self.speed_form.addRow(self.speed_label, self.speed_slider)
-        if (
-            any([x is not None for x in self.window.settings["detection_files"]])
-            or any([x is not None for x in self.window.settings["skeleton_files"]])
+        if any([x is not None for x in self.window.settings["detection_files"]]) or any(
+            [x is not None for x in self.window.settings["skeleton_files"]]
         ):
             self.speed_form.addRow(self.box_label, self.box_slider)
             self.speed_form.addRow(self.size_label, self.size_slider)

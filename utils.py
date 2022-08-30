@@ -414,22 +414,32 @@ def read_labels(labels_file):
         metadata, loaded_labels, animals, loaded_times = pickle.load(f)
     return metadata, loaded_labels, animals, loaded_times
 
+
 def read_calibration(calibration_filepath):
     cam_calibration = {}
-    cam_names = ['aa', 'ab', 'ac', 'ad', 'b1', 'b2']
+    cam_names = ["aa", "ab", "ac", "ad", "b1", "b2"]
     for cam in cam_names:
-        cam_calibration[cam] = \
-        np.load(os.path.join(calibration_filepath, f'camera_{cam}_calibration.npy'), allow_pickle=True, )[()]
+        cam_calibration[cam] = np.load(
+            os.path.join(calibration_filepath, f"camera_{cam}_calibration.npy"),
+            allow_pickle=True,
+        )[()]
     return cam_calibration
+
 
 def project_pose(cam_name, xyz, cam_calibration):
     """Project 3D points to the screen coordinate system of the specified camera"""
-    uv, _ = cv2.projectPoints(xyz, cam_calibration[cam_name]['r'], cam_calibration[cam_name]['t'],
-                              cam_calibration[cam_name]['Intrinsic'], cam_calibration[cam_name]['dist_coeff'])
-    return uv.reshape(-1,2)
+    uv, _ = cv2.projectPoints(
+        xyz,
+        cam_calibration[cam_name]["r"],
+        cam_calibration[cam_name]["t"],
+        cam_calibration[cam_name]["Intrinsic"],
+        cam_calibration[cam_name]["dist_coeff"],
+    )
+    return uv.reshape(-1, 2)
+
 
 def get_2d_files(filenames, data, calibration_dir):
-    cam_names = [filename.split('-')[0] for filename in filenames]
+    cam_names = [filename.split("-")[0] for filename in filenames]
     cam_calibration = read_calibration(calibration_dir)
     res = []
     for cam in cam_names:

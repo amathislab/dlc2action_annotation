@@ -1,8 +1,12 @@
 import numpy as np
 
-class Sampler():
+
+class Sampler:
     def __init__(self, classes):
-        self.results = {"good/bad": {c: [] for c in classes}, "edit %": {c: [] for c in classes}}
+        self.results = {
+            "good/bad": {c: [] for c in classes},
+            "edit %": {c: [] for c in classes},
+        }
         self.method = "good/bad"
         self.behavior = None
         self.threshold = 0.5
@@ -38,8 +42,10 @@ class Sampler():
         start, end = old_times
         interval = np.zeros(end - start)
         for s, e in new_times_list:
-            interval[max(s - start, 0): min(e - start, end - start)] = 1
-        self.results[self.method][self.behavior].append(np.sum(interval) / (end - start))
+            interval[max(s - start, 0) : min(e - start, end - start)] = 1
+        self.results[self.method][self.behavior].append(
+            np.sum(interval) / (end - start)
+        )
         interval = np.array([1] + list(interval) + [1])
         diffs = np.diff(interval)
         starts = list(np.argwhere(diffs == -1) + start)
@@ -68,8 +74,8 @@ class Sampler():
         values = {}
         if self.method == "good/bad":
             for key, value in self.results["good/bad"].items():
-                values[key] = f'{sum(value)}/{len(value)}'
+                values[key] = f"{sum(value)}/{len(value)}"
         else:
             for key, value in self.results["edit %"].items():
-                values[key] = f'{np.sum(np.array(value) > self.threshold)}/{len(value)}'
+                values[key] = f"{np.sum(np.array(value) > self.threshold)}/{len(value)}"
         return values

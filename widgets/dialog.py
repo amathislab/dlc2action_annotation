@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QSlider,
     QRadioButton,
-    QDialogButtonBox
+    QDialogButtonBox,
 )
 from PyQt5.QtGui import QPixmap, QColor, QFont
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -458,7 +458,7 @@ class AssessmentDialog(QDialog):
         self.combo.addItem("edit %")
         self.combo.setCurrentIndex(["good/bad", "edit %"].index(sampler.get_method()))
         self.combo.currentTextChanged.connect(self.method_changed)
-        self.threshold_value = QLabel(f'{sampler.get_threshold():.2f}')
+        self.threshold_value = QLabel(f"{sampler.get_threshold():.2f}")
         self.threshold_field = QSlider(Qt.Horizontal)
         self.threshold_field.setMinimum(0)
         self.threshold_field.setMaximum(100)
@@ -522,16 +522,16 @@ class AssessmentDialog(QDialog):
     def threshold_changed(self, value):
         value /= 100
         self.sampler.set_threshold(value)
-        self.threshold_value.setText(f'{value:.2f}')
+        self.threshold_value.setText(f"{value:.2f}")
         self.print_values()
 
     def add_row(self, label, value):
         l = QHBoxLayout()
         l.addWidget(QLabel(label))
         if value is None:
-            value = '?/?'
+            value = "?/?"
         l.addWidget(QLabel(value))
-        button = QPushButton('Sample')
+        button = QPushButton("Sample")
         l.addWidget(button)
         button.clicked.connect(lambda x: self.emit_label(label))
         l.addWidget(button)
@@ -547,7 +547,6 @@ class AssessmentDialog(QDialog):
 
 
 class Form(QDialog):
-
     def __init__(self, videos, parent=None):
         super(Form, self).__init__(parent)
         # Create widgets
@@ -560,11 +559,7 @@ class Form(QDialog):
         # Set dialog layout
         self.setLayout(layout)
         self.videos = videos
-        self.button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok,
-            Qt.Horizontal,
-            self
-        )
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
         layout.addWidget(self.button_box)
         self.button_box.accepted.connect(self.accept)
 

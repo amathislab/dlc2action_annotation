@@ -20,7 +20,13 @@ from copy import copy, deepcopy
 from PIL import Image
 import pandas as pd
 
-from .dialog import CatDialog, LoadDialog, ChoiceDialog, ChoiceDialogExample, AssessmentDialog
+from .dialog import (
+    CatDialog,
+    LoadDialog,
+    ChoiceDialog,
+    ChoiceDialogExample,
+    AssessmentDialog,
+)
 from .sampler import Sampler
 from .actionbar import Bar
 from .console import Console
@@ -170,8 +176,10 @@ class Viewer(QWidget):
             )
             if os.path.exists(file_3d):
                 data_3d = np.load(file_3d)
-                if self.settings['calibration_path'] is not None:
-                    data_2d = get_2d_files(self.filenames, data_3d, self.settings['calibration_path'])
+                if self.settings["calibration_path"] is not None:
+                    data_2d = get_2d_files(
+                        self.filenames, data_3d, self.settings["calibration_path"]
+                    )
 
         if (
             self.settings["upload_window"]
@@ -214,7 +222,7 @@ class Viewer(QWidget):
             data_3d,
             data_2d,
             self.settings["skeleton"],
-            self.settings["3d_bodyparts"]
+            self.settings["3d_bodyparts"],
         )
 
         if os.path.exists("../last_action_choice.pickle"):
@@ -328,7 +336,9 @@ class Viewer(QWidget):
         else:
             self.al_mode = True
             self.cur_al_point = 0
-            self.console.set_buttons(ass=self.sampler.assessment(), method=self.sampler.get_method())
+            self.console.set_buttons(
+                ass=self.sampler.assessment(), method=self.sampler.get_method()
+            )
             self.set_al_point()
         self.bar.al_mode = value
         self.bar.set_al_point(self.al_current, self.al_end)
@@ -523,24 +533,29 @@ class Viewer(QWidget):
         for key in self.settings["actions"]:
             actions += self.settings["actions"][key]
             actions += [key]
-            self.catDict[key] = [x for x in self.settings["actions"][key] if not x.startswith('negative')]
+            self.catDict[key] = [
+                x for x in self.settings["actions"][key] if not x.startswith("negative")
+            ]
             self.catDict["categories"].append(key)
         for a in self.loaded_labels:
             if a not in actions:
                 actions.append(a)
                 self.invisible_actions.append(a)
         self.catDict["base"] = {}
-        self.neg_actions = [x for x in actions if x.startswith('negative')]
-        self.unknown_actions = [x for x in actions if x.startswith('unknown')]
-        actions = [x for x in actions if not x.startswith('negative') and not x.startswith('unknown')]
-        self.times = [
-            [np.array([]) for j in actions] for i in range(self.n_animals())
+        self.neg_actions = [x for x in actions if x.startswith("negative")]
+        self.unknown_actions = [x for x in actions if x.startswith("unknown")]
+        actions = [
+            x
+            for x in actions
+            if not x.startswith("negative") and not x.startswith("unknown")
         ]
+        self.times = [[np.array([]) for j in actions] for i in range(self.n_animals())]
         self.negative_times = [
             [np.array([]) for j in self.neg_actions] for i in range(self.n_animals())
         ]
         self.unknown_times = [
-            [np.array([]) for j in self.unknown_actions] for i in range(self.n_animals())
+            [np.array([]) for j in self.unknown_actions]
+            for i in range(self.n_animals())
         ]
         for i, a in enumerate(actions):
             self.catDict["base"][i] = a
@@ -597,7 +612,11 @@ class Viewer(QWidget):
         sugg_labels = set()
         for ind_list in self.times:
             for i, cat in enumerate(cat_labels):
-                if cat not in sugg_labels and len(ind_list[i]) > 0 and len([x for x in ind_list[i] if x[-1] > 1]) > 0:
+                if (
+                    cat not in sugg_labels
+                    and len(ind_list[i]) > 0
+                    and len([x for x in ind_list[i] if x[-1] > 1]) > 0
+                ):
                     sugg_labels.add(cat)
         self.sampler = Sampler(classes=list(sugg_labels))
 
@@ -750,18 +769,18 @@ class Viewer(QWidget):
         if neg_classes is not None:
             for neg_class in neg_classes:
                 neg_ind = cat_labels.index(neg_class)
-                cat_labels.append(f'negative {neg_class}')
+                cat_labels.append(f"negative {neg_class}")
                 for i, ind_list in enumerate(times):
                     labels = np.zeros(self.video_len())
                     for start, end, ind in self.al_points:
                         if ind == self.animals[i]:
-                            labels[start: end] = -1
-                    if f'negative {neg_class}' in self.neg_actions:
-                        neg_a_i = self.neg_actions.index(f'negative {neg_class}')
+                            labels[start:end] = -1
+                    if f"negative {neg_class}" in self.neg_actions:
+                        neg_a_i = self.neg_actions.index(f"negative {neg_class}")
                         for start, end, _ in self.negative_times[i][neg_a_i]:
-                            labels[start: end] = -1
+                            labels[start:end] = -1
                     for start, end, _ in times[i][neg_ind]:
-                        labels[start: end] = 1
+                        labels[start:end] = 1
                     y_ext = np.r_[False, labels == -1, False]
                     idx = np.flatnonzero(y_ext[:-1] != y_ext[1:])
                     times[i].append([])
@@ -1047,7 +1066,10 @@ class Viewer(QWidget):
         if skeleton_file is not None:
             try:
                 points_df, index_dict = read_skeleton(
-                    skeleton_file, self.settings["data_type"], self.settings["likelihood_cutoff"], self.settings["min_length_frames"]
+                    skeleton_file,
+                    self.settings["data_type"],
+                    self.settings["likelihood_cutoff"],
+                    self.settings["min_length_frames"],
                 )
                 animals = points_df.animals
             except:
@@ -1080,7 +1102,7 @@ class Viewer(QWidget):
         ind = cat_labels.index(self.sampler.get_behavior())
         new_times = self.bar.get_new_times(ind)
         starts, ends = self.sampler.update_edit(old_times, new_times)
-        neg_label = f'negative {self.sampler.get_behavior()}'
+        neg_label = f"negative {self.sampler.get_behavior()}"
         if neg_label not in self.neg_actions:
             self.neg_actions.append(neg_label)
             for i in range(len(self.negative_times)):
@@ -1088,7 +1110,9 @@ class Viewer(QWidget):
         neg_ind = self.neg_actions.index(neg_label)
         for s, e in zip(starts, ends):
             self.negative_times[self.current_animal()][neg_ind].append([s, e, 0])
-        self.negative_times[self.current_animal()][neg_ind] = sorted(self.negative_times[self.current_animal()][neg_ind])
+        self.negative_times[self.current_animal()][neg_ind] = sorted(
+            self.negative_times[self.current_animal()][neg_ind]
+        )
         start, end = old_times
         ind_i = self.current_animal()
         interval = np.ones(end - start)
@@ -1100,7 +1124,7 @@ class Viewer(QWidget):
                     s = max(0, s - start)
                     e = min(end - start, e - start)
                     if amb < 2:
-                        interval[s: e] = 0
+                        interval[s:e] = 0
         interval = np.array([0] + list(interval) + [0])
         diffs = np.diff(interval)
         starts = list(np.argwhere(diffs == 1) + start)
@@ -1109,13 +1133,16 @@ class Viewer(QWidget):
             for cat_ind, cat in enumerate(cat_labels):
                 if cat_ind == ind:
                     continue
-                un_label = f'unknown {cat}'
+                un_label = f"unknown {cat}"
                 if un_label not in self.unknown_actions:
                     self.unknown_actions.append(un_label)
                     for i in range(len(self.unknown_times)):
                         self.unknown_times[i].append([])
                 un_ind = self.unknown_actions.index(un_label)
-                for s, e, in zip(starts, ends):
+                for (
+                    s,
+                    e,
+                ) in zip(starts, ends):
                     self.unknown_times[ind_i][un_ind].append([s, e, 0])
         self.on_next()
 
@@ -1432,11 +1459,14 @@ class Viewer(QWidget):
     def export_examples(self, value):
         from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
         from moviepy.editor import VideoFileClip
+
         dlg = ChoiceDialogExample(self.action_dict)
         labels = dlg.exec_()
         cat_labels = [self.catDict["base"][i] for i in self.catDict["base"]]
         num_clips = 5
-        target_dir = os.path.join(QFileDialog.getExistingDirectory(self, 'Save File'), "extracted_clips")
+        target_dir = os.path.join(
+            QFileDialog.getExistingDirectory(self, "Save File"), "extracted_clips"
+        )
         fps = VideoFileClip(os.path.join(self.filepaths[0], self.filenames[0])).fps
         os.mkdir(target_dir)
         for label in labels:
@@ -1457,11 +1487,14 @@ class Viewer(QWidget):
                         continue
                     for fn, fp in zip(self.filenames, self.filepaths):
                         filename_in = os.path.join(fp, fn)
-                        name, ext = fn.split('.')
-                        filename_out = os.path.join(target_dir, label, f'{name}_{label}_{cnt}.{ext}')
-                        ffmpeg_extract_subclip(filename_in, start / fps, end / fps, targetname=filename_out)
+                        name, ext = fn.split(".")
+                        filename_out = os.path.join(
+                            target_dir, label, f"{name}_{label}_{cnt}.{ext}"
+                        )
+                        ffmpeg_extract_subclip(
+                            filename_in, start / fps, end / fps, targetname=filename_out
+                        )
                         cnt += 1
-                        print(f'exported {filename_out}')
+                        print(f"exported {filename_out}")
             if cnt < num_clips:
-                print(f'not enough clips for {label}')
-
+                print(f"not enough clips for {label}")

@@ -2,6 +2,7 @@ from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout
 
+
 class ProgressBar(QWidget):
     clicked = pyqtSignal(int)
 
@@ -25,13 +26,13 @@ class CountLabel(QLabel):
         self.length = str(length)
         self.num_symbols = len(self.length)
         self.current = current
-        width = self.fontMetrics().width(f'{length}/{length}')
+        width = self.fontMetrics().width(f"{length}/{length}")
         self.setFixedWidth(width)
         self.setAlignment(Qt.AlignRight)
 
     def paintEvent(self, e):
         cur = self.current()
-        self.setText(f'{str(cur).rjust(self.num_symbols)}/{self.length}')
+        self.setText(f"{str(cur).rjust(self.num_symbols)}/{self.length}")
         super().paintEvent(e)
 
 
@@ -55,7 +56,12 @@ class ProgressBarWidget(QWidget):
         qp.setPen(Qt.NoPen)
         qp.setBrush(QColor(168, 216, 239))
         self.loaded = self.get_loaded()
-        qp.drawRect(self.loaded[0] * self.step, 0, (self.loaded[1] - self.loaded[0]) * self.step, self.h)
+        qp.drawRect(
+            self.loaded[0] * self.step,
+            0,
+            (self.loaded[1] - self.loaded[0]) * self.step,
+            self.h,
+        )
         qp.setPen(Qt.gray)
         qp.setBrush(Qt.NoBrush)
         qp.drawRect(0, 0, self.width() - 1, self.h)

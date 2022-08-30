@@ -41,7 +41,16 @@ class Bar(QWidget):
     clicked = pyqtSignal(int)
 
     def __init__(
-        self, window, segment_len, al_mode, al_current, al_end, correct_animal, mode, fm, active=True
+        self,
+        window,
+        segment_len,
+        al_mode,
+        al_current,
+        al_end,
+        correct_animal,
+        mode,
+        fm,
+        active=True,
     ):
         super().__init__()
         self.h = window.settings["actionbar_width"]
@@ -219,7 +228,9 @@ class Bar(QWidget):
             categories.remove(x)
         if len(times) > 0 and type(times[0]) is not np.ndarray:
             for i in range(len(times)):
-                times[i] = np.array([[int(x[0]), int(x[1]), int(x[2])] for x in times[i]])
+                times[i] = np.array(
+                    [[int(x[0]), int(x[1]), int(x[2])] for x in times[i]]
+                )
         while len(times) > 0:
             starts = np.array([x[0, 0] for x in times])
             next = np.argmin(starts)
@@ -577,4 +588,3 @@ class Bar(QWidget):
             if start < self.al_end and end > self.al_current:
                 new_times.append([start, end])
         return new_times
-

@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
         dev,
         active_learning,
         show_settings,
-        config_file
+        config_file,
     ):
         super(MainWindow, self).__init__()
         self.toolbar = None
@@ -143,7 +143,12 @@ class MainWindow(QMainWindow):
                     filepaths.append(filepath)
                     filenames.append(filename)
             self.run_viewer(
-                stacks, shapes, lens, filenames, filepaths, current,
+                stacks,
+                shapes,
+                lens,
+                filenames,
+                filepaths,
+                current,
             )
         else:
             if len(self.videos) > 1:
@@ -167,13 +172,17 @@ class MainWindow(QMainWindow):
         return stacks, shapes, lens, filename, filepath
 
     def run_viewer_single(self, current=0):
-        stacks, shapes, lens, filename, filepath = self.read_video_stack(
-            self.cur_video
-        )
+        stacks, shapes, lens, filename, filepath = self.read_video_stack(self.cur_video)
         self.run_viewer(stacks, shapes, lens, [filename], [filepath], current)
 
     def run_viewer(
-        self, stacks, shapes, lens, filenames, filepaths, current=0,
+        self,
+        stacks,
+        shapes,
+        lens,
+        filenames,
+        filepaths,
+        current=0,
     ):
         al_points = self.get_al_points(filenames[0])
         if al_points is None:
@@ -208,7 +217,7 @@ class MainWindow(QMainWindow):
                 with open(self.al_points_file, "rb") as f:
                     al_points = pickle.load(f)
                     sep = self.settings["prefix_separator"]
-                    name = filename.split('.')[0]
+                    name = filename.split(".")[0]
                     if sep is not None:
                         name = sep.join(name.split(sep)[1:])
                     al_points = al_points[name]
@@ -240,7 +249,10 @@ class MainWindow(QMainWindow):
                     files = [None for _ in self.videos]
                 else:
                     files = self.settings["skeleton_files"]
-                skeleton = [files[i] if x != video else skeleton[0] for i, x in enumerate(self.videos)]
+                skeleton = [
+                    files[i] if x != video else skeleton[0]
+                    for i, x in enumerate(self.videos)
+                ]
             if skeleton is not None:
                 settings_update["skeleton_files"] = skeleton
                 update = True
@@ -254,7 +266,9 @@ class MainWindow(QMainWindow):
         if update:
             self.viewer.save(verbose=False, ask=True)
             self.run_video(
-                current=self.viewer.current(), settings_update=settings_update, multiview=self.multiview
+                current=self.viewer.current(),
+                settings_update=settings_update,
+                multiview=self.multiview,
             )
             self._createActions()
             self._createMenuBar()
@@ -368,38 +382,29 @@ class MainWindow(QMainWindow):
         )
         labelAction.triggered.connect(self.set_label_al)
         exampleAction = QAction("&Export example clips", self)
-        exampleAction.setStatusTip(
-            "Export example clips of the behaviors"
-        )
+        exampleAction.setStatusTip("Export example clips of the behaviors")
         exampleAction.triggered.connect(self.viewer.export_examples)
         rainbowAction = QAction("&Body part colors", self)
-        rainbowAction.setStatusTip(
-            "Switch between individual and body part coloring"
-        )
+        rainbowAction.setStatusTip("Switch between individual and body part coloring")
         rainbowAction.triggered.connect(self.viewer.switch_rainbow)
         skeletonAction = QAction("&Skeleton", self)
-        skeletonAction.setStatusTip(
-            "Display skeleton connections"
-        )
+        skeletonAction.setStatusTip("Display skeleton connections")
         skeletonAction.triggered.connect(self.viewer.switch_skeleton)
         if self.settings["skeleton"] is None or len(self.settings["skeleton"]) == 0:
             skeletonAction.setDisabled(True)
         reprAction = QAction("&Reprojections", self)
-        reprAction.setStatusTip(
-            "Display reprojection points"
-        )
+        reprAction.setStatusTip("Display reprojection points")
         reprAction.triggered.connect(self.viewer.switch_repr)
-        if self.settings["3d_suffix"] is None or self.settings["calibration_path"] is None:
+        if (
+            self.settings["3d_suffix"] is None
+            or self.settings["calibration_path"] is None
+        ):
             reprAction.setDisabled(True)
         assAction = QAction("&Assess suggestions...", self)
-        assAction.setStatusTip(
-            "Sample suggestions and assess them as true or false"
-        )
+        assAction.setStatusTip("Sample suggestions and assess them as true or false")
         assAction.triggered.connect(self.set_assessment_al)
         settingsAction = QAction("&Open settings", self)
-        settingsAction.setStatusTip(
-            "Open the settings window"
-        )
+        settingsAction.setStatusTip("Open the settings window")
         settingsAction.triggered.connect(self.set_settings)
 
         self.menubar = self.menuBar()
@@ -481,9 +486,7 @@ class MainWindow(QMainWindow):
     def set_settings(self, event):
         SettingsWindow(self.settings_file).exec_()
         self.viewer.save(verbose=False, ask=True)
-        self.run_video(
-            current=self.viewer.current(), multiview=self.multiview
-        )
+        self.run_video(current=self.viewer.current(), multiview=self.multiview)
         self._createActions()
         self._createToolBar()
         self._createMenuBar()
@@ -518,11 +521,21 @@ class MainWindow(QMainWindow):
 @click.option("--active_learning", "-a", is_flag=True, help="Active learning mode")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
 @click.option("--config_file", "-c", default="config.yaml", help="The config file path")
-def main(video, output, labels, multiview, dev, active_learning, open_settings, config_file):
+def main(
+    video, output, labels, multiview, dev, active_learning, open_settings, config_file
+):
     app = QApplication(sys.argv)
 
     window = MainWindow(
-        app, video, output, labels, multiview, dev, active_learning, open_settings, config_file
+        app,
+        video,
+        output,
+        labels,
+        multiview,
+        dev,
+        active_learning,
+        open_settings,
+        config_file,
     )
     window.show()
 

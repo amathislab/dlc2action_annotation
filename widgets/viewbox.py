@@ -144,7 +144,9 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
             self.image.set_data(self.video[index])
             if self.segmentation is not None:
                 self.mask.set_data(self.segmentation.get_mask(index))
-        if (self.draw_points_bool or self.display_repr) and current % self.box_update_freq == 0:
+        if (
+            self.draw_points_bool or self.display_repr
+        ) and current % self.box_update_freq == 0:
             self.draw_points(
                 current,
                 displayed_animals,
@@ -173,7 +175,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
                 size=self.skeleton_size,
                 edge_color="white",
                 face_color="white",
-                color_order=self.color_order
+                color_order=self.color_order,
             )
         )
         self.skeletons = defaultdict(
@@ -196,7 +198,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
                     size=self.skeleton_size,
                     edge_color=color,
                     face_color="white",
-                    color_order=self.color_order
+                    color_order=self.color_order,
                 )
                 vis.update_data(
                     self.points_df.get_coord(current, animal), al_mode, al_animal
@@ -207,10 +209,18 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
             self.current = current
             if len(self.skeleton) > 0:
                 pos = self.points_df.get_coord(current, animal)
-                skeleton = np.array([x for x in self.skeleton if np.sum(pos[x[0]]) > 0 and np.sum(pos[x[1]]) > 0])
+                skeleton = np.array(
+                    [
+                        x
+                        for x in self.skeleton
+                        if np.sum(pos[x[0]]) > 0 and np.sum(pos[x[1]]) > 0
+                    ]
+                )
                 if len(skeleton) == 0:
                     skeleton = np.array([[0, 0]])
-                skeleton_vis = vispy.scene.visuals.Line(pos=pos, color="cornflowerblue", parent=self.scene, connect=skeleton)
+                skeleton_vis = vispy.scene.visuals.Line(
+                    pos=pos, color="cornflowerblue", parent=self.scene, connect=skeleton
+                )
                 self.skeletons[animal] = skeleton_vis
                 skeleton_vis.order = -1
         self.set_repr()
@@ -247,7 +257,8 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
             for i, ind in enumerate(self.animals)
         }
         self.skeletons = {
-            ind: vispy.scene.visuals.Line(pos=np.array([[0, 0]]), parent=self.scene) for ind in self.animals
+            ind: vispy.scene.visuals.Line(pos=np.array([[0, 0]]), parent=self.scene)
+            for ind in self.animals
         }
         self.set_repr()
 
@@ -291,24 +302,30 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
                             al_animal,
                         )
                         if self.display_skeleton:
-                            skeleton = np.array([x for x in self.skeleton if np.sum(pos[x[0]]) > 0 and np.sum(pos[x[1]]) > 0])
+                            skeleton = np.array(
+                                [
+                                    x
+                                    for x in self.skeleton
+                                    if np.sum(pos[x[0]]) > 0 and np.sum(pos[x[1]]) > 0
+                                ]
+                            )
                             if len(skeleton) == 0:
                                 skeleton = np.array([[0, 0]])
                             skeleton_vis.set_data(pos=pos, connect=skeleton)
                         else:
-                            skeleton_vis.set_data(pos=np.array([[0, 0]]), connect='segments')
+                            skeleton_vis.set_data(
+                                pos=np.array([[0, 0]]), connect="segments"
+                            )
                 except:
                     vis.update_data(np.array([[0, 0]]), al_mode, al_animal)
-                    skeleton_vis.set_data(pos=np.array([[0, 0]]), connect='segments')
+                    skeleton_vis.set_data(pos=np.array([[0, 0]]), connect="segments")
         if self.skeleton_size == 0:
             size = 0
         else:
             size = self.skeleton_size + 3
         if self.data_2d is not None:
             if self.display_repr:
-                self.points_2d.set_data(
-                    pos=self.data_2d[current], size=size
-                )
+                self.points_2d.set_data(pos=self.data_2d[current], size=size)
             else:
                 self.points_2d.set_data(np.array([[0, 0]]))
         self.current = current
@@ -392,8 +409,11 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
         for key, vis in self.points.items():
             self.points[key].rainbow = not vis.rainbow
 
+
 class VideoViewBox3D(vispy.scene.widgets.ViewBox):
-    def __init__(self, data_3d, parent, skeleton_size, skeleton, bodyparts, color_len=None):
+    def __init__(
+        self, data_3d, parent, skeleton_size, skeleton, bodyparts, color_len=None
+    ):
         super(VideoViewBox3D, self).__init__(parent=parent)
         self.unfreeze()
         self.data = data_3d
@@ -405,12 +425,19 @@ class VideoViewBox3D(vispy.scene.widgets.ViewBox):
                 if a in bodyparts and b in bodyparts:
                     self.skeleton.append([bodyparts.index(a), bodyparts.index(b)])
             self.skeleton = np.array(self.skeleton)
-        self.display_skeleton = (len(self.skeleton) > 0)
+        self.display_skeleton = len(self.skeleton) > 0
 
     def initialize(self, current):
         # noinspection PyTypeChecker
-        self.visual = Markers3d(self, self.data[current], parent=self.scene, color_len=self.color_len)
-        self.skeleton_visual = vispy.scene.visuals.Line(pos=self.data[current], color="cornflowerblue", parent=self.scene, connect=self.skeleton)
+        self.visual = Markers3d(
+            self, self.data[current], parent=self.scene, color_len=self.color_len
+        )
+        self.skeleton_visual = vispy.scene.visuals.Line(
+            pos=self.data[current],
+            color="cornflowerblue",
+            parent=self.scene,
+            connect=self.skeleton,
+        )
         self.skeleton_visual.order = -1
         self.camera = vispy.scene.cameras.PanZoomCamera(flip=(False, True))
         self.camera.aspect = 1
@@ -421,7 +448,7 @@ class VideoViewBox3D(vispy.scene.widgets.ViewBox):
         if self.display_skeleton:
             self.skeleton_visual.set_data(pos=self.data[current], connect=self.skeleton)
         else:
-            self.skeleton_visual.set_data(pos=np.array([[0, 0]]), connect='segments')
+            self.skeleton_visual.set_data(pos=np.array([[0, 0]]), connect="segments")
 
     def set_size(self, value):
         self.visual.skeleton_size = value
