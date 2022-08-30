@@ -489,14 +489,14 @@ class VideoCanvas(SceneCanvas):
             self.grid_y = 1
             self.grid_x = 1
         elif l == 2:
-            self.grid_y = 2
-            self.grid_x = 1
+            self.grid_y = 1
+            self.grid_x = 2
         elif l == 3 or l == 4:
             self.grid_y = 2
             self.grid_x = 2
         elif l == 5 or l == 6:
-            self.grid_y = 3
-            self.grid_x = 2
+            self.grid_y = 2
+            self.grid_x = 3
         elif l in [7, 8, 9]:
             self.grid_y = 3
             self.grid_x = 3
