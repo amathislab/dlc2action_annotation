@@ -1043,7 +1043,7 @@ class Viewer(QWidget):
         if skeleton_file is not None:
             try:
                 points_df, index_dict = read_skeleton(
-                    skeleton_file, self.settings["data_type"], self.settings["likelihood_cutoff"]
+                    skeleton_file, self.settings["data_type"], self.settings["likelihood_cutoff"], self.settings["min_length_frames"]
                 )
                 animals = points_df.animals
             except:

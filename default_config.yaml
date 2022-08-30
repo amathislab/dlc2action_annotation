@@ -4,6 +4,7 @@ data_type: dlc   #either dlc (DeepLabCut) or calms21 (Caltech Mouse Social Inter
 n_ind: 1 #this will be set as the number of individuals if no detection or annotation files are available
 actions: {locomotion: ["running", "walking", "jumping"], other: ["eating", "freezing"]}
 #actions to label (you can also enter them in the GUI)
+min_length_frames: 0 #tracklets shorter than this number or frames will be omitted
 
 # loading
 max_loaded_frames: 2000 #the maximum number of frames kept in RAM
@@ -57,3 +58,5 @@ DLC_suffix:
 - DLC_resnet50.h5
 #if not null it will be used to load the skeleton file (if multiple the first suffix that leads to an existing file will be used)
 annotator: "unknown"   #will be saved as metadata in the annotation file
+
+# other

@@ -117,13 +117,13 @@ def save_hdf(df, metadata, output_file):
     store.close()
 
 
-def read_skeleton(filename, data_type, likelihood_cutoff=0):
+def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0):
     """Open track or tracklet DLC file"""
     if data_type == "dlc":
         if filename[-3:] == ".h5" or filename[-5:] == ".hdf5":
             df, index = read_hdf(filename, likelihood_cutoff)
         else:
-            df, index = read_tracklets(filename)
+            df, index = read_tracklets(filename, min_length_frames)
     elif data_type == "calms21":
         df, index = read_calms21(filename)
     return PointsData(df), index
@@ -231,7 +231,7 @@ def read_calms21(filename):
     return dict(coords), index_dict
 
 
-def read_tracklets(filename):
+def read_tracklets(filename, min_frames):
     print("loading the DLC data")
     with open(filename, "rb") as f:
         data_p = pickle.load(f)
@@ -242,6 +242,8 @@ def read_tracklets(filename):
     index_dict = defaultdict(lambda: [])
     animals = []
     for tr_id in tqdm(keys):
+        if len(data_p[tr_id]) < min_frames:
+            continue
         animals.append(f"ind{tr_id}")
         for frame in data_p[tr_id]:
             fr_i = int(frame[5:])

@@ -322,6 +322,7 @@ class SettingsWindow(QDialog):
         self.general_layout.addRow("Max number of frames in RAM: ", self.max_loaded_le)
         self.general_layout.addRow("Load chunk (frames): ", self.chunk_le)
         self.general_layout.addRow("Load buffer (frames): ", self.buffer_le)
+        self.general_layout.addRow("Minimum tracklet length (frames): ", self.min_frames_le)
 
     def set_general_tab_data(self):
         self.annotator = self.set_le("annotator", set_int=False)
@@ -331,6 +332,7 @@ class SettingsWindow(QDialog):
         self.max_loaded_le = self.set_le("max_loaded_frames")
         self.chunk_le = self.set_le("load_chunk")
         self.buffer_le = self.set_le("load_buffer")
+        self.min_frames_le = self.set_le("min_length_frames")
 
     def create_display_tab(self):
         self.display_tab = QWidget()
@@ -421,6 +423,7 @@ class SettingsWindow(QDialog):
         self.settings["load_chunk"] = int(self.chunk_le.text())
         self.settings["load_buffer"] = int(self.buffer_le.text())
         self.settings["actions"] = self.behaviors.values() if len(self.behaviors.values()) > 0 else None
+        self.settings["min_length_frames"] = int(self.min_frames_le.text())
 
     def collect_al(self):
         self.settings["max_loaded_frames_al"] = int(self.max_loaded_al_le.text())
