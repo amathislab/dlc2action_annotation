@@ -14,7 +14,8 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QSpinBox,
     QSlider,
-    QScrollArea
+    QScrollArea,
+    QMessageBox
 )
 from qtwidgets import Toggle
 from PyQt5.QtCore import Qt
@@ -153,7 +154,6 @@ class SettingsWindow(QDialog):
         self.config_path = config_path
         self.settings = self._open_yaml(config_path)
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        self.files = {}
         self.labels = {}
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
@@ -252,7 +252,6 @@ class SettingsWindow(QDialog):
             button.clicked.connect(lambda: self.get_file(label, field, filter))
         layout.addWidget(label)
         layout.addWidget(button)
-        self.files[field] = self.settings[field]
         return layout
 
     def set_spinbox(self, field, minimum, maximum, singlestep=None):
@@ -300,12 +299,12 @@ class SettingsWindow(QDialog):
     def get_file(self, label_widget, field, filter=None):
         file = QFileDialog().getOpenFileName(self, filter=filter)[0]
         label_widget.setText(os.path.basename(file))
-        self.files[field] = file
+        self.settings[field] = file
 
     def get_dir(self, label_widget, field, filter=None):
         file = QFileDialog().getExistingDirectory(self)
         label_widget.setText(os.path.basename(file))
-        self.files[field] = file
+        self.settings[field] = file
 
     def create_general_tab(self):
         self.general_tab = QWidget()
@@ -458,12 +457,18 @@ class SettingsWindow(QDialog):
 
     def accept(self) -> None:
         self.collect()
-        self.settings.update(self.files)
         for key, value in list(self.settings.items()):
             if value == "None":
                 self.settings[key] = None
         with open(self.config_path, "w") as f:
             YAML().dump(self.settings, f)
+        if self.settings["suffix"] is None:
+            msg = QMessageBox()
+            msg.setText(
+                "The annotation suffix parameter cannot be None, please set it to a string value!"
+            )
+            msg.exec_()
+            return
         super().accept()
 
     def _open_yaml(self, path: str):
@@ -476,4 +481,3 @@ class SettingsWindow(QDialog):
         if data is None:
             data = {}
         return data
-
