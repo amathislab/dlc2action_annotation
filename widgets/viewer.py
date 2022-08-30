@@ -289,6 +289,10 @@ class Viewer(QWidget):
             self.set_current(current, center=True)
 
     def load_segmentation(self):
+        if self.settings["segmentation_suffix"] is None:
+            segmentation_list = [None for _ in self.filenames]
+            return segmentation_list
+
         self.segmentation_files = [
             os.path.join(fp, fn.split(".")[0] + self.settings["segmentation_suffix"])
             for fp, fn in zip(self.filepaths, self.filenames)

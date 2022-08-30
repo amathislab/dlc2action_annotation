@@ -405,6 +405,7 @@ class SettingsWindow(QDialog):
         self.fp_layout.addRow("Prefix separator: ", self.prefix_separator_le)
         self.fp_layout.addRow("Prior annotation file suffix: ", self.prior_suffix_le)
         self.fp_layout.addRow("DLC file suffixes: ", self.dlc_suffix)
+        self.fp_layout.addRow("Segmentation suffix: ", self.segmentation_le)
 
     def set_fp_tab_data(self):
         self.calibration_path = self.set_file("calibration_path", dir=True)
@@ -415,6 +416,7 @@ class SettingsWindow(QDialog):
         self.prefix_separator_le = self.set_le("prefix_separator", set_int=False)
         self.prior_suffix_le = self.set_le("prior_suffix", set_int=False)
         self.dlc_suffix = self.set_multiple_input("DLC_suffix")
+        self.segmentation_le = self.set_le("segmentation_suffix", set_int=False)
 
     def collect_general(self):
         self.settings["data_type"] = self.data_type_combo.currentText()
@@ -457,6 +459,7 @@ class SettingsWindow(QDialog):
         self.settings["prior_suffix"] = self.prior_suffix_le.text()
         self.settings["DLC_suffix"] = self.dlc_suffix.values()
         self.settings["annotator"] = self.annotator.text()
+        self.settings["segmentation_suffix"] = self.segmentation_le.text()
 
     def accept(self) -> None:
         self.collect()
