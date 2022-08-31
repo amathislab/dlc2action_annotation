@@ -10,6 +10,10 @@ import dask.array as da
 from tqdm import tqdm
 from warnings import catch_warnings, filterwarnings
 import os
+import shutil
+from ruamel.yaml import YAML
+from widgets.settings import SettingsWindow
+
 
 try:
     import msgpack
@@ -274,6 +278,28 @@ def read_settings(settings_file):
     with open(settings_file) as f:
         settings = yaml.load(f, Loader=yaml.FullLoader)
     return settings
+
+def get_settings(config_file, show_settings):
+    if not os.path.exists(config_file):
+        shutil.copyfile("default_config.yaml", config_file)
+        show_settings = True
+    else:
+        with open(config_file) as f:
+            config = YAML().load(f)
+        with open("default_config.yaml") as f:
+            default_config = YAML().load(f)
+        to_remove = []
+        for key, value in default_config.items():
+            if key in config:
+                to_remove.append(key)
+        for key in to_remove:
+            default_config.pop(key)
+        config.update(default_config)
+        with open(config_file, "w") as f:
+            YAML().dump(config, f)
+    if show_settings:
+        SettingsWindow(config_file).exec_()
+    return read_settings(config_file)
 
 
 class WorkerThread(QThread):

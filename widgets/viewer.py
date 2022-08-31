@@ -134,7 +134,6 @@ class Viewer(QWidget):
 
         self.al_animal = current_animal
         points_df_list, index_dict = self.load_skeleton(current)
-        print(f'loaded {points_df_list}')
 
         filename = self.filenames[0]
         filepath = self.filepaths[0]
@@ -1010,9 +1009,6 @@ class Viewer(QWidget):
                 animal = self.animal(event)
             elif type(event) is str:
                 animal = event
-            else:
-                print(f'{event=}')
-                print(f'{type(event)=}')
         self.update_labels()
         if animal not in self.displayed_animals:
             self.set_correct_animal(False)

@@ -26,7 +26,7 @@ import pickle
 import pyqtgraph as pg
 import inspect
 import os
-from utils import read_video, read_stack, read_skeleton, read_settings
+from utils import read_video, read_stack, read_skeleton, get_settings
 from widgets.viewbox import VideoViewBox
 import annotator
 from collections import defaultdict
@@ -351,14 +351,15 @@ class MainWindow(QWidget):
     switch = pyqtSignal()
     status = pyqtSignal(str)
 
-    def __init__(self, settings, filenames, filepaths, data_file, *args, **kwargs):
+    def __init__(self, filenames, filepaths, data_file, open_settings=False, config_file="config.yaml", *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        self.settings = settings
+        self.settings_file = config_file
+        self.settings = get_settings(self.settings_file, open_settings)
         self.filepaths = filepaths
         self.filenames = filenames
         self.data_file = data_file
-        self.parameters = [settings, filenames, filepaths, data_file]
+        self.parameters = [filenames, filepaths, data_file, False, config_file]
         with open("colors.txt") as f:
             self.colors = (
                 np.array([list(map(int, line.split())) for line in f.readlines()]) / 255
@@ -418,7 +419,6 @@ class MainWindow(QWidget):
                     self.skeleton_files.append(None)
         else:
             self.skeleton_files = [None for _ in range(len(self.filenames))]
-        print(f'{self.skeleton_files=}')
 
     def load_animals(self, skeleton_file):
         if skeleton_file is not None:
@@ -664,8 +664,7 @@ class MainWindow(QWidget):
 
 
 @click.option(
-    "--video_files",
-    "-v",
+    "--video",
     multiple=True,
     required=True,
     help="The video filepath; to include more than one just repeat this option",
@@ -679,18 +678,19 @@ class MainWindow(QWidget):
     "the features of those clips; labels is a (N, 1)-shape numpy array that contains "
     "the corresponding labels (-100 stands for no label)",
 )
+@click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
+@click.option("--config_file", "-c", default="config.yaml", help="The config file path")
 @click.command()
-def main(video_files, data_file):
+def main(video, data_file, open_settings, config_file):
 
     app = QApplication(sys.argv)
-    settings = read_settings("config.yaml")
     filenames = []
     filepaths = []
-    for f in video_files:
+    for f in video:
         filepath, filename = os.path.split(f)
         filepaths.append(filepath)
         filenames.append(filename)
-    window = MainWindow(settings, filenames, filepaths, data_file)
+    window = MainWindow(filenames, filepaths, data_file, open_settings, config_file)
     window.show()
     app.exec_()
 

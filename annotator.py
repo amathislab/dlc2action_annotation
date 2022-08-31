@@ -16,10 +16,8 @@ import cluster
 import click
 import os
 import pickle
-import shutil
-from ruamel.yaml import YAML
 
-from utils import read_settings, read_video
+from utils import get_settings, read_video, read_settings
 
 
 class MainWindow(QMainWindow):
@@ -42,27 +40,8 @@ class MainWindow(QMainWindow):
         self.cur_video = 0
         self.output_file = output_file
         self.clustering_parameters = clustering_parameters
-        if not os.path.exists(config_file):
-            shutil.copyfile("default_config.yaml", config_file)
-            show_settings = True
-        else:
-            with open(config_file) as f:
-                config = YAML().load(f)
-            with open("default_config.yaml") as f:
-                default_config = YAML().load(f)
-            to_remove = []
-            for key, value in default_config.items():
-                if key in config:
-                    to_remove.append(key)
-            for key in to_remove:
-                default_config.pop(key)
-            config.update(default_config)
-            with open(config_file, "w") as f:
-                YAML().dump(config, f)
+        self.settings = get_settings(config_file, show_settings)
         self.settings_file = config_file
-        if show_settings:
-            SettingsWindow(self.settings_file).exec_()
-        self.settings = read_settings(self.settings_file)
         self.sequential = False
         self.labels = labels
         self.dev = dev
