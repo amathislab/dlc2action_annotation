@@ -203,9 +203,8 @@ class LineEdit(QLineEdit):
 class ModWindow(QWidget):
     def __init__(self, window):
         super(ModWindow, self).__init__()
-
         self.window = window
-        if self.window.get_method == "raw":
+        if self.window.method == "raw":
             self.parameters = []
             self.args = []
         else:
@@ -223,8 +222,8 @@ class ModWindow(QWidget):
             le = LineEdit()
             le.enter.connect(self.plot_graph)
             self.boxes.append(le)
-            if par in self.window.args[self.window.get_method]:
-                value = str(self.window.args[self.window.get_method][par])
+            if par in self.window.args[self.window.method]:
+                value = str(self.window.args[self.window.method][par])
             else:
                 value = str(self.parameters[par].default)
             le.setText(value)
@@ -239,7 +238,7 @@ class ModWindow(QWidget):
         self.buttons.addWidget(self.plot_button)
 
         urlLink = f"<a href={self.window.doc_link}>documentation</a>"
-        self.label1 = QLabel(f"Modify {self.window.get_method} parameters")
+        self.label1 = QLabel(f"Modify {self.window.method} parameters")
         self.label2 = QLabel(f"Here is the {urlLink}")
         self.label2.setTextFormat(Qt.RichText)
         self.label2.setOpenExternalLinks(True)
@@ -275,7 +274,7 @@ class ModWindow(QWidget):
         arg_dict["n_components"] = 2
         try:
             self.window.get_clustering(arg_dict)
-            self.window.args[self.window.get_method] = arg_dict
+            self.window.args[self.window.method] = arg_dict
         except ValueError as e:
             self.value_error(e)
 
@@ -305,7 +304,7 @@ class Console(QWidget):
 
         self.pars_button = QPushButton("Modify parameters")
         self.pars_button.clicked.connect(self.window.modify_pars)
-        if self.window.get_method == "raw":
+        if self.window.method == "raw":
             self.pars_button.setEnabled(False)
 
         self.method_checkbox = QCheckBox("Multiple videos open")

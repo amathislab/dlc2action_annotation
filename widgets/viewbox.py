@@ -29,13 +29,15 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
         al_mode,
         al_animal,
         correct_mode,
-        data_2d,
-        skeleton,
-        bodyparts_3d,
+        data_2d=None,
+        skeleton=None,
+        bodyparts_3d=None,
         *args,
         **kwargs
     ):
         super(VideoViewBox, self).__init__(*args, **kwargs)
+        if skeleton is None:
+            skeleton = []
         self.unfreeze()
         self.window = window
         self.node_transform_ = node_transform
