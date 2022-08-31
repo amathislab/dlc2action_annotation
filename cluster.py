@@ -318,6 +318,10 @@ class Console(QWidget):
         self.move_radio.setChecked(True)
         self.save_button = QPushButton("Save selection")
         self.save_button.clicked.connect(self.window.save)
+        self.save_button.setDisabled(True)
+        self.open_button = QPushButton("Open intervals")
+        # self.open_button.clicked.connect(self.window.open_intervals)
+        self.open_button.setDisabled(True)
 
         self.radio_layout = QHBoxLayout()
         self.radio_layout.addWidget(self.method_checkbox)
@@ -327,6 +331,7 @@ class Console(QWidget):
         self.radio_layout.addWidget(self.move_radio)
         self.radio_layout.addSpacing(100)
         self.radio_layout.addWidget(self.save_button)
+        self.radio_layout.addWidget(self.open_button)
 
         self.method_layout = QHBoxLayout()
         self.method_layout.addWidget(self.method_label)
@@ -620,6 +625,9 @@ class MainWindow(QWidget):
             self.chosen = list(np.where(x & y)[0])
         self.rect_position = [0, 0, 0, 0]
         self.plot_clusters()
+        self.console.save_button.setDisabled(len(self.chosen) == 0)
+        self.console.open_button.setDisabled(len(self.chosen) == 0)
+
 
     def set_select_mode(self):
         self.select_mode = True
