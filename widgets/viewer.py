@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtWidgets import (
     QWidget,
@@ -134,6 +134,7 @@ class Viewer(QWidget):
 
         self.al_animal = current_animal
         points_df_list, index_dict = self.load_skeleton(current)
+        print(f'loaded {points_df_list}')
 
         filename = self.filenames[0]
         filepath = self.filepaths[0]
@@ -1176,7 +1177,7 @@ class Viewer(QWidget):
                 self.sampler.compute()
                 self.set_assessment_al()
             elif self.show_question(
-                message="Move on to a different video?", default="yes"
+                message="Move on from this video?", default="yes"
             ):
                 self.next_video_f()
         else:

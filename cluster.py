@@ -358,6 +358,7 @@ class MainWindow(QWidget):
         self.filepaths = filepaths
         self.filenames = filenames
         self.data_file = data_file
+        self.parameters = [settings, filenames, filepaths, data_file]
         with open("colors.txt") as f:
             self.colors = (
                 np.array([list(map(int, line.split())) for line in f.readlines()]) / 255
@@ -652,12 +653,12 @@ class MainWindow(QWidget):
         for video, start, end, clip in intervals:
             al_dict[video].append([int(start), int(end), str(clip)])
         self.close()
-        print(f'{al_dict=}')
         window = annotator.MainWindow(
             videos=[os.path.join(fp, fn) for fp, fn in zip(self.filepaths, self.filenames) if fn.split(".")[0] in al_dict],
             multiview=False,
             active_learning=True,
-            al_points_dictionary=al_dict
+            al_points_dictionary=al_dict,
+            clustering_parameters=self.parameters
         )
         window.show()
 

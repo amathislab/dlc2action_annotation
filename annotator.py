@@ -12,6 +12,7 @@ from widgets.dialog import Form
 from PyQt5.QtGui import QIcon
 from widgets.viewer import Viewer as Viewer
 from widgets.settings import SettingsWindow
+import cluster
 import click
 import os
 import pickle
@@ -32,13 +33,15 @@ class MainWindow(QMainWindow):
         active_learning=False,
         show_settings=False,
         config_file="config.yaml",
-        al_points_dictionary=None
+        al_points_dictionary=None,
+        clustering_parameters=None
     ):
         super(MainWindow, self).__init__()
         self.toolbar = None
         self.menubar = None
         self.cur_video = 0
         self.output_file = output_file
+        self.clustering_parameters = clustering_parameters
         if not os.path.exists(config_file):
             shutil.copyfile("default_config.yaml", config_file)
             show_settings = True
@@ -95,8 +98,14 @@ class MainWindow(QMainWindow):
         self._createMenuBar()
 
     def next_video(self):
-        self.cur_video = (self.cur_video + 1) % len(self.videos)
-        self.run_viewer_single()
+        if self.clustering_parameters is not None and self.cur_video == len(self.videos) - 1:
+            self.close()
+            window = cluster.MainWindow(*self.clustering_parameters)
+            window.show()
+        else:
+            self.cur_video = (self.cur_video + 1) % len(self.videos)
+            self.settings = read_settings(self.settings_file)
+            self.run_viewer_single()
 
     def prev_video(self):
         self.cur_video = self.cur_video - 1
