@@ -501,7 +501,9 @@ class MainWindow(QWidget):
             videos = [f.split(".")[0] for f in self.filenames]
             n = 100
             videos_rand = [videos[random.randint(0, len(videos) - 1)] for _ in range(n)]
-            self.frames = [(v, 0, 10, "ind0") for v in videos_rand]
+            start_frames = list(range(0, 1000, 50))
+            self.frames = [(v, start_frames[i % len(start_frames)], start_frames[i % len(start_frames)] + 50, "ind0")
+                           for i, v in enumerate(videos_rand)]
         else:
             with open(self.data_file, "rb") as f:
                 self.frames, self.data, self.labels, self.label_dict = pickle.load(f)
