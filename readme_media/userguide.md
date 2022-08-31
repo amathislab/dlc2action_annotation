@@ -201,6 +201,9 @@ calibration_folder
 ```
 In this case the settings from the `camera_aa_calibration.npy` file will be applied to videos that have filenames starting with `aa-` and the settings from the `camera_ab_calibration.npy` file to videos that have filenames starting with `ab-`. Each of the .npy files should contain a dictionary with the following keys: `"r"` with the rotation matrix, `"t"` with the translation vector, `"Intrinsic"` with the intrinsic parameter matrix, `"dist_coeff"` with the distortion coefficients. The format of all parameters should be as specified in [`cv2.projectPoints'`](https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html?highlight=calib#void%20projectPoints(InputArray%20objectPoints,%20InputArray%20rvec,%20InputArray%20tvec,%20InputArray%20cameraMatrix,%20InputArray%20distCoeffs,%20OutputArray%20imagePoints,%20OutputArray%20jacobian,%20double%20aspectRatio)).
 
+#### Segmentation:
+You can also open .msgpack segmentation masks. Each frame should be a list of dictionarirs that have `"category_id"` and `"segmentation"` keys. See `utils.Segmentation` class for more details.
+
 #### Annotation:
 Your annotation will be saved as pickled files. They can be opened with this python code.
 ```python

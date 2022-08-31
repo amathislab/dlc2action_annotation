@@ -13,19 +13,19 @@ dependencies:
   - numpy==1.23.2
   - PyYaml==5.3.1
   - nb_conda==2.2.1
-  - pytables
+  - pytables==3.7.0
   - pycocotools==2.0.4
   - scikit-image==0.19.3
   - pyqtgraph==0.12.4
   - scikit-learn==1.1.2
-  - ruamel.yaml
+  - ruamel.yaml==0.17.21
   - pip:
     - vispy==0.11.0
     - PyQt5==5.15.2
     - av==8.0.3
     - PIMS==0.5
-    - ttf_opensans
-    - tqdm
-    - msgpack
-    - qtwidgets
-    - opencv-python
+    - ttf_opensans==2020.10.30
+    - tqdm==4.64.0
+    - msgpack==1.0.4
+    - qtwidgets==0.18
+    - opencv-python==4.6.0.66
