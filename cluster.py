@@ -28,6 +28,8 @@ import inspect
 import os
 from utils import read_video, read_stack, read_skeleton, read_settings
 from widgets.viewbox import VideoViewBox
+import annotator
+from collections import defaultdict
 
 
 class PlotWidget(pg.PlotWidget):
@@ -320,7 +322,7 @@ class Console(QWidget):
         self.save_button.clicked.connect(self.window.save)
         self.save_button.setDisabled(True)
         self.open_button = QPushButton("Open intervals")
-        # self.open_button.clicked.connect(self.window.open_intervals)
+        self.open_button.clicked.connect(self.window.open_intervals)
         self.open_button.setDisabled(True)
 
         self.radio_layout = QHBoxLayout()
@@ -415,11 +417,12 @@ class MainWindow(QWidget):
                     self.skeleton_files.append(None)
         else:
             self.skeleton_files = [None for _ in range(len(self.filenames))]
+        print(f'{self.skeleton_files=}')
 
     def load_animals(self, skeleton_file):
         if skeleton_file is not None:
             try:
-                points_df, _ = read_skeleton(skeleton_file)
+                points_df, _ = read_skeleton(skeleton_file, data_type=self.settings["data_type"])
             except:
                 print("skeleton file is invalid or does not exist")
                 points_df = None
@@ -461,8 +464,7 @@ class MainWindow(QWidget):
         if label in self.label_dict:
             label = self.label_dict[label]
         if self.points_df_dict[vid] is not None:
-            points_df = self.points_df_dict[vid].loc[list(range(start, end))]
-            points_df = points_df.iloc[points_df.index.get_level_values(1) == ind]
+            points_df = self.points_df_dict[vid].get_range(start, end, ind)
         else:
             points_df = None
         vw = VideoWindow(
@@ -642,6 +644,21 @@ class MainWindow(QWidget):
         with open(self.output_file, "wb") as f:
             pickle.dump(self.chosen, f)
 
+    def open_intervals(self):
+        intervals = np.array(self.frames)[self.chosen] # (video, start, end, clip)
+        al_dict = defaultdict(lambda: [])
+        for video, start, end, clip in intervals:
+            al_dict[video].append([int(start), int(end), str(clip)])
+        self.close()
+        print(f'{al_dict=}')
+        window = annotator.MainWindow(
+            videos=[os.path.join(fp, fn) for fp, fn in zip(self.filepaths, self.filenames) if fn.split(".")[0] in al_dict],
+            multiview=False,
+            active_learning=True,
+            al_points_dictionary=al_dict
+        )
+        window.show()
+
 
 @click.option(
     "--video_files",
@@ -663,7 +680,7 @@ class MainWindow(QWidget):
 def main(video_files, data_file):
 
     app = QApplication(sys.argv)
-    settings = read_settings("default_config.yaml")
+    settings = read_settings("config.yaml")
     filenames = []
     filepaths = []
     for f in video_files:
@@ -672,8 +689,8 @@ def main(video_files, data_file):
         filenames.append(filename)
     window = MainWindow(settings, filenames, filepaths, data_file)
     window.show()
-
     app.exec_()
+
 
 
 if __name__ == "__main__":

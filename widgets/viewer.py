@@ -45,7 +45,6 @@ class Viewer(QWidget):
 
     def __init__(
         self,
-        app,
         stacks,
         shapes,
         lengths,
@@ -60,7 +59,6 @@ class Viewer(QWidget):
         al_points=None,
     ):
         super(Viewer, self).__init__()
-        self.app = app
         self.settings = settings
         self.filepaths = filepaths
         self.filenames = filenames
@@ -263,7 +261,7 @@ class Viewer(QWidget):
             self.al_end,
             self.correct_animal,
             None,
-            QFontMetrics(self.app.font()),
+            QFontMetrics(self.font()),
         )
         self.bar.setFixedHeight(self.bar.h)
         self.bar.clicked.connect(self.on_bar_clicked)
@@ -1011,6 +1009,9 @@ class Viewer(QWidget):
                 animal = self.animal(event)
             elif type(event) is str:
                 animal = event
+            else:
+                print(f'{event=}')
+                print(f'{type(event)=}')
         self.update_labels()
         if animal not in self.displayed_animals:
             self.set_correct_animal(False)

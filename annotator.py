@@ -24,21 +24,20 @@ from utils import read_settings, read_video
 class MainWindow(QMainWindow):
     def __init__(
         self,
-        app,
         videos,
-        output_file,
-        labels,
-        multiview,
-        dev,
-        active_learning,
-        show_settings,
-        config_file,
+        output_file=None,
+        labels=None,
+        multiview=True,
+        dev=False,
+        active_learning=False,
+        show_settings=False,
+        config_file="config.yaml",
+        al_points_dictionary=None
     ):
         super(MainWindow, self).__init__()
         self.toolbar = None
         self.menubar = None
         self.cur_video = 0
-        self.app = app
         self.output_file = output_file
         if not os.path.exists(config_file):
             shutil.copyfile("default_config.yaml", config_file)
@@ -68,7 +67,11 @@ class MainWindow(QMainWindow):
         self.al_mode = self.settings["start_al"]
         if active_learning:
             self.al_mode = True
-        self.al_points_file = self.settings["al_points_file"]
+        if al_points_dictionary is not None:
+            self.al_points_file = self.settings["al_points_file"]
+        else:
+            self.al_points_file = None
+        self.al_points_dict = al_points_dictionary
 
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
@@ -188,7 +191,6 @@ class MainWindow(QMainWindow):
         if al_points is None:
             self.al_mode = False
         self.viewer = Viewer(
-            self.app,
             stacks,
             shapes,
             lens,
@@ -213,17 +215,18 @@ class MainWindow(QMainWindow):
             al_points = [[(107, 283, "ind6"), (222, 388, "ind14"), (226, 258, "ind16")]]
             return al_points[self.cur_video]
         else:
-            try:
+            sep = self.settings["prefix_separator"]
+            name = filename.split(".")[0]
+            if sep is not None:
+                name = sep.join(name.split(sep)[1:])
+            if self.al_points_file is not None:
                 with open(self.al_points_file, "rb") as f:
                     al_points = pickle.load(f)
-                    sep = self.settings["prefix_separator"]
-                    name = filename.split(".")[0]
-                    if sep is not None:
-                        name = sep.join(name.split(sep)[1:])
-                    al_points = al_points[name]
-                    return al_points
-            except:
+            elif self.al_points_dict is not None:
+                al_points = self.al_points_dict
+            else:
                 return None
+            return al_points.get(name)
 
     def load_data(self, type):
         update = False
@@ -527,7 +530,6 @@ def main(
     app = QApplication(sys.argv)
 
     window = MainWindow(
-        app,
         video,
         output,
         labels,
@@ -540,7 +542,6 @@ def main(
     window.show()
 
     app.exec_()
-
 
 if __name__ == "__main__":
     main()

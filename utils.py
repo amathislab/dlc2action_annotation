@@ -187,6 +187,17 @@ class PointsData:
         else:
             return self.points_df.loc[current, animal].to_numpy()
 
+    def get_range(self, start, end, animal):
+        if self.dict_type:
+            d = {x: self.points_df[x][animal] for x in range(start, end)}
+            d["animals"] = [animal]
+            d["names"] = self.names
+            return PointsData(d)
+        else:
+            df = self.points_df.loc[list(range(start, end))]
+            df = df.iloc[df.index.get_level_values(1) == animal]
+            return PointsData(df)
+
     def set_coord(self, current, animal, point, coord):
         if self.dict_type:
             self.points_df[current][animal][point, :] = coord
