@@ -213,8 +213,8 @@ with open("/path/to/annotation.pickle", "rb") as f:
   data = pickle.load(f)
  
  metadata = data[0]
- individual_list = data[1]
- label_list = data[2]
+ label_list = data[1]
+ individual_list = data[2]
  annotation = data[3]
  ```
  
