@@ -18,9 +18,13 @@ from PyQt5.QtWidgets import (
     QSlider,
     QRadioButton,
     QDialogButtonBox,
+    QListWidget,
+    QDoubleSpinBox,
+    QSpinBox,
 )
-from PyQt5.QtGui import QPixmap, QColor, QFont
+from PyQt5.QtGui import QPixmap, QColor, QFont, QIntValidator
 from PyQt5.QtCore import Qt, pyqtSignal
+from collections import defaultdict
 
 
 class LineEdit(QLineEdit):
@@ -568,3 +572,188 @@ class Form(QDialog):
         for i, button in enumerate(self.buttons):
             if button.isChecked():
                 return self.videos[i]
+
+class EpisodeSelector(QDialog):
+    def __init__(self, project):
+        super().__init__()
+        options = list(project.list_episodes().index) + ["train..."]
+        label = QLabel("Please choose the episode to load the model from:")
+        self.combobox = QComboBox()
+        self.combobox.addItems(options)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
+        layout = QVBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(self.combobox)
+        layout.addWidget(self.button_box)
+        self.setLayout(layout)
+        self.button_box.accepted.connect(self.accept)
+
+    def exec_(self) -> int:
+        super().exec_()
+        chosen = self.combobox.currentText()
+        if chosen == "train...":
+            chosen = None
+        return chosen
+
+class EpisodeParamsSelector(QDialog):
+    def __init__(self, project, behaviors):
+        super().__init__()
+        self.check_name_validity = project._check_episode_validity
+        self.name_le = QLineEdit()
+        self.load_episode_combobox = QComboBox()
+        self.load_episode_combobox.addItems(["none"] + list(project.list_episodes().index))
+        self.load_episode_combobox.setCurrentText("none")
+        self.num_epochs_le = QSpinBox()
+        self.num_epochs_le.setMinimum(1)
+        self.num_epochs_le.setMaximum(500)
+        self.num_epochs_le.setValue(100)
+        self.behavior_list = QListWidget()
+        self.behavior_list.addItems(behaviors)
+        self.behavior_list.setSelectionMode(QListWidget.MultiSelection)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
+        layout = QVBoxLayout()
+        form_layout = QFormLayout()
+        form_layout.addRow("Episode name: ", self.name_le)
+        form_layout.addRow("Load episode: ", self.load_episode_combobox)
+        form_layout.addRow("Number of epochs: ", self.num_epochs_le),
+        form_layout.addRow("Behaviors: ", self.behavior_list)
+        layout.addLayout(form_layout)
+        layout.addWidget(self.button_box)
+        self.setLayout(layout)
+        self.button_box.accepted.connect(self.accept)
+
+    def accept(self):
+        episode_name = self.name_le.text()
+        try:
+            self.check_name_validity(episode_name)
+            super().accept()
+        except ValueError as e:
+            print('error')
+            msg = QMessageBox()
+            msg.setText(str(e))
+            msg.setWindowTitle("Warning")
+            msg.addButton(QMessageBox.Ok)
+            msg.exec_()
+
+    def exec_(self):
+        super().exec_()
+        episode_name = self.name_le.text()
+        load_episode = self.load_episode_combobox.currentText()
+        if load_episode == "none":
+            load_episode = None
+        num_epochs = self.num_epochs_le.value()
+        behaviors = [
+            item.text() for item in self.behavior_list.selectedItems()
+        ]
+        return (
+            episode_name,
+            load_episode,
+            num_epochs,
+            behaviors
+        )
+
+class SuggestionParamsSelector(QDialog):
+    def __init__(self, behaviors):
+        super().__init__()
+        layout = QVBoxLayout()
+        first_row = QHBoxLayout()
+        label0 = QLabel("Suggestion name: ")
+        self.name_le = QLineEdit()
+        first_row.addWidget(label0)
+        first_row.addWidget(self.name_le)
+        layout.addLayout(first_row)
+        second_row = QHBoxLayout()
+        label1 = QLabel("Min frames behaviors: ")
+        label2 = QLabel("Min frames AL intervals: ")
+        self.min_behavior_le = QSpinBox()
+        self.min_behavior_le.setValue(5)
+        self.min_behavior_le.setMinimum(0)
+        self.min_al_le = QSpinBox()
+        self.min_al_le.setValue(60)
+        self.min_al_le.setMinimum(10)
+        for widget in [label1, self.min_behavior_le, label2, self.min_al_le]:
+            second_row.addWidget(widget)
+        layout.addLayout(second_row)
+        self.behavior_layout = QFormLayout()
+        layout.addLayout(self.behavior_layout)
+        self.include = {}
+        self.exclude = {}
+        self.ignore = {}
+        self.thresholds = {}
+        self.threshold_diffs = {}
+        self.hysteresis = {}
+        self.setLayout(layout)
+        for behavior in behaviors:
+            self.add_row(behavior)
+        self.behaviors = behaviors
+        self.button_box.accepted.connect(self.accept)
+
+    def add_row(self, behavior):
+        layout = QHBoxLayout()
+        radio_layout = QVBoxLayout()
+        include_radio = QRadioButton("include")
+        exclude_radio = QRadioButton("exclude")
+        ignore_radio = QRadioButton("ignore")
+        self.include[behavior] = include_radio
+        self.exclude[behavior] = exclude_radio
+        self.ignore[behavior] = ignore_radio
+        radio_layout.addWidget(include_radio)
+        radio_layout.addWidget(exclude_radio)
+        radio_layout.addWidget(ignore_radio)
+        layout.addLayout(radio_layout)
+        threshold_le = QDoubleSpinBox()
+        threshold_le.setMinimum(0)
+        threshold_le.setMaximum(1)
+        threshold_le.setDecimals(2)
+        threshold = QVBoxLayout()
+        thr_label = QLabel("threshold:")
+        self.thresholds[behavior] = threshold_le
+        threshold.addWidget(thr_label)
+        threshold.addWidget(threshold_le)
+        layout.addLayout(threshold)
+        threshold_diff = QVBoxLayout()
+        thr_diff_label = QLabel("threshold diff:")
+        thr_diff_le = QDoubleSpinBox()
+        thr_diff_le.setMinimum(0)
+        thr_diff_le.setMaximum(0.2)
+        thr_diff_le.setDecimals(2)
+        self.threshold_diffs[behavior] = thr_diff_le
+        threshold_diff.addWidget(thr_diff_label)
+        threshold_diff.addWidget(thr_diff_le)
+        layout.addLayout(threshold_diff)
+        hysteresis = QVBoxLayout()
+        hyst_label = QLabel("hysteresis:")
+        hyst_cb = QCheckBox()
+        self.hysteresis[behavior] = hyst_cb
+        hysteresis.addWidget(hyst_label)
+        hysteresis.addWidget(hyst_cb)
+        layout.addLayout(hysteresis)
+        self.behavior_layout.addRow(behavior, layout)
+
+    def exec_(self):
+        super().exec_()
+        params = defaultdict(lambda: [])
+        params["min_frames_suggestion"] = self.min_behavior_le.value()
+        params["min_frames_al"] = self.min_al_le.value()
+        for i, behavior in enumerate(self.behaviors):
+            threshold = self.thresholds[i].value()
+            threshold_diff = self.threshold_diffs[i].value()
+            hysteresis = self.hysteresis[i].isChecked()
+            if self.include[i].isSelected():
+                prefixes = ["suggestion", "include"]
+            elif self.exclude[i].isSelected():
+                prefixes = ["error", "exclude"]
+            else:
+                prefixes = []
+            for prefix in prefixes:
+                params[f"{prefix}_classes"].append(behavior)
+                params[f"{prefix}_threshold"].append(threshold)
+                params[f"{prefix}_threshold_diff"].append(threshold_diff)
+                params[f"{prefix}_hysteresis"].append(hysteresis)
+        name = self.name_le.text()
+        return name, params
+
+
+
+
+

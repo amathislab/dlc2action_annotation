@@ -50,6 +50,7 @@ class Viewer(QWidget):
         lengths,
         output_file,
         labels,
+        suggestions,
         settings,
         sequential,
         filenames,
@@ -116,6 +117,7 @@ class Viewer(QWidget):
             self.active_list = "base"
         self.output_file = output_file
         self.labels_file = labels
+        self.suggestions_file = suggestions
         self.n_ind = self.settings["n_ind"]
 
         if self.al_mode:
@@ -145,15 +147,19 @@ class Viewer(QWidget):
         self.basename = os.path.join(filepath, filename.split(".")[0])
 
         if self.labels_file is None and self.settings["suffix"] is not None:
-            self.labels_file = self.basename + self.settings["suffix"] + ".pickle"
-            if not os.path.exists(self.labels_file):
-                print(f"{self.labels_file} does not exist")
-                self.labels_file = os.path.join(
-                    filepath, filename.split(".")[0] + self.settings["suffix"] + ".h5"
-                )
+            self.labels_file = self.basename + self.settings["suffix"]
             if not os.path.exists(self.labels_file):
                 print(f"{self.labels_file} does not exist")
                 self.labels_file = None
+
+        print(f'{self.suggestions_file=}')
+        if self.suggestions_file is None:
+            self.suggestions_file = self.basename + "_suggestion.pickle"
+            if self.suggestions_file == self.labels_file:
+                self.suggestions_file = None
+            elif not os.path.exists(self.suggestions_file):
+                print(f"{self.suggestions_file} does not exist")
+                self.suggestions_file = None
 
         if self.output_file is None:
             if self.labels_file is not None:
@@ -708,7 +714,10 @@ class Viewer(QWidget):
 
     def current_animal(self):
         cur = self.canvas.current_animal
-        return self.canvas.animals.index(cur)
+        if cur not in self.canvas.animals:
+            return 0
+        else:
+            return self.canvas.animals.index(cur)
 
     def current_animal_name(self):
         cur = self.current_animal()
@@ -937,27 +946,33 @@ class Viewer(QWidget):
             elif self.labels_file is not None:
                 print(f"annotation file {self.labels_file} does not exist")
 
-        priors = self.settings["prior_suffix"]
-        if priors is None:
-            priors = []
-        elif type(priors) is not list:
-            priors = [priors]
-        priors = priors + ["_suggestion"]
-        for prior in priors:
-            if prior == "_suggestion":
-                amb = 2
+        if self.suggestions_file is not None:
+            if self.loaded_times is None:
+                self.load_annotation(self.suggestions_file, 2)
             else:
-                amb = 3
-            file = (
-                self.output_file.split(".")[0][: -len(self.settings["suffix"])]
-                + prior
-                + ".pickle"
-            )
-            if os.path.exists(file):
-                if self.loaded_times is None:
-                    self.load_annotation(file, amb)
-                else:
-                    self.load_prior(file, amb)
+                self.load_prior(self.suggestions_file, 2)
+
+        # priors = self.settings["prior_suffix"]
+        # if priors is None:
+        #     priors = []
+        # elif type(priors) is not list:
+        #     priors = [priors]
+        # priors = priors + ["_suggestion"]
+        # for prior in priors:
+        #     if prior == "_suggestion":
+        #         amb = 2
+        #     else:
+        #         amb = 3
+        #     file = (
+        #         self.output_file.split(".")[0][: -len(self.settings["suffix"])]
+        #         + prior
+        #         + ".pickle"
+        #     )
+        #     if os.path.exists(file):
+        #         if self.loaded_times is None:
+        #             self.load_annotation(file, amb)
+        #         else:
+        #             self.load_prior(file, amb)
 
     def load_annotation(self, file, amb=None):
         if self.settings["data_type"] == "dlc":

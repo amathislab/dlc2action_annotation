@@ -99,11 +99,10 @@ def read_video(path, backend="pyav"):
         return (stream, stream[0].shape, len(stream))
     elif backend == "pyav":
         from pims import PyAVReaderIndexed
-        from dask import delayed
 
         stream = PyAVReaderIndexed(path)
         shape = stream.frame_shape
-        lazy_imread = delayed(stream.get_frame)
+        lazy_imread = stream.get_frame
         return lazy_imread, shape, len(stream)
     elif backend == "pyav_fast":
         from pims import Video
@@ -154,9 +153,10 @@ def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
         arr = np.array(arr)
         return arr
     elif backend == "pyav":
+        print(f'start={start}, end={end}')
         arr = np.array(
             [
-                da.from_delayed(stack(i), shape=shape, dtype=np.uint8)
+                stack(i)
                 for i in range(start, end, fs)
             ]
         )
@@ -486,3 +486,6 @@ def get_2d_files(filenames, data, calibration_dir):
         data_2d = np.stack(data_2d)
         res.append(data_2d)
     return res
+
+def autolabel(classifier, X, y):
+    X_train = X[y != -100]

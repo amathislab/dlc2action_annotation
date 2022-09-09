@@ -25,14 +25,16 @@ class MainWindow(QMainWindow):
         self,
         videos,
         output_file=None,
-        labels=None,
         multiview=True,
         dev=False,
         active_learning=False,
         show_settings=False,
         config_file="config.yaml",
         al_points_dictionary=None,
-        clustering_parameters=None
+        clustering_parameters=None,
+        skeleton_files=None,
+        annotation_files=None,
+        suggestion_files=None,
     ):
         super(MainWindow, self).__init__()
         self.toolbar = None
@@ -41,12 +43,14 @@ class MainWindow(QMainWindow):
         self.output_file = output_file
         self.clustering_parameters = clustering_parameters
         self.settings = get_settings(config_file, show_settings)
+
         self.settings_file = config_file
         self.sequential = False
-        self.labels = labels
         self.dev = dev
         self.multiview = multiview
         self.al_mode = self.settings["start_al"]
+        if skeleton_files is not None:
+            self.settings["skeleton_files"] = skeleton_files
         if active_learning:
             self.al_mode = True
         if al_points_dictionary is not None:
@@ -54,7 +58,6 @@ class MainWindow(QMainWindow):
         else:
             self.al_points_file = None
         self.al_points_dict = al_points_dictionary
-
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
 
@@ -70,6 +73,12 @@ class MainWindow(QMainWindow):
                 self.videos = videos
                 if type(self.videos) is not list:
                     self.videos = list(self.videos)
+        if annotation_files is None:
+            annotation_files = [None for _ in self.videos]
+        self.annotation_files = annotation_files
+        if suggestion_files is None:
+            suggestion_files = [None for _ in self.videos]
+        self.suggestion_files = suggestion_files
         self.run_video(self.multiview)
 
         self._createActions()
@@ -164,7 +173,16 @@ class MainWindow(QMainWindow):
 
     def run_viewer_single(self, current=0):
         stacks, shapes, lens, filename, filepath = self.read_video_stack(self.cur_video)
-        self.run_viewer(stacks, shapes, lens, [filename], [filepath], current)
+        self.run_viewer(
+            stacks,
+            shapes,
+            lens,
+            [filename],
+            [filepath],
+            self.annotation_files[self.cur_video],
+            self.suggestion_files[self.cur_video],
+            current,
+        )
 
     def run_viewer(
         self,
@@ -173,17 +191,24 @@ class MainWindow(QMainWindow):
         lens,
         filenames,
         filepaths,
+        annotation,
+        suggestion,
         current=0,
     ):
         al_points = self.get_al_points(filenames[0])
         if al_points is None:
             self.al_mode = False
+        if annotation is None:
+            annotation = self.annotation_files[0]
+        if annotation is None:
+            suggestion = self.suggestion_files[0]
         self.viewer = Viewer(
             stacks,
             shapes,
             lens,
             None,
-            self.labels,
+            annotation,
+            suggestion,
             self.settings,
             self.sequential,
             filenames,
@@ -247,13 +272,13 @@ class MainWindow(QMainWindow):
             if skeleton is not None:
                 settings_update["skeleton_files"] = skeleton
                 update = True
-        if type == "labels":
-            labels = QFileDialog.getOpenFileName(
-                self, "Open file", filter="Annotation files (*.h5 *.pickle)"
-            )[0]
-            if labels != "":
-                self.labels = labels
-                update = True
+        # if type == "labels":
+        #     labels = QFileDialog.getOpenFileName(
+        #         self, "Open file", filter="Annotation files (*.h5 *.pickle)"
+        #     )[0]
+        #     if labels != "":
+        #         self.labels = labels
+        #         update = True
         if update:
             self.viewer.save(verbose=False, ask=True)
             self.run_video(
@@ -518,14 +543,13 @@ def main(
     app = QApplication(sys.argv)
 
     window = MainWindow(
-        video,
-        output,
-        labels,
-        multiview,
-        dev,
-        active_learning,
-        open_settings,
-        config_file,
+        videos=video,
+        output_file=output,
+        multiview=multiview,
+        dev=dev,
+        active_learning=active_learning,
+        show_settings=open_settings,
+        config_file=config_file,
     )
     window.show()
 
