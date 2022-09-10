@@ -976,8 +976,8 @@ class MainWindow(QWidget):
         self.close()
         del self.data
         behaviors = self.get_behaviors()
-        episode_name = self.get_episode(behaviors)
         suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
+        episode_name = self.get_episode(behaviors)
         self.run_suggestion(suggestion_name, episode_name, suggestion_params)
 
     def run_suggestion(self, suggestion_name, episode_name, suggestion_params):

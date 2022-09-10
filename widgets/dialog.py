@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QListWidget,
     QDoubleSpinBox,
     QSpinBox,
+    QButtonGroup
 )
 from PyQt5.QtGui import QPixmap, QColor, QFont, QIntValidator
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -685,6 +686,7 @@ class SuggestionParamsSelector(QDialog):
         self.threshold_diffs = {}
         self.hysteresis = {}
         self.setLayout(layout)
+        self.groups = []
         for behavior in behaviors:
             self.add_row(behavior)
         self.behaviors = behaviors
@@ -695,9 +697,14 @@ class SuggestionParamsSelector(QDialog):
     def add_row(self, behavior):
         layout = QHBoxLayout()
         radio_layout = QVBoxLayout()
+        group = QButtonGroup()
+        self.groups.append(group)
         include_radio = QRadioButton("include")
         exclude_radio = QRadioButton("exclude")
         ignore_radio = QRadioButton("ignore")
+        group.addButton(include_radio)
+        group.addButton(exclude_radio)
+        group.addButton(ignore_radio)
         self.include[behavior] = include_radio
         self.exclude[behavior] = exclude_radio
         self.ignore[behavior] = ignore_radio
