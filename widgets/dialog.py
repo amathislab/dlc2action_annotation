@@ -666,6 +666,7 @@ class SuggestionParamsSelector(QDialog):
         second_row = QHBoxLayout()
         label1 = QLabel("Min frames behaviors: ")
         label2 = QLabel("Min frames AL intervals: ")
+        label3 = QLabel("Background threshold: ")
         self.min_behavior_le = QSpinBox()
         self.min_behavior_le.setValue(5)
         self.min_behavior_le.setMinimum(0)
@@ -674,7 +675,11 @@ class SuggestionParamsSelector(QDialog):
         self.min_al_le.setValue(60)
         self.min_al_le.setMinimum(10)
         self.min_al_le.setMaximum(100)
-        for widget in [label1, self.min_behavior_le, label2, self.min_al_le]:
+        self.bg_le = QDoubleSpinBox()
+        self.bg_le.setMinimum(0.05)
+        self.bg_le.setMaximum(0.5)
+        self.bg_le.setValue(0.45)
+        for widget in [label1, self.min_behavior_le, label2, self.min_al_le, label3, self.bg_le]:
             second_row.addWidget(widget)
         layout.addLayout(second_row)
         self.behavior_layout = QFormLayout()
@@ -752,6 +757,7 @@ class SuggestionParamsSelector(QDialog):
         params = defaultdict(lambda: [])
         params["min_frames_suggestion"] = self.min_behavior_le.value()
         params["min_frames_al"] = self.min_al_le.value()
+        params["background_threshold"] = self.bg_le.value()
         for i, behavior in enumerate(self.behaviors):
             threshold = self.thresholds[behavior].value()
             threshold_diff = self.threshold_diffs[behavior].value()
