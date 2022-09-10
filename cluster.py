@@ -575,7 +575,7 @@ class MainWindow(QWidget):
                     "annotation_suffix": self.settings["suffix"],
                     "feature_suffix": self.feature_suffix,
                     "filter_annotated": True,
-                    "behaviors": []
+                    "behaviors": None
                 },
                 "general": {
                     "metric_functions": {"f1"},
@@ -976,8 +976,9 @@ class MainWindow(QWidget):
         self.close()
         del self.data
         behaviors = self.get_behaviors()
-        suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
         episode_name = self.get_episode(behaviors)
+        behaviors = list(self.open_dlc2action_project().get_behavior_dictionary(episode_name).values())
+        suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
         self.run_suggestion(suggestion_name, episode_name, suggestion_params)
 
     def run_suggestion(self, suggestion_name, episode_name, suggestion_params):
