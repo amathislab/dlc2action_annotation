@@ -711,13 +711,13 @@ class SuggestionParamsSelector(QDialog):
         radio_layout.addWidget(include_radio)
         radio_layout.addWidget(exclude_radio)
         radio_layout.addWidget(ignore_radio)
-        ignore_radio.setChecked(True)
+        include_radio.setChecked(True)
         layout.addLayout(radio_layout)
         threshold_le = QDoubleSpinBox()
         threshold_le.setMinimum(0)
         threshold_le.setMaximum(1)
         threshold_le.setDecimals(2)
-        threshold_le.setValue(0.5)
+        threshold_le.setValue(0.6)
         threshold = QVBoxLayout()
         thr_label = QLabel("threshold:")
         self.thresholds[behavior] = threshold_le
@@ -734,13 +734,6 @@ class SuggestionParamsSelector(QDialog):
         threshold_diff.addWidget(thr_diff_label)
         threshold_diff.addWidget(thr_diff_le)
         layout.addLayout(threshold_diff)
-        hysteresis = QVBoxLayout()
-        hyst_label = QLabel("hysteresis:")
-        hyst_cb = QCheckBox()
-        self.hysteresis[behavior] = hyst_cb
-        hysteresis.addWidget(hyst_label)
-        hysteresis.addWidget(hyst_cb)
-        layout.addLayout(hysteresis)
         self.behavior_layout.addRow(behavior, layout)
 
     def accept(self) -> None:
@@ -762,11 +755,11 @@ class SuggestionParamsSelector(QDialog):
         for i, behavior in enumerate(self.behaviors):
             threshold = self.thresholds[behavior].value()
             threshold_diff = self.threshold_diffs[behavior].value()
-            hysteresis = self.hysteresis[behavior].isChecked()
+            hysteresis = threshold_diff > 0
             if self.include[behavior].isChecked():
-                prefixes = ["suggestion", "include"]
+                prefixes = ["suggestion"]
             elif self.exclude[behavior].isChecked():
-                prefixes = ["error", "exclude"]
+                prefixes = ["error"]
             else:
                 prefixes = []
             for prefix in prefixes:

@@ -575,6 +575,7 @@ class MainWindow(QWidget):
                     "annotation_suffix": self.settings["suffix"],
                     "feature_suffix": self.feature_suffix,
                     "filter_annotated": True,
+                    "filter_background": True,
                     "behaviors": None
                 },
                 "general": {
@@ -896,23 +897,40 @@ class MainWindow(QWidget):
             intervals = np.array(self.frames)[self.chosen] # (video, start, end, clip)
         al_dict = None
         suggestion_files = None
-        if suggestions_folder is not None:
-            if os.path.exists(os.path.join(suggestions_folder, "al_points.pickle")):
-                with open(os.path.join(suggestions_folder, "al_points.pickle"), "rb") as f:
-                    al_dict = pickle.load(f)
-            suggestion_files = []
-            files = os.listdir(suggestions_folder)
-            for fn in self.filenames:
-                for file in files:
-                    if file.startswith(fn.split('.')[0]):
-                        suggestion_files.append(file)
         if al_dict is None:
             al_dict = defaultdict(lambda: [])
             for video, start, end, clip in intervals:
                 al_dict[video].append([int(start), int(end), str(clip)])
+        if suggestions_folder is not None:
+            files = os.listdir(suggestions_folder)
+            for file in files:
+                if file.endswith("al_points.pickle"):
+                    break
+            if os.path.exists(os.path.join(suggestions_folder, file)):
+                with open(os.path.join(suggestions_folder, file), "rb") as f:
+                    al_dict = pickle.load(f)
+            keys = list(al_dict.keys())
+            for key in keys:
+                if len(al_dict[key]) == 0:
+                    al_dict.pop(key)
+            suggestion_files = []
+            files = os.listdir(suggestions_folder)
+            for fn in self.filenames:
+                video_id = fn.split('.')[0]
+                if video_id not in al_dict:
+                    continue
+                for file in files:
+                    if file.startswith(video_id):
+                        suggestion_files.append(os.path.join(suggestions_folder, file))
+        videos = [os.path.join(fp, fn) for fp, fn in zip(self.filepaths, self.filenames) if fn.split(".")[0] in al_dict]
+        annotation_files = [ann for ann, fn in zip(self.annotation_files, self.filenames) if fn.split(".")[0] in al_dict]
         if sort_intervals:
-            for fn, ann in zip(self.filenames, self.annotation_files):
-                video = fn.split('.')[0]
+            if suggestion_files is not None:
+                iterator = zip(videos, suggestion_files)
+            else:
+                iterator = zip(videos, annotation_files)
+            for file, ann in iterator:
+                video = os.path.basename(file).split('.')[0]
                 if video in al_dict:
                     labels_dict = defaultdict(lambda: [])
                     annotation = Annotation(ann)
@@ -921,9 +939,9 @@ class MainWindow(QWidget):
                     al_dict[video] = []
                     for label in sorted(labels_dict.keys()):
                         al_dict[video] += labels_dict[label]
-
+        print(f'{al_dict=}')
         window = annotator.MainWindow(
-            videos=[os.path.join(fp, fn) for fp, fn in zip(self.filepaths, self.filenames) if fn.split(".")[0] in al_dict],
+            videos=videos,
             multiview=False,
             active_learning=True,
             al_points_dictionary=al_dict,
@@ -988,7 +1006,7 @@ class MainWindow(QWidget):
             suggestion_episodes=[episode_name],
             parameters_update={
                 "general": {"only_load_annotated": False},
-                "data": {"filter_annotated": False, "filter_background": False}
+                "data": {"filter_annotated": False}
             },
             force=True,
             delete_dataset=True,
@@ -1000,7 +1018,7 @@ class MainWindow(QWidget):
 
     def browse_suggestions(self, suggestion_name: str):
         project = self.open_dlc2action_project()
-        suggestions_path = os.path.join(project._suggestions_path(), suggestion_name)
+        suggestions_path = os.path.join(project.project_path, "results", "suggestions", suggestion_name)
         self.open_intervals(suggestions_folder=suggestions_path, sort_intervals=True)
 
 
