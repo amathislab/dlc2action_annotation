@@ -946,12 +946,13 @@ class MainWindow(QWidget):
                 continue
             with open(os.path.join(self.annotation_folder, file), "rb") as f:
                 data = pickle.load(f)
-            behaviors.update([x for x in data[1] if not x.startswith("negative") and not x.startswith("unknown")])
+            file_behaviors = [x for i, x in enumerate(data[1]) if any([len(y[i]) > 0 for y in data[3]])]
+            file_behaviors = [x for x in file_behaviors if not x.startswith("negative") and not x.startswith("unknown")]
+            behaviors.update(file_behaviors)
         return sorted(behaviors)
 
     def get_episode(self, behaviors):
         episode_name = EpisodeSelector(self.open_dlc2action_project()).exec_()
-        print(f'{behaviors=}')
         if episode_name is None:
             (
                 episode_name,
