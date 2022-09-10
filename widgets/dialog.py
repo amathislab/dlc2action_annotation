@@ -668,9 +668,11 @@ class SuggestionParamsSelector(QDialog):
         self.min_behavior_le = QSpinBox()
         self.min_behavior_le.setValue(5)
         self.min_behavior_le.setMinimum(0)
+        self.min_behavior_le.setMaximum(100)
         self.min_al_le = QSpinBox()
         self.min_al_le.setValue(60)
         self.min_al_le.setMinimum(10)
+        self.min_al_le.setMaximum(100)
         for widget in [label1, self.min_behavior_le, label2, self.min_al_le]:
             second_row.addWidget(widget)
         layout.addLayout(second_row)
@@ -686,6 +688,8 @@ class SuggestionParamsSelector(QDialog):
         for behavior in behaviors:
             self.add_row(behavior)
         self.behaviors = behaviors
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
+        layout.addWidget(self.button_box)
         self.button_box.accepted.connect(self.accept)
 
     def add_row(self, behavior):
@@ -700,11 +704,13 @@ class SuggestionParamsSelector(QDialog):
         radio_layout.addWidget(include_radio)
         radio_layout.addWidget(exclude_radio)
         radio_layout.addWidget(ignore_radio)
+        ignore_radio.setChecked(True)
         layout.addLayout(radio_layout)
         threshold_le = QDoubleSpinBox()
         threshold_le.setMinimum(0)
         threshold_le.setMaximum(1)
         threshold_le.setDecimals(2)
+        threshold_le.setValue(0.5)
         threshold = QVBoxLayout()
         thr_label = QLabel("threshold:")
         self.thresholds[behavior] = threshold_le
@@ -730,18 +736,29 @@ class SuggestionParamsSelector(QDialog):
         layout.addLayout(hysteresis)
         self.behavior_layout.addRow(behavior, layout)
 
+    def accept(self) -> None:
+        if sum([x.isChecked() for x in self.include.values()]) == 0 and sum([x.isChecked() for x in self.exclude.values()]) == 0:
+            print('here')
+            msg = QMessageBox()
+            msg.setText("Please choose to include or exclude at least one behavior!")
+            msg.setWindowTitle("Warning")
+            msg.addButton(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            super().accept()
+
     def exec_(self):
         super().exec_()
         params = defaultdict(lambda: [])
         params["min_frames_suggestion"] = self.min_behavior_le.value()
         params["min_frames_al"] = self.min_al_le.value()
         for i, behavior in enumerate(self.behaviors):
-            threshold = self.thresholds[i].value()
-            threshold_diff = self.threshold_diffs[i].value()
-            hysteresis = self.hysteresis[i].isChecked()
-            if self.include[i].isSelected():
+            threshold = self.thresholds[behavior].value()
+            threshold_diff = self.threshold_diffs[behavior].value()
+            hysteresis = self.hysteresis[behavior].isChecked()
+            if self.include[behavior].isChecked():
                 prefixes = ["suggestion", "include"]
-            elif self.exclude[i].isSelected():
+            elif self.exclude[behavior].isChecked():
                 prefixes = ["error", "exclude"]
             else:
                 prefixes = []
