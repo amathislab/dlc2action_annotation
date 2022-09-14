@@ -179,7 +179,7 @@ and select 'Start/Stop active learning' in the 'Active learning' menu to go back
 ![](search.gif)
 
 ### Saving
-The program should run smoothly, but please don't forget to save your results regularly by selecting the 'Save' action in the 'File' menu or pressing `Ctrl + S`, just in case.
+The program should run smoothly, but please don't forget to save your results regularly by selecting the 'Save' action in the 'File' menu or pressing `Cmd + S`, just in case.
 
 ### File formats
 #### Videos:
@@ -234,6 +234,6 @@ The program works best with shorter, smaller files. In case you want to cut your
 ```bash
 python split.py --file path/to/video --split-size S --downsample N --fps F --skeleton-file /path/to/DLC
 ```
-Here 'S' encodes the size of each piece in seconds, `downsample` lets you only keep every `N`th frame (useful in case of large fps) and `F` is the input video framerate. The `skeleton-file` parameter is optional.
+Here `S` encodes the size of each piece in seconds, `downsample` lets you only keep every `N`th frame (useful in case of large fps) and `F` is the input video framerate. The `skeleton-file` parameter is optional.
 
 Back to main [readme](../README.md)
