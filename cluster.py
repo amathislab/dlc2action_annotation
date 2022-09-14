@@ -944,7 +944,6 @@ class MainWindow(QWidget):
                     al_dict[video] = []
                     for label in sorted(labels_dict.keys()):
                         al_dict[video] += labels_dict[label]
-        print(f'{al_dict=}')
         window = annotator.MainWindow(
             videos=videos,
             multiview=False,

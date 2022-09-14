@@ -667,7 +667,7 @@ class SuggestionParamsSelector(QDialog):
         self.min_al_le.setMaximum(100)
         self.bg_le = QDoubleSpinBox()
         self.bg_le.setMinimum(0.05)
-        self.bg_le.setMaximum(0.5)
+        self.bg_le.setMaximum(0.6)
         self.bg_le.setValue(0.45)
         for widget in [label1, self.min_behavior_le, label2, self.min_al_le, label3, self.bg_le]:
             second_row.addWidget(widget)
