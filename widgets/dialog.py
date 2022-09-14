@@ -91,6 +91,10 @@ class CatLine(QWidget):
         self.colors = colors
 
     def on_text(self, event):
+        col = QColor(*get_color(self.colors, event))
+        pixmap = QPixmap(100, 100)
+        pixmap.fill(col)
+        self.button.setPixmap(pixmap)
         text = self.name_field.text()
         if (
             len(self.lines) > 0
@@ -112,12 +116,6 @@ class CatLine(QWidget):
                 self.sc_field.setText(sc)
 
     def set_sc(self, value):
-        print(f'{value=}')
-        print(f'{get_color(self.colors, value)=}')
-        col = QColor(*get_color(self.colors, value))
-        pixmap = QPixmap(100, 100)
-        pixmap.fill(col)
-        self.button.setPixmap(pixmap)
         hot_buttons = [
             x.sc_field.text()
             for x in self.lines

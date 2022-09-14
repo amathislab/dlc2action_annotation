@@ -494,7 +494,7 @@ def autolabel(classifier, X, y):
 
 def get_color(arr, name):
     alphabet = string.ascii_lowercase
-    prompt = sum([alphabet.index(x) for x in name[:3]])
+    prompt = sum([alphabet.index(x.lower()) for x in name[:3]])
     random.seed(prompt)
     return random.choice(arr)
     # return arr[prompt % len(arr)]
