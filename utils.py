@@ -248,7 +248,7 @@ def read_calms21(filename):
     return dict(coords), index_dict
 
 
-def read_tracklets(filename, min_frames):
+def read_tracklets(filename, min_frames=0):
     print("loading the DLC data")
     with open(filename, "rb") as f:
         data_p = pickle.load(f)
@@ -498,3 +498,62 @@ def get_color(arr, name):
     random.seed(prompt)
     return random.choice(arr)
     # return arr[prompt % len(arr)]
+
+def oks(y_true, y_pred, visibility):
+    # You might want to set these global constant
+    # outside the function scope
+    KAPPA = np.array([1] * len(y_true))
+    # The object scale
+    # You might need a dynamic value for the object scale
+    SCALE = 1.0
+
+    # Compute the L2/Euclidean Distance
+    distances = np.linalg.norm(y_pred - y_true, axis=-1)
+    # Compute the exponential part of the equation
+    exp_vector = np.exp(-(distances**2) / (2 * (SCALE**2) * (KAPPA**2)))
+    # The numerator expression
+    numerator = np.dot(exp_vector, visibility.astype(bool).astype(int))
+    # The denominator expression
+    denominator = np.sum(visibility.astype(bool).astype(int)) + 1e-7
+    return numerator / denominator
+
+def reassign(annotation_file_old, annotation_file_new, tracklets_old, tracklets_new):
+    coords_old, _ = read_tracklets(tracklets_old)
+    coords_new, _ = read_tracklets(tracklets_new)
+    with open(annotation_file_old, "rb") as f:
+        data = list(pickle.load(f))
+    times_new = [[[] for i in data[1]] for _ in coords_new["animals"]]
+    for ind_i_old, ind_old in enumerate(data[2]):
+        for cat_i, cat_list in enumerate(data[3][ind_i_old]):
+            for start, end, amb in cat_list:
+                votes = defaultdict(lambda: 0)
+                for frame in range(start, end):
+                    pairs = []
+                    if frame not in coords_new or frame not in coords_old:
+                        continue
+                    if ind_old not in coords_old[frame]:
+                        continue
+                    value_old = coords_old[frame][ind_old]
+                    visibility_old = ((value_old != 0).sum(-1) != 0)
+                    for ind_new in coords_new[frame]:
+                        value_new = coords_new[frame][ind_new]
+                        visibility = visibility_old * ((value_new != 0).sum(-1) != 0)
+                        # visibility = np.expand_dims(visibility, -1)
+                        oks_value = oks(value_old, value_new, visibility)
+                        pairs.append((oks_value, ind_new))
+                    max_i = np.argmax([x[0] for x in pairs])
+                    votes[pairs[max_i][1]] += 1
+                max_vote = 0
+                winner = None
+                for ind, vote in votes.items():
+                    if vote > max_vote:
+                        winner = ind
+                        max_vote = vote
+                winner_i = coords_new["animals"].index(winner)
+                times_new[winner_i][cat_i].append([start, end, amb])
+    data[3] = times_new
+    data[2] = coords_new["animals"]
+    with open(annotation_file_new, "wb") as f:
+        pickle.dump(data, f)
+
+

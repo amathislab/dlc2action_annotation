@@ -27,6 +27,7 @@ from PyQt5.QtGui import QPixmap, QColor, QFont, QIntValidator
 from PyQt5.QtCore import Qt, pyqtSignal
 from collections import defaultdict
 from utils import get_color
+import pickle
 
 
 class LineEdit(QLineEdit):
@@ -763,6 +764,8 @@ class SuggestionParamsSelector(QDialog):
                 params[f"{prefix}_hysteresis"].append(hysteresis)
         name = self.name_le.text()
         return name, params
+
+
 
 
 
