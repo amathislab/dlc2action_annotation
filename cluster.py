@@ -100,7 +100,7 @@ class Annotation():
             return "unknown"
         result = set()
         for cat, ann in cats.items():
-            if ann >= (end - start) * 0.2:
+            if ann >= (end - start) * 0.1:
                 if cat.startswith('negative'):
                     result.add("no behavior")
                 else:
@@ -953,7 +953,8 @@ class MainWindow(QWidget):
             config_file=self.settings_file,
             skeleton_files=self.skeleton_files,
             annotation_files=self.annotation_files,
-            suggestion_files=suggestion_files
+            suggestion_files=suggestion_files,
+            hard_negatives="all",
         )
         window.show()
 
