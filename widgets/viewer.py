@@ -14,7 +14,7 @@ from datetime import datetime
 import numpy as np
 from random import sample as smp
 import os
-from collections import defaultdict
+from collections import defaultdict, deque
 import pickle
 from copy import copy, deepcopy
 from PIL import Image
@@ -82,33 +82,10 @@ class Viewer(QWidget):
         self.displayed_animals = []
         self.sequential = sequential
         self.animals = None
-        self.animal_colors = [
-            "blue",
-            "yellow",
-            "darkmagenta",
-            "purple",
-            "pink",
-            "red",
-            "green",
-            "magenta",
-            "cyan",
-            "lawngreen",
-            "gold",
-            "indigo",
-            "maroon",
-            "palegreen",
-            "darkviolet",
-            "orange",
-            "teal",
-            "dodgerblue",
-            "saddlebrown",
-            "deeppink",
-            "lime",
-            "coral",
-            "steelblue",
-            "indianred",
-            "navy",
-        ]
+        with open("colors.txt") as f:
+            self.animal_colors = [
+                list(map(lambda x: float(x) / 255, line.split())) for line in f.readlines()
+            ]
         self.active = True
         self.display_categories = True
         if self.display_categories:

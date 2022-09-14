@@ -1,3 +1,5 @@
+import random
+
 from PyQt5.QtCore import QThread
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtWidgets import QWidget
@@ -13,6 +15,7 @@ import os
 import shutil
 from ruamel.yaml import YAML
 from widgets.settings import SettingsWindow
+import string
 
 
 try:
@@ -153,7 +156,6 @@ def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
         arr = np.array(arr)
         return arr
     elif backend == "pyav":
-        print(f'start={start}, end={end}')
         arr = np.array(
             [
                 stack(i)
@@ -489,3 +491,10 @@ def get_2d_files(filenames, data, calibration_dir):
 
 def autolabel(classifier, X, y):
     X_train = X[y != -100]
+
+def get_color(arr, name):
+    alphabet = string.ascii_lowercase
+    prompt = sum([alphabet.index(x) for x in name[:3]])
+    random.seed(prompt)
+    return random.choice(arr)
+    # return arr[prompt % len(arr)]

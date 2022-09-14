@@ -6,6 +6,7 @@ import math
 from PyQt5.QtWidgets import QWidget
 from collections import defaultdict
 from copy import copy
+from utils import get_color
 
 
 class ActionRect:
@@ -71,30 +72,15 @@ class Bar(QWidget):
         self.len = segment_len
         self.setMouseTracking(True)
         self.get_labels()
-        self.colors = [
-            QColor(51, 204, 51),
-            QColor(20, 170, 255),
-            QColor(153, 102, 255),
-            QColor(255, 102, 0),
-            QColor(102, 255, 178),
-            QColor(100, 0, 170),
-            QColor(20, 20, 140),
-            QColor(174, 50, 160),
-            QColor(180, 0, 0),
-            QColor(255, 255, 0),
-            QColor(128, 195, 66),
-            QColor(65, 204, 51),
-            QColor(20, 180, 255),
-            QColor(153, 102, 230),
-            QColor(240, 102, 0),
-            QColor(120, 255, 178),
-            QColor(100, 10, 170),
-            QColor(20, 30, 140),
-            QColor(150, 50, 160),
-            QColor(180, 0, 20),
-            QColor(220, 255, 0),
-            QColor(150, 195, 66),
-        ]
+        with open("colors.txt") as f:
+            self.colors = [
+                list(map(lambda x: float(x), line.split())) for line in f.readlines()
+            ]
+
+    def get_color(self, name):
+        if isinstance(name, int):
+            name = self.window.catDict["base"][name]
+        return get_color(self.colors, name)
 
     def reset(self):
         self.move_rect = None
@@ -284,7 +270,7 @@ class Bar(QWidget):
                 start = 0
             if end > self.len:
                 end = self.len
-            col = self.colors[rect.cat % len(self.colors)]
+            col = QColor(*self.get_color(rect.cat))
             if rect.amb == 2:
                 col.setAlphaF(0.3)
             elif rect.amb == 3:

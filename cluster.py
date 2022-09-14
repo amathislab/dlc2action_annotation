@@ -36,6 +36,7 @@ import annotator
 from collections import defaultdict
 from sklearn.ensemble import RandomForestClassifier
 from typing import Iterable
+from utils import get_color
 
 
 class Annotation():
@@ -466,6 +467,7 @@ class MainWindow(QWidget):
 
         if annotation_folder is None:
             annotation_folder = feature_folder
+
         self.settings_file = config_file
         self.settings = get_settings(self.settings_file, open_settings)
         self.filepaths = filepaths
@@ -550,6 +552,9 @@ class MainWindow(QWidget):
         self.layout.addLayout(self.video_layout)
         self.layout.addLayout(self.main_layout)
         self.setLayout(self.layout)
+
+    def get_color(self, name):
+        return get_color(self.colors, name)
 
     def initialize_dlc2action_project(self, skip):
         if skip:
@@ -738,7 +743,7 @@ class MainWindow(QWidget):
                         self.frames.append((video.split('.')[0], s + min_frames[clip], end + min_frames[clip], clip))
                         self.data.append(clip_arr[:, s: end].mean(-1))
                         self.labels.append(main_labels)
-            labels = list(set(self.labels))
+            labels = sorted(list(set(self.labels)))
             self.label_dict = {i: x for i, x in enumerate(labels)}
             inv_dict = {x: i for i, x in enumerate(labels)}
             self.labels = [inv_dict[x] for x in self.labels]
@@ -785,7 +790,7 @@ class MainWindow(QWidget):
         elif self.label_dict[x] == "no behavior":
             col = pg.mkColor(110, 110, 110)
         else:
-            col = pg.mkColor(self.colors[x % len(self.colors)] * 255)
+            col = pg.mkColor(self.get_color(self.label_dict[x]) * 255)
         if n in self.chosen and x != -100:
             if col == Qt.blue:
                 col.setAlphaF(0.1)

@@ -26,6 +26,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap, QColor, QFont, QIntValidator
 from PyQt5.QtCore import Qt, pyqtSignal
 from collections import defaultdict
+from utils import get_color
 
 
 class LineEdit(QLineEdit):
@@ -55,11 +56,12 @@ class CatLine(QWidget):
     next_line = pyqtSignal(int)
     finished = pyqtSignal()
 
-    def __init__(self, window, col, name, sc, lines, hot_buttons):
+    def __init__(self, window, col, name, sc, lines, hot_buttons, colors):
         super(CatLine, self).__init__()
         self.window = window
         self.layout = QHBoxLayout()
         self.button = QLabel()
+        col = QColor(*col)
         pixmap = QPixmap(100, 100)
         pixmap.fill(col)
         self.button.setPixmap(pixmap)
@@ -86,6 +88,7 @@ class CatLine(QWidget):
         self.n = len(lines)
         self.lines = lines
         self.hot_buttons = hot_buttons
+        self.colors = colors
 
     def on_text(self, event):
         text = self.name_field.text()
@@ -109,6 +112,12 @@ class CatLine(QWidget):
                 self.sc_field.setText(sc)
 
     def set_sc(self, value):
+        print(f'{value=}')
+        print(f'{get_color(self.colors, value)=}')
+        col = QColor(*get_color(self.colors, value))
+        pixmap = QPixmap(100, 100)
+        pixmap.fill(col)
+        self.button.setPixmap(pixmap)
         hot_buttons = [
             x.sc_field.text()
             for x in self.lines
@@ -123,6 +132,7 @@ class CatLine(QWidget):
             self.window.show_warning("used", value)
         else:
             self.sc_field.setText(value)
+
 
     def switch(self):
         if len(self.sc_field.text()) > 0:
@@ -146,30 +156,10 @@ class CatDialog(QDialog):
         self.cat_list = {}
         self.invisible = invisible
         self.hot_buttons = []
-        self.colors = [
-            QColor(51, 204, 51),
-            QColor(20, 170, 255),
-            QColor(153, 102, 255),
-            QColor(255, 102, 0),
-            QColor(102, 255, 178),
-            QColor(100, 0, 170),
-            QColor(20, 20, 140),
-            QColor(174, 50, 160),
-            QColor(180, 0, 0),
-            QColor(255, 255, 0),
-            QColor(128, 195, 66),
-            QColor(65, 204, 51),
-            QColor(20, 180, 255),
-            QColor(153, 102, 230),
-            QColor(240, 102, 0),
-            QColor(120, 255, 178),
-            QColor(100, 10, 170),
-            QColor(20, 30, 140),
-            QColor(150, 50, 160),
-            QColor(180, 0, 20),
-            QColor(220, 255, 0),
-            QColor(150, 195, 66),
-        ]
+        with open("colors.txt") as f:
+            self.colors = [
+                list(map(lambda x: float(x), line.split())) for line in f.readlines()
+            ]
 
         self.layout = QVBoxLayout()
         self.label = QVBoxLayout()
@@ -231,8 +221,8 @@ class CatDialog(QDialog):
         if type(name) is not str:
             name = ""
             sc = ""
-        col = self.colors[ind % len(self.colors)]
-        line = CatLine(self, col, name, sc, self.lines, self.hot_buttons)
+        col = [255, 255, 255] if name == "" else get_color(self.colors, name)
+        line = CatLine(self, col, name, sc, self.lines, self.hot_buttons, self.colors)
         line.next_line.connect(self.new_line)
         line.finished.connect(self.finish)
         self.lines.append(line)
