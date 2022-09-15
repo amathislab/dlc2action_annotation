@@ -195,7 +195,7 @@ class PointsData:
 
     def get_range(self, start, end, animal):
         if self.dict_type:
-            d = {x: self.points_df[x][animal] for x in range(start, end)}
+            d = {x: {animal: self.points_df[x][animal]} for x in range(start, end) if animal in self.points_df[x]}
             d["animals"] = [animal]
             d["names"] = self.names
             return PointsData(d)
@@ -394,37 +394,22 @@ class BoxLoader:
     def __init__(self, detections):
         self.lim_count = 3
         self.load(detections)
-        self.set_dict()
 
     def load(self, file):
         with open(file, "rb") as f:
-            self.array = pickle.load(f)
-
-    def set_dict(self):
-        self.count = defaultdict(lambda: 0)
-        running_dict = {}
-        self.boxes = []
-        self.n_ind = 0
-        for frame_i, frame in enumerate(self.array):
-            self.boxes.append(defaultdict(lambda: [-100, -100, 10, 10, -100, -100]))
-            updated = set()
-            for box_i, box in enumerate(frame):
-                y1, x1, y2, x2, id = box
+            array = pickle.load(f)
+        self.n_ind = len(array)
+        self.boxes = defaultdict(lambda: {})
+        for ind in array:
+            for frame in array[ind]:
+                x1, y1, x2, y2 = array[ind][frame]
                 center_x = (x1 + x2) / 2
                 center_y = (y1 + y2) / 2
                 w = np.abs(x2 - x1)
                 h = np.abs(y2 - y1)
                 rect_x = center_x + w / 2
                 rect_y = center_y - h / 2
-                if id not in running_dict.keys():
-                    cur = 0
-                    while cur in [running_dict[x] for x in running_dict]:
-                        cur += 1
-                    running_dict[id] = cur
-                    if cur + 1 > self.n_ind:
-                        self.n_ind = cur + 1
-                updated.add(id)
-                self.boxes[frame_i][running_dict[id]] = [
+                self.boxes[frame][ind] = [
                     center_x,
                     center_y,
                     w,
@@ -432,13 +417,47 @@ class BoxLoader:
                     rect_x,
                     rect_y,
                 ]
-                self.count[id] = 0
-            not_updated = set(running_dict.keys()).difference(updated)
-            for id in not_updated:
-                self.count[id] += 1
-                if self.count[id] > self.lim_count:
-                    del self.count[id]
-                    del running_dict[id]
+        del array
+        frames = sorted(list(self.boxes.keys()))
+        self.boxes = [self.boxes[frame] for frame in range(frames[-1])]
+        # self.count = defaultdict(lambda: 0)
+        # running_dict = {}
+        # self.boxes = []
+        # self.n_ind = 0
+        # for frame_i, frame in enumerate(self.array):
+        #     self.boxes.append(defaultdict(lambda: [-100, -100, 10, 10, -100, -100]))
+        #     updated = set()
+        #     for box_i, box in enumerate(frame):
+        #         y1, x1, y2, x2, id = box
+        #         center_x = (x1 + x2) / 2
+        #         center_y = (y1 + y2) / 2
+        #         w = np.abs(x2 - x1)
+        #         h = np.abs(y2 - y1)
+        #         rect_x = center_x + w / 2
+        #         rect_y = center_y - h / 2
+        #         if id not in running_dict.keys():
+        #             cur = 0
+        #             while cur in [running_dict[x] for x in running_dict]:
+        #                 cur += 1
+        #             running_dict[id] = cur
+        #             if cur + 1 > self.n_ind:
+        #                 self.n_ind = cur + 1
+        #         updated.add(id)
+        #         self.boxes[frame_i][running_dict[id]] = [
+        #             center_x,
+        #             center_y,
+        #             w,
+        #             h,
+        #             rect_x,
+        #             rect_y,
+        #         ]
+        #         self.count[id] = 0
+        #     not_updated = set(running_dict.keys()).difference(updated)
+        #     for id in not_updated:
+        #         self.count[id] += 1
+        #         if self.count[id] > self.lim_count:
+        #             del self.count[id]
+        #             del running_dict[id]
 
     def get_boxes(self):
         return self.boxes
@@ -517,11 +536,21 @@ def oks(y_true, y_pred, visibility):
     denominator = np.sum(visibility.astype(bool).astype(int)) + 1e-7
     return numerator / denominator
 
-def reassign(annotation_file_old, annotation_file_new, tracklets_old, tracklets_new):
+def reassign(
+        annotation_file_old,
+        annotation_file_new,
+        tracklets_old,
+        tracklets_new,
+        mapping_file=None,
+):
     coords_old, _ = read_tracklets(tracklets_old)
     coords_new, _ = read_tracklets(tracklets_new)
     with open(annotation_file_old, "rb") as f:
         data = list(pickle.load(f))
+    mapping = None
+    if mapping_file is not None:
+        with open(mapping_file, "rb") as f:
+            mapping = pickle.load(f)
     times_new = [[[] for i in data[1]] for _ in coords_new["animals"]]
     for ind_i_old, ind_old in enumerate(data[2]):
         for cat_i, cat_list in enumerate(data[3][ind_i_old]):
@@ -549,6 +578,9 @@ def reassign(annotation_file_old, annotation_file_new, tracklets_old, tracklets_
                     if vote > max_vote:
                         winner = ind
                         max_vote = vote
+                if mapping is not None:
+                    if winner in mapping:
+                        winner = mapping[winner]
                 winner_i = coords_new["animals"].index(winner)
                 times_new[winner_i][cat_i].append([start, end, amb])
     data[3] = times_new
@@ -556,4 +588,182 @@ def reassign(annotation_file_old, annotation_file_new, tracklets_old, tracklets_
     with open(annotation_file_new, "wb") as f:
         pickle.dump(data, f)
 
+def write_detections(video_file, detections_file, target_file, video_w=None, video_h=None):
+    with open(detections_file, "rb") as f:
+        detections = pickle.load(f)
+    new_detections = defaultdict(lambda: {})
+    for ind in detections:
+        for frame in detections[ind]:
+            new_detections[frame][ind] = detections[ind][frame]
+    del detections
+    video = cv2.VideoCapture(video_file)
+    if video_w is None:
+        video_w  = int(video.get(3))  # float `width`
+    if video_h is None:
+        video_h = int(video.get(4))  # float `height`
+    output = cv2.VideoWriter(target_file, cv2.VideoWriter_fourcc(*'MP4V'), 20, (video_w, video_h))
+    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    with open("colors.txt") as f:
+        colors = [
+            list(map(lambda x: float(x), line.split())) for line in f.readlines()
+        ]
+    animals = {}
+    for count in tqdm(range(frame_count)):
+        ok, image = video.read()
+        image = cv2.resize(image, (video_w, video_h))
+        if not ok:
+            break
+        for ind, value in new_detections[count].items():
+            if ind not in animals:
+                animals[ind] = tuple(colors[len(animals) % len(colors)])
+            color = animals[ind]
+            x1, y1, x2, y2 = map(int, value)
+            image = cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
+            cv2.putText(image, ind, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        output.write(image)
+        count += 1
+    video.release()
+    output.release()
 
+def overlap(bbox1, bbox2):
+    x = min(bbox1[2], bbox2[2]) - max(bbox1[0], bbox2[0])
+    y = min(bbox1[3], bbox2[3]) - max(bbox1[1], bbox2[1])
+    area1 = (bbox1[2] - bbox1[0]) * (bbox1[3] - bbox1[1])
+    area2 = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1])
+    return x * y / (area1 + area2 - x * y)
+
+def extract_detections(
+        tracklet_file,
+        target_file,
+        margin=20,
+        smooth=True,
+        add_missing=True,
+        min_len=30,
+        overlap_thr=0.8,
+        strict_min_len=10,
+        lowess_frac=0.05
+):
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    coords, _ = read_tracklets(tracklet_file)
+    detections = defaultdict(lambda: {})
+    for frame in coords:
+        if frame in ["names", "animals"]:
+            continue
+        for ind, value in coords[frame].items():
+            min_x = value[:, 0][value[:, 0] > 0].min() - margin
+            min_y = value[:, 1][value[:, 1] > 0].min() - margin
+            max_coords = value.max(axis=0) + margin
+            detections[ind][frame] = [min_x, min_y, *max_coords]
+    for ind in list(detections.keys()):
+        if len(detections[ind]) < strict_min_len:
+            detections.pop(ind)
+    if smooth:
+        for ind in tqdm(detections):
+            frames = sorted(list(detections[ind].keys()))
+            for i in range(4):
+                arr = [detections[ind][frame][i] for frame in frames]
+                arr = lowess(arr, frames, is_sorted=True, frac=lowess_frac, it=0)
+                for frame, x in arr:
+                    detections[ind][frame][i] = x
+    if overlap_thr is not None:
+        mapping = {}
+        keys = list(detections.keys())
+        key_i = 0
+        while key_i < len(keys):
+            ind = keys[key_i]
+            key_i += 1
+            if ind not in detections:
+                continue
+            other_inds = set()
+            for frame in detections[ind]:
+                other_inds.update(list(coords[frame].keys()))
+            for other_ind in other_inds:
+                if other_ind == ind or other_ind not in detections:
+                    continue
+                overlaps = [overlap(detections[ind][frame], detections[other_ind][frame]) for frame in detections[ind] if frame in detections[other_ind]]
+                if len([x for x in overlaps if x < overlap_thr]) < min(3, len(overlaps) / 3):
+                    mapping[other_ind] = ind
+                    other_det = detections.pop(other_ind)
+                    keys.append(ind)
+                    for frame in other_det:
+                        if frame not in detections[ind]:
+                            detections[ind][frame] = other_det[frame]
+            folder = os.path.dirname(target_file)
+            name = os.path.basename(target_file).split('.')[0]
+            with open(os.path.join(folder, name + "_mapping.pickle"), "wb") as f:
+                pickle.dump(mapping, f)
+    for ind in list(detections.keys()):
+        if len(detections[ind]) < min_len:
+            detections.pop(ind)
+    if add_missing:
+        for ind in tqdm(detections):
+            frames = sorted(list(detections[ind].keys()))
+            for i, frame in enumerate(frames[:-1]):
+                if frames[i + 1] - frame != 1:
+                    next_frame = frames[i + 1]
+                    next_bbox = np.array(detections[ind][next_frame])
+                    this_bbox = np.array(detections[ind][frame])
+                    step = (next_bbox - this_bbox) / (next_frame - frame)
+                    for j in range(frame + 1, next_frame):
+                        detections[ind][j] = this_bbox + step * (j - frame)
+    with open(target_file, "wb") as f:
+        pickle.dump(dict(detections), f)
+
+
+def reassign_folder(
+        old_annotation_folder,
+        new_annotation_folder,
+        old_annotation_suffix,
+        new_annotation_suffix,
+        old_tracklet_suffix,
+        new_tracklet_suffix,
+        old_tracklet_folder=None,
+        new_tracklet_folder=None,
+):
+    if old_tracklet_folder is None:
+        old_tracklet_folder = old_annotation_folder
+    if new_tracklet_folder is None:
+        new_tracklet_folder = new_annotation_folder
+    old_annotation_files = [x for x in os.listdir(old_annotation_folder) if x.endswith(old_annotation_suffix)]
+    old_tracklet_files = [x for x in os.listdir(old_tracklet_folder) if x.endswith(old_tracklet_suffix)]
+    new_tracklet_files = [x for x in os.listdir(new_tracklet_folder) if x.endswith(new_tracklet_suffix)]
+    video_ids = []
+    unmatched = []
+    for file in old_annotation_files:
+        video_id = file[: - len(old_annotation_suffix)]
+        if video_id + old_tracklet_suffix not in old_tracklet_files:
+            unmatched.append(file)
+        elif video_id + new_tracklet_suffix not in new_tracklet_files:
+            unmatched.append(file)
+        else:
+            video_ids.append(video_id)
+    print('Unmatched files:')
+    for file in unmatched:
+        print(f'   {file}')
+    for video_id in video_ids:
+        reassign(
+            annotation_file_old=os.path.join(old_annotation_folder, video_id + old_annotation_suffix),
+            annotation_file_new=os.path.join(new_annotation_folder, video_id + new_annotation_suffix),
+            tracklets_old=os.path.join(old_tracklet_folder, video_id + old_tracklet_suffix),
+            tracklets_new=os.path.join(new_tracklet_folder, video_id + new_tracklet_suffix),
+        )
+    print('Reassignment complete')
+
+def apply_mapping(
+        old_tracklet_file,
+        new_tracklet_file,
+        mapping_file,
+):
+    with open(old_tracklet_file, "rb") as f:
+        data_p = pickle.load(f)
+    with open(mapping_file, "rb") as f:
+        mapping = pickle.load(f)
+    for old_ind, new_ind in mapping.items():
+        old_tr = int(old_ind[3:])
+        new_tr = int(new_ind[3:])
+        for frame, value in data_p[old_tr].items():
+            if frame not in data_p[new_tr]:
+                data_p[new_tr][frame] = value
+        data_p.pop(old_tr)
+    with open(new_tracklet_file, "wb") as f:
+        pickle.dump(data_p, f)

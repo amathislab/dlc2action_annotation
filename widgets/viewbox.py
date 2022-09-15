@@ -99,7 +99,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
             self.boxes = boxes
             self.box_visuals = dict()
             for i in range(self.n_ind):
-                seq = np.array([box[i] for box in self.boxes])
+                seq = np.array([box[self.animals[i]] for box in self.boxes])
                 self.box_visuals[i] = BoxVisual(
                     self.font_size,
                     self.animals[i],

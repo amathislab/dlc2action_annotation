@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
         skeleton_files=None,
         annotation_files=None,
         suggestion_files=None,
-        hard_nagatives=None,
+        hard_negatives=None,
     ):
         super(MainWindow, self).__init__()
         self.toolbar = None
@@ -81,8 +81,8 @@ class MainWindow(QMainWindow):
             suggestion_files = [None for _ in self.videos]
         self.suggestion_files = suggestion_files
         self.run_video(self.multiview)
-        if hard_nagatives is not None:
-            self.settings["hard_negative_classes"] = hard_nagatives
+        if hard_negatives is not None:
+            self.settings["hard_negative_classes"] = hard_negatives
 
         self._createActions()
         self._createToolBar()

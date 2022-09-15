@@ -642,6 +642,7 @@ class MainWindow(QWidget):
     def clicked(self, point, ev):
         data_list = list(self.scatter.data)
         points_list = [x[9] for x in data_list]
+        print(f'{len(points_list)=}')
         n = points_list.index(ev[0])
         self.visited.update([n])
         if self.video_mode == "same":
@@ -652,6 +653,7 @@ class MainWindow(QWidget):
             label = self.label_dict[label]
         if vid not in self.stacks:
             self.open_video(vid)
+        print(f'{start=}, {end=}, {ind=}')
         if self.points_df_dict[vid] is not None:
             points_df = self.points_df_dict[vid].get_range(start, end, ind)
         else:
@@ -719,7 +721,7 @@ class MainWindow(QWidget):
             self.frames = []
             self.data = []
             self.labels = []
-            frames_step = 128
+            frames_step = 256
             for file_i, file in enumerate(self.feature_files):
                 if file.endswith("npy"):
                     video_dict = np.load(file, allow_pickle=True).item()
@@ -734,9 +736,10 @@ class MainWindow(QWidget):
                     if clip in ["max_frames", "video_tag"]:
                         continue
                     clip_arr = video_dict.pop(clip)
-                    n = clip_arr.shape[0]
-                    if not ((n & (n-1) == 0) and n != 0):
-                        clip_arr = clip_arr.T
+                    # print(f'{clip_arr.shape=}')
+                    # n = clip_arr.shape[0]
+                    # if not ((n & (n-1) == 0) and n != 0):
+                    clip_arr = clip_arr.T
                     for s in range(0, clip_arr.shape[-1], frames_step):
                         end = min(clip_arr.shape[-1], s + frames_step)
                         main_labels = annotation.main_labels(s, end, clip)
@@ -751,6 +754,9 @@ class MainWindow(QWidget):
                 self.data = np.stack(self.data, 0)
             else:
                 self.data = torch.stack(self.data, 0).numpy()
+            print(f'{self.data.shape=}')
+            print(f'{len(self.frames)=}')
+            print(f'{len(self.labels)=}')
 
     def reset_args(self):
         self.args[self.method] = {"n_components": 2}
@@ -898,6 +904,7 @@ class MainWindow(QWidget):
 
     def open_intervals(self, intervals=None, suggestions_folder=None, sort_intervals=False):
         self.close()
+        self.data = None
         if intervals is None or not isinstance(intervals, Iterable):
             intervals = np.array(self.frames)[self.chosen] # (video, start, end, clip)
         al_dict = None
@@ -948,7 +955,7 @@ class MainWindow(QWidget):
             videos=videos,
             multiview=False,
             active_learning=True,
-            al_points_dictionary=al_dict,
+            # al_points_dictionary=al_dict,
             clustering_parameters=self.parameters,
             config_file=self.settings_file,
             skeleton_files=self.skeleton_files,

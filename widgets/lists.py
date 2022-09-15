@@ -34,6 +34,7 @@ class List(QListWidget):
             QKeySequence(key)[0] for key in self.window.active_shortcuts()
         ]:
             self.window.on_shortcut(event.text().upper())
+            self.window.on_shortcut(event.text().upper())
         elif event.key() in self.animal_shortcuts:
             self.window.set_animal(int(event.text()))
         else:
@@ -77,8 +78,11 @@ class CatList(List):
 
     def update_list(self):
         cat_key = self.key
+        print('clearing')
         self.clear()
+        print('cleared')
         inv = self.window.shortCutInv(key=cat_key)
+        print('moving on')
         for cat in self.window.catDict[cat_key]:
             if self.window.catDict[cat_key][cat] not in self.window.invisible_actions:
                 col = QColor(*self.window.bar.get_color(self.window.catDict[cat_key][cat]))
@@ -94,6 +98,7 @@ class CatList(List):
         if self.count() > 0:
             self.item(0).setSelected(True)
         self.reset_shortcuts(self.window.shortCut)
+        print('finish updating')
 
 
 class SegmentationList(List):
