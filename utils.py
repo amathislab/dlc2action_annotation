@@ -8,7 +8,7 @@ from collections import defaultdict
 import pandas as pd
 import yaml
 import pickle
-import dask.array as da
+from datetime import datetime
 from tqdm import tqdm
 from warnings import catch_warnings, filterwarnings
 import os
@@ -16,6 +16,7 @@ import shutil
 from ruamel.yaml import YAML
 from widgets.settings import SettingsWindow
 import string
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 try:
@@ -248,8 +249,9 @@ def read_calms21(filename):
     return dict(coords), index_dict
 
 
-def read_tracklets(filename, min_frames=0):
-    print("loading the DLC data")
+def read_tracklets(filename, min_frames=0, verbose=True):
+    if verbose:
+        print("loading the DLC data")
     with open(filename, "rb") as f:
         data_p = pickle.load(f)
     header = data_p["header"]
@@ -258,7 +260,9 @@ def read_tracklets(filename, min_frames=0):
     coords = defaultdict(lambda: {})
     index_dict = defaultdict(lambda: [])
     animals = []
-    for tr_id in tqdm(keys):
+    if verbose:
+        keys = tqdm(keys)
+    for tr_id in keys:
         if len(data_p[tr_id]) < min_frames:
             continue
         animals.append(f"ind{tr_id}")
@@ -543,8 +547,13 @@ def reassign(
         tracklets_new,
         mapping_file=None,
 ):
-    coords_old, _ = read_tracklets(tracklets_old)
-    coords_new, _ = read_tracklets(tracklets_new)
+    coords_old, _ = read_tracklets(tracklets_old, verbose=False)
+    coords_new, _ = read_tracklets(tracklets_new, verbose=False)
+    names_old = list(coords_old["names"])
+    names_new = list(coords_new["names"])
+    common_names = [x for x in names_new if x in names_old]
+    common_bp_old = [names_old.index(x) for x in common_names]
+    common_bp_new = [names_new.index(x) for x in common_names]
     with open(annotation_file_old, "rb") as f:
         data = list(pickle.load(f))
     mapping = None
@@ -562,10 +571,10 @@ def reassign(
                         continue
                     if ind_old not in coords_old[frame]:
                         continue
-                    value_old = coords_old[frame][ind_old]
+                    value_old = coords_old[frame][ind_old][common_bp_old]
                     visibility_old = ((value_old != 0).sum(-1) != 0)
                     for ind_new in coords_new[frame]:
-                        value_new = coords_new[frame][ind_new]
+                        value_new = coords_new[frame][ind_new][common_bp_new]
                         visibility = visibility_old * ((value_new != 0).sum(-1) != 0)
                         # visibility = np.expand_dims(visibility, -1)
                         oks_value = oks(value_old, value_new, visibility)
@@ -581,10 +590,15 @@ def reassign(
                 if mapping is not None:
                     if winner in mapping:
                         winner = mapping[winner]
+                if winner is None:
+                    continue
                 winner_i = coords_new["animals"].index(winner)
                 times_new[winner_i][cat_i].append([start, end, amb])
     data[3] = times_new
     data[2] = coords_new["animals"]
+    data[0]["skeleton_files"] = [tracklets_new]
+    now = datetime.now()
+    data[0]["remapped"] = now.strftime("%m/%d/%Y, %H:%M:%S")
     with open(annotation_file_new, "wb") as f:
         pickle.dump(data, f)
 
@@ -615,7 +629,10 @@ def write_detections(video_file, detections_file, target_file, video_w=None, vid
             break
         for ind, value in new_detections[count].items():
             if ind not in animals:
-                animals[ind] = tuple(colors[len(animals) % len(colors)])
+                if ind.startswith("invisible"):
+                    animals[ind] = (128, 128, 128)
+                else:
+                    animals[ind] = tuple(colors[len(animals) % len(colors)])
             color = animals[ind]
             x1, y1, x2, y2 = map(int, value)
             image = cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
@@ -632,6 +649,44 @@ def overlap(bbox1, bbox2):
     area2 = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1])
     return x * y / (area1 + area2 - x * y)
 
+def get_vis_score(coords, ind, frame, mapping):
+    keys = [ind]
+    for old, new in mapping.items():
+        if new == ind:
+            keys.append(old)
+    value = 0
+    for ind in keys:
+        if ind not in coords[frame]:
+            continue
+        ind_value = np.sum(coords[frame][ind][:, 0] != 0) / coords[frame][ind].shape[0]
+        if ind_value > value:
+            value = ind_value
+    return value
+
+def get_visible_n(coords, ind, frames, visibility_min_score, mapping):
+    visible = 0
+    keys = [ind]
+    for old, new in mapping.items():
+        if new == ind:
+            keys.append(old)
+    for frame in frames:
+        value = 0
+        for ind in keys:
+            if ind not in coords[frame]:
+                continue
+            if np.sum(coords[frame][ind][:, 0] != 0) >= coords[frame][ind].shape[0] * visibility_min_score:
+                value = 1
+                break
+        visible += value
+    return visible
+
+def update_mapping(old, new, mapping):
+    mapping[old] = new
+    for o, n in mapping.items():
+        if n == old:
+            mapping[o] = new
+    return mapping
+
 def extract_detections(
         tracklet_file,
         target_file,
@@ -641,24 +696,31 @@ def extract_detections(
         min_len=30,
         overlap_thr=0.8,
         strict_min_len=10,
-        lowess_frac=0.05
+        lowess_frac=0.05,
+        visibility_min_frac=0,
+        visibility_min_score=0.25,
+        keep_invisible=False,
 ):
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    coords, _ = read_tracklets(tracklet_file)
+    coords, _ = read_tracklets(tracklet_file, verbose=False)
     detections = defaultdict(lambda: {})
+    mapping = {}
+    folder = os.path.dirname(target_file)
+    name = os.path.basename(target_file).split('.')[0]
+    mapping_file = os.path.join(folder, name + "_mapping.pickle")
     for frame in coords:
         if frame in ["names", "animals"]:
             continue
         for ind, value in coords[frame].items():
-            min_x = value[:, 0][value[:, 0] > 0].min() - margin
-            min_y = value[:, 1][value[:, 1] > 0].min() - margin
+            min_x = value[:, 0][value[:, 0] != 0].min() - margin
+            min_y = value[:, 1][value[:, 1] != 0].min() - margin
             max_coords = value.max(axis=0) + margin
             detections[ind][frame] = [min_x, min_y, *max_coords]
     for ind in list(detections.keys()):
         if len(detections[ind]) < strict_min_len:
             detections.pop(ind)
+            mapping = update_mapping(ind, None, mapping)
     if smooth:
-        for ind in tqdm(detections):
+        for ind in detections:
             frames = sorted(list(detections[ind].keys()))
             for i in range(4):
                 arr = [detections[ind][frame][i] for frame in frames]
@@ -666,7 +728,6 @@ def extract_detections(
                 for frame, x in arr:
                     detections[ind][frame][i] = x
     if overlap_thr is not None:
-        mapping = {}
         keys = list(detections.keys())
         key_i = 0
         while key_i < len(keys):
@@ -682,21 +743,37 @@ def extract_detections(
                     continue
                 overlaps = [overlap(detections[ind][frame], detections[other_ind][frame]) for frame in detections[ind] if frame in detections[other_ind]]
                 if len([x for x in overlaps if x < overlap_thr]) < min(3, len(overlaps) / 3):
-                    mapping[other_ind] = ind
                     other_det = detections.pop(other_ind)
                     keys.append(ind)
                     for frame in other_det:
                         if frame not in detections[ind]:
                             detections[ind][frame] = other_det[frame]
-            folder = os.path.dirname(target_file)
-            name = os.path.basename(target_file).split('.')[0]
-            with open(os.path.join(folder, name + "_mapping.pickle"), "wb") as f:
-                pickle.dump(mapping, f)
+                        else:
+                            vis_other = get_vis_score(coords, other_ind, frame, mapping)
+                            vis_this = get_vis_score(coords, ind, frame, mapping)
+                            if vis_other > vis_this:
+                                detections[ind][frame] = other_det[frame]
+                    mapping[other_ind] = ind
+                    mapping = update_mapping(other_ind, ind, mapping)
     for ind in list(detections.keys()):
         if len(detections[ind]) < min_len:
             detections.pop(ind)
+            mapping[ind] = None
+            mapping = update_mapping(ind, None, mapping)
+    if visibility_min_score > 0 and visibility_min_frac > 0:
+        for ind in list(detections.keys()):
+            total = len(detections[ind])
+            visible = get_visible_n(
+                coords, ind, detections[ind].keys(), visibility_min_score, mapping
+            )
+            if visible / total < visibility_min_frac:
+                invisible = detections.pop(ind)
+                new = f"invisible{ind[3:]}" if keep_invisible else None
+                mapping = update_mapping(ind, new, mapping)
+                if keep_invisible:
+                    detections[f"invisible{ind[3:]}"] = invisible
     if add_missing:
-        for ind in tqdm(detections):
+        for ind in detections:
             frames = sorted(list(detections[ind].keys()))
             for i, frame in enumerate(frames[:-1]):
                 if frames[i + 1] - frame != 1:
@@ -708,6 +785,9 @@ def extract_detections(
                         detections[ind][j] = this_bbox + step * (j - frame)
     with open(target_file, "wb") as f:
         pickle.dump(dict(detections), f)
+    with open(mapping_file, "wb") as f:
+        pickle.dump(mapping, f)
+    return mapping_file
 
 
 def reassign_folder(
@@ -719,6 +799,8 @@ def reassign_folder(
         new_tracklet_suffix,
         old_tracklet_folder=None,
         new_tracklet_folder=None,
+        mapping_folder=None,
+        mapping_suffix=None,
 ):
     if old_tracklet_folder is None:
         old_tracklet_folder = old_annotation_folder
@@ -737,15 +819,21 @@ def reassign_folder(
             unmatched.append(file)
         else:
             video_ids.append(video_id)
-    print('Unmatched files:')
-    for file in unmatched:
-        print(f'   {file}')
-    for video_id in video_ids:
+    if len(unmatched) > 0:
+        print('Unmatched files:')
+        for file in unmatched:
+            print(f'   {file}')
+    for video_id in tqdm(video_ids):
+        if mapping_folder is not None and mapping_suffix is not None:
+            mapping_file = os.path.join(mapping_folder, video_id + mapping_suffix)
+        else:
+            mapping_file = None
         reassign(
             annotation_file_old=os.path.join(old_annotation_folder, video_id + old_annotation_suffix),
             annotation_file_new=os.path.join(new_annotation_folder, video_id + new_annotation_suffix),
             tracklets_old=os.path.join(old_tracklet_folder, video_id + old_tracklet_suffix),
             tracklets_new=os.path.join(new_tracklet_folder, video_id + new_tracklet_suffix),
+            mapping_file=mapping_file,
         )
     print('Reassignment complete')
 
@@ -759,11 +847,75 @@ def apply_mapping(
     with open(mapping_file, "rb") as f:
         mapping = pickle.load(f)
     for old_ind, new_ind in mapping.items():
-        old_tr = int(old_ind[3:])
-        new_tr = int(new_ind[3:])
-        for frame, value in data_p[old_tr].items():
-            if frame not in data_p[new_tr]:
-                data_p[new_tr][frame] = value
+        if old_ind.startswith("ind"):
+            old_tr = int(old_ind[3:])
+        else:
+            old_tr = int(old_ind[len("invisible"):])
+        if new_ind is not None:
+            if new_ind.startswith("ind"):
+                new_tr = int(new_ind[3:])
+            else:
+                new_tr = int(new_ind[len("invisible"):])
+            for frame, value in data_p[old_tr].items():
+                if frame not in data_p[new_tr]:
+                    data_p[new_tr][frame] = value
         data_p.pop(old_tr)
     with open(new_tracklet_file, "wb") as f:
         pickle.dump(data_p, f)
+
+
+def detect_and_remap(
+        old_tracklet_folders,
+        new_tracklet_folder,
+        detection_folder,
+        tracklet_suffix=None,
+        margin=40,
+        smooth=True,
+        add_missing=True,
+        min_len=30,
+        overlap_thr=0.7,
+        strict_min_len=5,
+        lowess_frac=0.07,
+        visibility_min_frac=0,
+        visibility_min_score=0.25,
+        keep_invisible=False,
+):
+    if tracklet_suffix is None:
+        tracklet_suffix = [".pickle"]
+    p_bar = tqdm(total=sum([len(os.listdir(folder)) for folder in old_tracklet_folders]))
+    x = 0
+    for folder in old_tracklet_folders:
+        files = os.listdir(folder)
+        for file in files:
+            # if x < 101:
+            #     x += 1
+            #     p_bar.update(1)
+            #     continue
+            ok = False
+            for s in tracklet_suffix:
+                if file.endswith(s):
+                    ok = True
+            if not ok:
+                continue
+            target_file = file.split('.')[0] + '_det.pickle'
+            mapping_file = extract_detections(
+                tracklet_file=os.path.join(folder, file),
+                target_file=os.path.join(detection_folder, target_file),
+                margin=margin,
+                smooth=smooth,
+                add_missing=add_missing,
+                min_len=min_len,
+                overlap_thr=overlap_thr,
+                strict_min_len=strict_min_len,
+                lowess_frac=lowess_frac,
+                visibility_min_frac=visibility_min_frac,
+                visibility_min_score=visibility_min_score,
+                keep_invisible=keep_invisible,
+            )
+            apply_mapping(
+                old_tracklet_file=os.path.join(folder, file),
+                new_tracklet_file=os.path.join(new_tracklet_folder, file.split('.')[0] + "_remapped.pickle"),
+                mapping_file=mapping_file,
+            )
+            p_bar.update(1)
+    p_bar.close()

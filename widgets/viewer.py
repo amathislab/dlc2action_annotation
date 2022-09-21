@@ -129,7 +129,6 @@ class Viewer(QWidget):
                 print(f"{self.labels_file} does not exist")
                 self.labels_file = None
 
-        print(f'{self.suggestions_file=}')
         if self.suggestions_file is None:
             self.suggestions_file = self.basename + "_suggestion.pickle"
             if self.suggestions_file == self.labels_file:
@@ -142,10 +141,11 @@ class Viewer(QWidget):
             if self.labels_file is not None:
                 self.output_file = self.labels_file
             elif self.settings["suffix"] is not None:
-                self.output_file = self.basename + self.settings["suffix"] + ".pickle"
+                self.output_file = self.basename + self.settings["suffix"]
             else:
                 self.output_file = None
 
+        print(f'{self.labels_file=}, {self.output_file=}')
         self.load_labels()
 
         data_2d = [None for _ in self.filenames]
@@ -752,7 +752,7 @@ class Viewer(QWidget):
         neg_classes = self.settings["hard_negative_classes"]
         if neg_classes == 'all':
             neg_classes = copy(cat_labels)
-        if neg_classes is not None:
+        if neg_classes is not None and self.al_points is not None:
             for neg_class in neg_classes:
                 neg_ind = cat_labels.index(neg_class)
                 cat_labels.append(f"negative {neg_class}")
@@ -808,6 +808,7 @@ class Viewer(QWidget):
         metadata["annotator"] = self.settings["annotator"]
         metadata["length"] = self.video_len()
         metadata["video_file"] = self.filenames[0]
+        metadata["skeleton_files"] = self.settings["skeleton_files"]
 
         with open(self.output_file, "wb") as f:
             pickle.dump((metadata, cat_labels, self.animals, times), f)

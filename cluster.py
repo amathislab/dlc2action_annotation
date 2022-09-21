@@ -50,6 +50,8 @@ class Annotation():
                     _, self.cats, self.inds, self.data = pickle.load(f)
             except pickle.UnpicklingError:
                 pass
+        print(f'{filename=}')
+        print(f'{self.cats=}')
 
     def generate_array(self):
         length = 0
@@ -85,6 +87,7 @@ class Annotation():
     def get_filename(filepaths, filenames, video_id, suffix):
         for fn, fp in zip(filenames, filepaths):
             if fn.split('.')[0] == video_id:
+                print(f'{video_id=}, {suffix=}')
                 return os.path.join(fp, video_id + suffix + '.pickle')
 
     def main_labels(self, start, end, ind):
@@ -95,6 +98,8 @@ class Annotation():
             for s, e, _ in cat_list:
                 if s < end and e > start:
                     cats[cat] += (min(e, end) - max(s, start))
+        if len(cats) > 0:
+            print(f'{cats=}')
         total_annotated = sum(cats.values())
         if total_annotated == 0:
             return "unknown"
@@ -696,6 +701,7 @@ class MainWindow(QWidget):
             start_frames = list(range(0, 1000, 50))
             self.frames = [(v, start_frames[i % len(start_frames)], start_frames[i % len(start_frames)] + 50, "ind0")
                            for i, v in enumerate(videos_rand)]
+            print(f'{videos=}')
             for video in videos:
                 annotation = Annotation(
                     Annotation.get_filename(
@@ -955,7 +961,7 @@ class MainWindow(QWidget):
             videos=videos,
             multiview=False,
             active_learning=True,
-            # al_points_dictionary=al_dict,
+            al_points_dictionary=al_dict,
             clustering_parameters=self.parameters,
             config_file=self.settings_file,
             skeleton_files=self.skeleton_files,
@@ -1006,6 +1012,7 @@ class MainWindow(QWidget):
         self.close()
         del self.data
         behaviors = self.get_behaviors()
+        suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
         episode_name = self.get_episode(behaviors)
         behaviors = list(self.open_dlc2action_project().get_behavior_dictionary(episode_name).values())
         suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
@@ -1098,7 +1105,7 @@ def main(
     features = []
     video = list(video)
     if video_folder is not None:
-        video += [os.path.join(video_folder, x) for x in os.listdir(video_folder)]
+        video += [os.path.join(video_folder, x) for x in os.listdir(video_folder) if x.split('.')[-1] in ["mp4", "mkv", "mov", "avi"]]
     for f in video:
         filepath, filename = os.path.split(f)
         filepaths.append(filepath)
