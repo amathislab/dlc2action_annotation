@@ -44,14 +44,13 @@ class Annotation():
         self.inds = None
         self.cats = None
         self.data = None
+        self.filename = filename
         if filename is not None and os.path.exists(filename):
             try:
                 with open(filename, "rb") as f:
                     _, self.cats, self.inds, self.data = pickle.load(f)
             except pickle.UnpicklingError:
                 pass
-        print(f'{filename=}')
-        print(f'{self.cats=}')
 
     def generate_array(self):
         length = 0
@@ -87,7 +86,6 @@ class Annotation():
     def get_filename(filepaths, filenames, video_id, suffix):
         for fn, fp in zip(filenames, filepaths):
             if fn.split('.')[0] == video_id:
-                print(f'{video_id=}, {suffix=}')
                 return os.path.join(fp, video_id + suffix + '.pickle')
 
     def main_labels(self, start, end, ind):
@@ -96,10 +94,10 @@ class Annotation():
         cats = defaultdict(lambda: 0)
         for cat, cat_list in zip(self.cats, self.data[self.inds.index(ind)]):
             for s, e, _ in cat_list:
+                if ind == 'ind360':
+                    print(f'{cat}, {s=}, {e=}, {start=}, {end=}')
                 if s < end and e > start:
                     cats[cat] += (min(e, end) - max(s, start))
-        if len(cats) > 0:
-            print(f'{cats=}')
         total_annotated = sum(cats.values())
         if total_annotated == 0:
             return "unknown"
@@ -738,6 +736,7 @@ class MainWindow(QWidget):
                 video = self.filenames[file_i]
                 annotation = Annotation(self.annotation_files[file_i])
                 min_frames = video_dict.pop("min_frames")
+                print(f'{min_frames["ind360"]=}')
                 clips = list(video_dict.keys())
                 for clip in clips:
                     if clip in ["max_frames", "video_tag"]:
@@ -749,7 +748,7 @@ class MainWindow(QWidget):
                     clip_arr = clip_arr.T
                     for s in range(0, clip_arr.shape[-1], frames_step):
                         end = min(clip_arr.shape[-1], s + frames_step)
-                        main_labels = annotation.main_labels(s, end, clip)
+                        main_labels = annotation.main_labels(s + min_frames[clip], end + min_frames[clip], clip)
                         self.frames.append((video.split('.')[0], s + min_frames[clip], end + min_frames[clip], clip))
                         self.data.append(clip_arr[:, s: end].mean(-1))
                         self.labels.append(main_labels)
