@@ -30,3 +30,4 @@ dependencies:
     - qtwidgets==0.18
     - opencv-python==4.6.0.66
     - torch==1.12.1
+    - statsmodels==0.13.2
