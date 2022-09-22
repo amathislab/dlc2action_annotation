@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
 )
 from widgets.dialog import Form
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import pyqtSignal
 from widgets.viewer import Viewer as Viewer
 from widgets.settings import SettingsWindow
 import cluster
@@ -21,6 +22,8 @@ from utils import get_settings, read_video, read_settings
 
 
 class MainWindow(QMainWindow):
+    closed = pyqtSignal()
+
     def __init__(
         self,
         videos,
@@ -88,11 +91,15 @@ class MainWindow(QMainWindow):
         self._createToolBar()
         self._createMenuBar()
 
+    def closeEvent(self, a0) -> None:
+        self.closed.emit()
+        super().closeEvent(a0)
+
     def next_video(self):
         if self.clustering_parameters is not None and self.cur_video == len(self.videos) - 1:
             self.close()
-            window = cluster.MainWindow(*self.clustering_parameters)
-            window.show()
+            # window = cluster.MainWindow(*self.clustering_parameters)
+            # window.show()
         else:
             self.cur_video = (self.cur_video + 1) % len(self.videos)
             self.settings = read_settings(self.settings_file)

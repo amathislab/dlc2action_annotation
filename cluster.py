@@ -657,7 +657,6 @@ class MainWindow(QWidget):
             label = self.label_dict[label]
         if vid not in self.stacks:
             self.open_video(vid)
-        print(f'{start=}, {end=}, {ind=}')
         if self.points_df_dict[vid] is not None:
             points_df = self.points_df_dict[vid].get_range(start, end, ind)
         else:
@@ -908,9 +907,13 @@ class MainWindow(QWidget):
         with open(self.output_file, "wb") as f:
             pickle.dump(self.chosen, f)
 
+    def reopen(self):
+        self.get_data()
+        self.show()
+
     def open_intervals(self, intervals=None, suggestions_folder=None, sort_intervals=False):
-        self.close()
-        self.data = None
+        self.hide()
+        del self.data
         if intervals is None or not isinstance(intervals, Iterable):
             intervals = np.array(self.frames)[self.chosen] # (video, start, end, clip)
         al_dict = None
@@ -957,7 +960,7 @@ class MainWindow(QWidget):
                     al_dict[video] = []
                     for label in sorted(labels_dict.keys()):
                         al_dict[video] += labels_dict[label]
-        window = annotator.MainWindow(
+        self.new_window = annotator.MainWindow(
             videos=videos,
             multiview=False,
             active_learning=True,
@@ -969,7 +972,8 @@ class MainWindow(QWidget):
             suggestion_files=suggestion_files,
             hard_negatives="all",
         )
-        window.show()
+        self.new_window.closed.connect(self.reopen)
+        self.new_window.show()
 
     def open_dlc2action_project(self):
         from dlc2action.project import Project

@@ -43,14 +43,12 @@ class List(QListWidget):
 
 
 class AnimalList(List):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, current, visuals, *args, **kwargs):
         super(AnimalList, self).__init__(*args, **kwargs)
-        self.update_list()
+        self.update_list(current, visuals)
 
-    def update_list(self):
+    def update_list(self, current, visuals):
         self.clear()
-        current = self.window.current_animal_name()
-        visuals = self.window.get_displayed_animals()
         for i, (animal, color) in enumerate(visuals):
             col = QColor(*[x * 255 for x in color])
             pixmap = QPixmap(100, 100)
@@ -78,11 +76,8 @@ class CatList(List):
 
     def update_list(self):
         cat_key = self.key
-        print('clearing')
         self.clear()
-        print('cleared')
         inv = self.window.shortCutInv(key=cat_key)
-        print('moving on')
         for cat in self.window.catDict[cat_key]:
             if self.window.catDict[cat_key][cat] not in self.window.invisible_actions:
                 col = QColor(*self.window.bar.get_color(self.window.catDict[cat_key][cat]))

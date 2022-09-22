@@ -400,8 +400,10 @@ class Viewer(QWidget):
 
     def redraw(self):
         if self.active:
-            self.update()
-            self.canvas.update()
+            self.bar.update()
+            self.progressbar.update()
+            # self.canvas.update()
+            # self.bar.update()
 
     def on_play(self, value=None):
         self.canvas.set_play(value)
@@ -658,7 +660,7 @@ class Viewer(QWidget):
         self.get_ncat()
         try:
             self.console.catlist.update_list()
-            self.console.animallist.update_list()
+            self.update_animals()
             self.console.seglist.update_list()
             self.update()
         except:
@@ -1018,7 +1020,7 @@ class Viewer(QWidget):
                     self.al_animal,
                 )
         self.bar.get_labels()
-        self.console.animallist.update_list()
+        self.update_animals()
 
     def change_tracklet(self):
         if self.annotate_anyway:
@@ -1196,10 +1198,16 @@ class Viewer(QWidget):
         self.canvas.set_al_point(al_point=self.cur_al_point)
         self.set_animal(animal)
 
+    def update_animals(self):
+        self.console.animallist.update_list(
+            self.current_animal_name(),
+            self.get_displayed_animals()
+        )
+
     def change_displayed_animals(self, ind_list):
         if set(self.displayed_animals) != set(ind_list):
             self.displayed_animals = ind_list
-            self.console.animallist.update_list()
+            self.update_animals()
             if self.current_animal_name() not in self.displayed_animals:
                 self.set_correct_animal(False)
                 if len(self.bar.grow_rects) > 0:

@@ -258,6 +258,7 @@ class VideoCanvas(SceneCanvas):
                 self.load_data()
         if self.index_dict[self.current] is not None:
             self.window.change_displayed_animals(self.index_dict[self.current])
+        self.update()
 
     def start_loading(self):
         if self.next_bunch is not None:
