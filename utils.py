@@ -16,7 +16,6 @@ import shutil
 from ruamel.yaml import YAML
 from widgets.settings import SettingsWindow
 import string
-from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 try:
@@ -716,6 +715,7 @@ def extract_detections(
         visibility_min_score=0.25,
         keep_invisible=False,
 ):
+    from statsmodels.nonparametric.smoothers_lowess import lowess
     coords, _ = read_tracklets(tracklet_file, verbose=False)
     detections = defaultdict(lambda: {})
     mapping = {}
