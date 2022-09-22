@@ -1430,6 +1430,14 @@ class Viewer(QWidget):
         else:
             return False
 
+    def set_tracklet_al(self):
+        self.al_points = []
+        for ind in self.animals:
+            start, end = self.canvas.get_ind_start_end(ind)
+            if start is not None and end is not None:
+                self.al_points.append([start, end, ind])
+        self.canvas.al_points = self.al_points
+
     def set_cat_id(self, cat_id):
         self.canvas.set_cat_id(cat_id)
 

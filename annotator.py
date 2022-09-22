@@ -400,6 +400,11 @@ class MainWindow(QMainWindow):
             "Find the intervals annotated with a specific label in the video"
         )
         labelAction.triggered.connect(self.set_label_al)
+        trackletAction = QAction("&Start tracklet navigation", self)
+        trackletAction.setStatusTip(
+            "Go through tracklets one by one"
+        )
+        trackletAction.triggered.connect(self.set_tracklet_al)
         exampleAction = QAction("&Export example clips", self)
         exampleAction.setStatusTip("Export example clips of the behaviors")
         exampleAction.triggered.connect(self.viewer.export_examples)
@@ -451,6 +456,7 @@ class MainWindow(QMainWindow):
         al.addAction(activeLearningAction)
         al.addAction(unlabeledAction)
         al.addAction(labelAction)
+        al.addAction(trackletAction)
         al.addAction(assAction)
         display = self.menubar.addMenu("Display")
         display.addAction(rainbowAction)
@@ -490,6 +496,11 @@ class MainWindow(QMainWindow):
 
     def set_unlabeled_al(self, event):
         self.viewer.set_unlabeled_al()
+        self.al_mode = True
+        self.viewer.change_al_mode(self.al_mode)
+
+    def set_tracklet_al(self, event):
+        self.viewer.set_tracklet_al()
         self.al_mode = True
         self.viewer.change_al_mode(self.al_mode)
 

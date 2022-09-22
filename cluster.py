@@ -250,6 +250,7 @@ class VideoCanvas(SceneCanvas):
             al_animal=None,
             correct_mode=False,
             segmentation=None,
+            length=self.length,
         )
         vb.initialize(self.current, 0)
         self.central_widget.add_widget(vb)

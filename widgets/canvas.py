@@ -519,6 +519,7 @@ class VideoCanvas(SceneCanvas):
                         data_2d=self.data_2d[n],
                         skeleton=self.skeleton,
                         bodyparts_3d=self.bodyparts_3d,
+                        length=self.len_global,
                     )
                     self.grid.add_widget(vb, i, j)
                     vb.initialize(self.current, mask_opacity)
@@ -543,6 +544,7 @@ class VideoCanvas(SceneCanvas):
                         color_len=color_len,
                         bodyparts=self.window.settings["3d_bodyparts"],
                         skeleton=self.skeleton,
+                        length=self.len_global,
                     )
                     vb.initialize(self.current)
                     vb.camera = "turntable"
@@ -622,6 +624,25 @@ class VideoCanvas(SceneCanvas):
             self.window.set_animal(int(event.key.name))
         else:
             print(f"canvas didn't recognise key {event.key.name}")
+
+    def get_ind_start_end(self, animal):
+        starts = []
+        ends = []
+        for vb in self.viewboxes:
+            start, end = vb.get_ind_start_end(animal)
+            if start is not None:
+                starts.append(start)
+            if end is not None:
+                ends.append(end)
+        if len(starts) == 0:
+            start = None
+        else:
+            start = min(starts)
+        if len(ends) == 0:
+            end = None
+        else:
+            end = max(ends)
+        return start, end
 
     # def on_mouse_press(self, event):
     #     tr = self.scene.node_transform(self.line)

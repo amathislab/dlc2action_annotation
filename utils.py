@@ -176,8 +176,8 @@ class PointsData:
         self.points_df = points_df
         self.dict_type = type(points_df) is dict
         if self.dict_type:
-            self.animals = points_df["animals"]
-            self.names = points_df["names"]
+            self.animals = points_df.pop("animals")
+            self.names = points_df.pop("names")
         else:
             self.animals = list(points_df.index.levels[1])
             self.names = list(points_df.index.levels[2])
@@ -204,6 +204,21 @@ class PointsData:
             df = self.points_df.loc[list(range(start, end))]
             df = df.iloc[df.index.get_level_values(1) == animal]
             return PointsData(df)
+
+    def get_start_end(self, animal):
+        if self.dict_type:
+            frames = []
+            for x in self.points_df:
+                if animal in self.points_df[x]:
+                    frames.append(int(x))
+        else:
+            frames = list(self.points_df.iloc[self.points_df.index.get_level_values(1) == animal].index.get_level_values(0))
+        if len(frames) > 0:
+            start = min(frames)
+            end = max(frames)
+            return start, end + 1
+        else:
+            return None, None
 
     def set_coord(self, current, animal, point, coord):
         if self.dict_type:
