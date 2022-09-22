@@ -145,7 +145,6 @@ class Viewer(QWidget):
             else:
                 self.output_file = None
 
-        print(f'{self.labels_file=}, {self.output_file=}')
         self.load_labels()
 
         data_2d = [None for _ in self.filenames]

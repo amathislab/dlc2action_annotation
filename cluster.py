@@ -37,6 +37,7 @@ from collections import defaultdict
 from sklearn.ensemble import RandomForestClassifier
 from typing import Iterable
 from utils import get_color
+from itertools import groupby
 
 
 class Annotation():
@@ -52,11 +53,18 @@ class Annotation():
             except pickle.UnpicklingError:
                 pass
 
-    def generate_array(self):
+    def get_len(self):
+        if self.data is None:
+            return 0
         length = 0
         for ind_list in self.data:
             for cat_list in ind_list:
-                length = max(length, max([x[1] for x in cat_list]))
+                if len(cat_list) > 0:
+                    length = max(length, max([x[1] for x in cat_list]))
+        return length
+
+    def generate_array(self):
+        length = self.get_len()
         to_remove = []
         for i, x in enumerate(self.inds):
             ok = any([len(cat_list) > 0 for cat_list in self.data[i]])
@@ -88,14 +96,29 @@ class Annotation():
             if fn.split('.')[0] == video_id:
                 return os.path.join(fp, video_id + suffix + '.pickle')
 
+    def unannotated(self):
+        if self.data is None:
+            return None
+        al_points = []
+        for ind_i, ind in enumerate(self.inds):
+            labels = np.zeros((len(self.cats), self.get_len()))
+            for cat in range(len(self.data[ind_i])):
+                for start, end, _ in self.data[ind_i][cat]:
+                    labels[cat, start:end] = 1
+            cur = 0
+            for k, g in groupby(np.sum(labels, axis=0) > 0):
+                length = len(list(g))
+                if not k and length > 20:
+                    al_points.append([cur, cur + length, ind])
+                cur += length
+        return al_points
+
     def main_labels(self, start, end, ind):
         if self.data is None or ind not in self.inds:
             return "unknown"
         cats = defaultdict(lambda: 0)
         for cat, cat_list in zip(self.cats, self.data[self.inds.index(ind)]):
             for s, e, _ in cat_list:
-                if ind == 'ind360':
-                    print(f'{cat}, {s=}, {e=}, {start=}, {end=}')
                 if s < end and e > start:
                     cats[cat] += (min(e, end) - max(s, start))
         total_annotated = sum(cats.values())
@@ -424,6 +447,8 @@ class Console(QWidget):
         self.open_button.setDisabled(True)
         self.auto_button = QPushButton("Autolabel")
         self.auto_button.clicked.connect(self.window.autolabel)
+        self.remain_button = QPushButton("Open unannotated")
+        self.remain_button.clicked.connect(self.window.get_remainder)
 
         self.radio_layout = QHBoxLayout()
         self.radio_layout.addWidget(self.method_checkbox)
@@ -435,6 +460,7 @@ class Console(QWidget):
         self.radio_layout.addWidget(self.save_button)
         self.radio_layout.addWidget(self.open_button)
         self.radio_layout.addWidget(self.auto_button)
+        self.radio_layout.addWidget(self.remain_button)
 
         self.method_layout = QHBoxLayout()
         self.method_layout.addWidget(self.method_label)
@@ -646,7 +672,6 @@ class MainWindow(QWidget):
     def clicked(self, point, ev):
         data_list = list(self.scatter.data)
         points_list = [x[9] for x in data_list]
-        print(f'{len(points_list)=}')
         n = points_list.index(ev[0])
         self.visited.update([n])
         if self.video_mode == "same":
@@ -699,7 +724,6 @@ class MainWindow(QWidget):
             start_frames = list(range(0, 1000, 50))
             self.frames = [(v, start_frames[i % len(start_frames)], start_frames[i % len(start_frames)] + 50, "ind0")
                            for i, v in enumerate(videos_rand)]
-            print(f'{videos=}')
             for video in videos:
                 annotation = Annotation(
                     Annotation.get_filename(
@@ -735,7 +759,6 @@ class MainWindow(QWidget):
                 video = self.filenames[file_i]
                 annotation = Annotation(self.annotation_files[file_i])
                 min_frames = video_dict.pop("min_frames")
-                print(f'{min_frames["ind360"]=}')
                 clips = list(video_dict.keys())
                 for clip in clips:
                     if clip in ["max_frames", "video_tag"]:
@@ -759,9 +782,6 @@ class MainWindow(QWidget):
                 self.data = np.stack(self.data, 0)
             else:
                 self.data = torch.stack(self.data, 0).numpy()
-            print(f'{self.data.shape=}')
-            print(f'{len(self.frames)=}')
-            print(f'{len(self.labels)=}')
 
     def reset_args(self):
         self.args[self.method] = {"n_components": 2}
@@ -911,6 +931,15 @@ class MainWindow(QWidget):
         self.get_data()
         self.show()
 
+    def get_remainder(self):
+        al_points = []
+        for file in self.annotation_files:
+            id = os.path.basename(file)[: -len(self.settings["suffix"])]
+            intervals = Annotation(file).unannotated()
+            if intervals is not None:
+                al_points += [[id, *x] for x in intervals]
+        self.open_intervals(intervals=al_points)
+
     def open_intervals(self, intervals=None, suggestions_folder=None, sort_intervals=False):
         self.hide()
         del self.data
@@ -1016,7 +1045,6 @@ class MainWindow(QWidget):
         self.close()
         del self.data
         behaviors = self.get_behaviors()
-        suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
         episode_name = self.get_episode(behaviors)
         behaviors = list(self.open_dlc2action_project().get_behavior_dictionary(episode_name).values())
         suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
