@@ -752,7 +752,7 @@ class Viewer(QWidget):
         cat_labels = [self.catDict["base"][i] for i in self.catDict["base"]]
         neg_classes = self.settings["hard_negative_classes"]
         if neg_classes == 'all':
-            neg_classes = copy(cat_labels)
+            neg_classes = [x for x in cat_labels if x not in self.invisible_actions]
         if neg_classes is not None and self.al_points is not None:
             for neg_class in neg_classes:
                 neg_ind = cat_labels.index(neg_class)
