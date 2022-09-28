@@ -201,7 +201,6 @@ class PointsData:
             d = {x: {animal: self.points_df[x][animal]} for x in range(start, end) if animal in self.points_df[x]}
             d["animals"] = [animal]
             d["names"] = self.names
-            print(f'{d.keys()=}')
             return PointsData(d)
         else:
             df = self.points_df.loc[list(range(start, end))]
