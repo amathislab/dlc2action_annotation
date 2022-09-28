@@ -765,9 +765,10 @@ class MainWindow(QWidget):
                         continue
                     clip_arr = video_dict.pop(clip)
                     # print(f'{clip_arr.shape=}')
-                    # n = clip_arr.shape[0]
+                    n = clip_arr.shape[0]
+                    if n != 2048:
                     # if not ((n & (n-1) == 0) and n != 0):
-                    clip_arr = clip_arr.T
+                        clip_arr = clip_arr.T
                     for s in range(0, clip_arr.shape[-1], frames_step):
                         end = min(clip_arr.shape[-1], s + frames_step)
                         main_labels = annotation.main_labels(s + min_frames[clip], end + min_frames[clip], clip)
