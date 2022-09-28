@@ -133,6 +133,7 @@ def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0)
             df, index = read_tracklets(filename, min_length_frames)
     elif data_type == "calms21":
         df, index = read_calms21(filename)
+    print(f'{df.keys()=}')
     return PointsData(df), index
 
 
@@ -196,9 +197,11 @@ class PointsData:
 
     def get_range(self, start, end, animal):
         if self.dict_type:
+            print(f'{self.points_df[start].keys()=}')
             d = {x: {animal: self.points_df[x][animal]} for x in range(start, end) if animal in self.points_df[x]}
             d["animals"] = [animal]
             d["names"] = self.names
+            print(f'{d.keys()=}')
             return PointsData(d)
         else:
             df = self.points_df.loc[list(range(start, end))]
