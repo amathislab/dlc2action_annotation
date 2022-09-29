@@ -144,7 +144,6 @@ class Viewer(QWidget):
                 self.output_file = self.basename + self.settings["suffix"]
             else:
                 self.output_file = None
-
         self.load_labels()
 
         data_2d = [None for _ in self.filenames]
@@ -965,8 +964,10 @@ class Viewer(QWidget):
                     self.loaded_times,
                 ) = pickle.load(f)
 
-            if self.animals is None or len(self.animals) < len(self.loaded_animals):
+            if self.animals is None:
                 self.animals = self.loaded_animals
+            else:
+                self.anmals = list(set(self.animals + self.loaded_animals))
             self.n_ind = len(self.animals)
             if amb is not None:
                 for i, ind_list in enumerate(self.loaded_times):
@@ -1152,12 +1153,22 @@ class Viewer(QWidget):
         self.on_next()
 
     def next_video_f(self):
-        success = self.save()
+        if self.show_question(
+            message="Save the current annotation?", default="yes"
+        ):
+            success = self.save()
+        else:
+            success = True
         if success:
             self.next_video.emit()
 
     def prev_video_f(self):
-        success = self.save()
+        if self.show_question(
+                message="Save the current annotation?", default="yes"
+        ):
+            success = self.save()
+        else:
+            success = True
         if success:
             self.prev_video.emit()
 

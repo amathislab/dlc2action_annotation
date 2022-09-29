@@ -93,7 +93,6 @@ class CatList(List):
         if self.count() > 0:
             self.item(0).setSelected(True)
         self.reset_shortcuts(self.window.shortCut)
-        print('finish updating')
 
 
 class SegmentationList(List):

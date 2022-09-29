@@ -564,10 +564,14 @@ class Form(QDialog):
                 return self.videos[i]
 
 class EpisodeSelector(QDialog):
-    def __init__(self, project):
+    def __init__(self, project, suggestions=False):
         super().__init__()
-        options = list(project.list_episodes().index) + ["train..."]
-        label = QLabel("Please choose the episode to load the model from:")
+        if suggestions:
+            options = list(project.list_suggestions().index)
+            label = QLabel("Please choose the suggestions name:")
+        else:
+            options = list(project.list_episodes().index) + ["train..."]
+            label = QLabel("Please choose the episode to load the model from:")
         self.combobox = QComboBox()
         self.combobox.addItems(options)
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
