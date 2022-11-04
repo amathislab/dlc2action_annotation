@@ -166,6 +166,7 @@ def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
         )
         return arr
     elif backend == "pyav_fast":
+        print(f'{start=}, {end=}, {fs=}')
         with catch_warnings():
             filterwarnings("ignore", message="VideoStream.seek is deprecated")
             arr = np.stack([stack[i] for i in range(start, end, fs)])
@@ -236,6 +237,8 @@ def read_hdf(filename, likelihood_cutoff=0):
         old_idx = temp.columns.to_frame()
         old_idx.insert(0, "individuals", "ind0")
         temp.columns = pd.MultiIndex.from_frame(old_idx)
+    temp.iloc[:, temp.columns.get_level_values(2) == "likelihood"] = temp.iloc[:, temp.columns.get_level_values(
+        2) == "likelihood"].fillna(0)
     df = temp.stack(["individuals", "bodyparts"])
     df.loc[df["likelihood"] < likelihood_cutoff, ["x", "y"]] = 0
     df = df[["x", "y"]]
@@ -883,8 +886,8 @@ def apply_mapping(
 
 def detect_and_remap(
         old_tracklet_folders,
-        new_tracklet_folder,
         detection_folder,
+        new_tracklet_folder=None,
         tracklet_suffix=None,
         margin=40,
         smooth=True,
@@ -896,24 +899,18 @@ def detect_and_remap(
         visibility_min_frac=0,
         visibility_min_score=0.25,
         keep_invisible=False,
+        remap=False
 ):
     if tracklet_suffix is None:
         tracklet_suffix = [".pickle"]
-    p_bar = tqdm(total=sum([len(os.listdir(folder)) for folder in old_tracklet_folders]))
-    x = 0
+    files = defaultdict(lambda: [])
     for folder in old_tracklet_folders:
-        files = os.listdir(folder)
-        for file in files:
-            # if x < 101:
-            #     x += 1
-            #     p_bar.update(1)
-            #     continue
-            ok = False
-            for s in tracklet_suffix:
-                if file.endswith(s):
-                    ok = True
-            if not ok:
-                continue
+        for file in os.listdir(folder):
+            if any([file.endswith(s) for s in tracklet_suffix]):
+                files[folder].append(file)
+    p_bar = tqdm(total=sum([len(v) for v in files.values()]))
+    for folder, file_list in files.items():
+        for file in file_list:
             target_file = file.split('.')[0] + '_det.pickle'
             mapping_file = extract_detections(
                 tracklet_file=os.path.join(folder, file),
@@ -929,10 +926,11 @@ def detect_and_remap(
                 visibility_min_score=visibility_min_score,
                 keep_invisible=keep_invisible,
             )
-            apply_mapping(
-                old_tracklet_file=os.path.join(folder, file),
-                new_tracklet_file=os.path.join(new_tracklet_folder, file.split('.')[0] + "_remapped.pickle"),
-                mapping_file=mapping_file,
-            )
+            if remap:
+                apply_mapping(
+                    old_tracklet_file=os.path.join(folder, file),
+                    new_tracklet_file=os.path.join(new_tracklet_folder, file.split('.')[0] + "_remapped.pickle"),
+                    mapping_file=mapping_file,
+                )
             p_bar.update(1)
     p_bar.close()
