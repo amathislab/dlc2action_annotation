@@ -564,10 +564,14 @@ class Form(QDialog):
                 return self.videos[i]
 
 class EpisodeSelector(QDialog):
-    def __init__(self, project):
+    def __init__(self, project, suggestions=False):
         super().__init__()
-        options = list(project.list_episodes().index) + ["train..."]
-        label = QLabel("Please choose the episode to load the model from:")
+        if suggestions:
+            options = list(project.list_suggestions().index)
+            label = QLabel("Please choose the suggestions name:")
+        else:
+            options = list(project.list_episodes().index) + ["train..."]
+            label = QLabel("Please choose the episode to load the model from:")
         self.combobox = QComboBox()
         self.combobox.addItems(options)
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
@@ -654,21 +658,21 @@ class SuggestionParamsSelector(QDialog):
         layout.addLayout(first_row)
         second_row = QHBoxLayout()
         label1 = QLabel("Min frames behaviors: ")
-        label2 = QLabel("Min frames AL intervals: ")
+        # label2 = QLabel("Min frames AL intervals: ")
         label3 = QLabel("Background threshold: ")
         self.min_behavior_le = QSpinBox()
         self.min_behavior_le.setValue(5)
         self.min_behavior_le.setMinimum(0)
         self.min_behavior_le.setMaximum(100)
-        self.min_al_le = QSpinBox()
-        self.min_al_le.setValue(60)
-        self.min_al_le.setMinimum(10)
-        self.min_al_le.setMaximum(100)
+        # self.min_al_le = QSpinBox()
+        # self.min_al_le.setValue(60)
+        # self.min_al_le.setMinimum(10)
+        # self.min_al_le.setMaximum(100)
         self.bg_le = QDoubleSpinBox()
         self.bg_le.setMinimum(0.05)
         self.bg_le.setMaximum(0.6)
         self.bg_le.setValue(0.45)
-        for widget in [label1, self.min_behavior_le, label2, self.min_al_le, label3, self.bg_le]:
+        for widget in [label1, self.min_behavior_le, label3, self.bg_le]:
             second_row.addWidget(widget)
         layout.addLayout(second_row)
         self.behavior_layout = QFormLayout()

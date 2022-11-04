@@ -447,6 +447,8 @@ class Console(QWidget):
         self.open_button.setDisabled(True)
         self.auto_button = QPushButton("Autolabel")
         self.auto_button.clicked.connect(self.window.autolabel)
+        self.browse_button = QPushButton("Browse suggestions")
+        self.browse_button.clicked.connect(self.window.open_suggestions)
         self.remain_button = QPushButton("Open unannotated")
         self.remain_button.clicked.connect(self.window.get_remainder)
 
@@ -461,6 +463,7 @@ class Console(QWidget):
         self.radio_layout.addWidget(self.open_button)
         self.radio_layout.addWidget(self.auto_button)
         self.radio_layout.addWidget(self.remain_button)
+        self.radio_layout.addWidget(self.browse_button)
 
         self.method_layout = QHBoxLayout()
         self.method_layout.addWidget(self.method_label)
@@ -611,7 +614,8 @@ class MainWindow(QWidget):
                     "feature_suffix": self.feature_suffix,
                     "filter_annotated": True,
                     "filter_background": True,
-                    "behaviors": None
+                    "behaviors": None,
+                    "transpose_features": True,
                 },
                 "general": {
                     "metric_functions": {"f1"},
@@ -943,7 +947,7 @@ class MainWindow(QWidget):
 
     def open_intervals(self, intervals=None, suggestions_folder=None, sort_intervals=False):
         self.hide()
-        del self.data
+        self.data = None
         if intervals is None or not isinstance(intervals, Iterable):
             intervals = np.array(self.frames)[self.chosen] # (video, start, end, clip)
         al_dict = None
@@ -973,6 +977,7 @@ class MainWindow(QWidget):
                 for file in files:
                     if file.startswith(video_id):
                         suggestion_files.append(os.path.join(suggestions_folder, file))
+        print(f'{al_dict=}')
         videos = [os.path.join(fp, fn) for fp, fn in zip(self.filepaths, self.filenames) if fn.split(".")[0] in al_dict]
         annotation_files = [ann for ann, fn in zip(self.annotation_files, self.filenames) if fn.split(".")[0] in al_dict]
         if sort_intervals:
@@ -1050,6 +1055,10 @@ class MainWindow(QWidget):
         behaviors = list(self.open_dlc2action_project().get_behavior_dictionary(episode_name).values())
         suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
         self.run_suggestion(suggestion_name, episode_name, suggestion_params)
+
+    def open_suggestions(self):
+        suggestion_name = EpisodeSelector(suggestions=True, project=self.open_dlc2action_project()).exec_()
+        self.browse_suggestions(suggestion_name)
 
     def run_suggestion(self, suggestion_name, episode_name, suggestion_params):
         project = self.open_dlc2action_project()
