@@ -1,3 +1,8 @@
+#
+# Copyright 2020-2022 by A. Mathis Group and contributors. All rights reserved.
+#
+# This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
+#
 from PyQt5.QtCore import QTimer
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtWidgets import (
