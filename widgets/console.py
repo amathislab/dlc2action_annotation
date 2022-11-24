@@ -13,10 +13,11 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QSlider,
     QCheckBox,
+    QListWidget,
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize
-from .lists import AnimalList, CatList, SegmentationList
+from .lists import AnimalList, CatList, SegmentationList, List
 
 
 class Console(QWidget):
@@ -40,7 +41,11 @@ class Console(QWidget):
         self.catlist = CatList(key=self.window.active_list, window=self.window)
         self.catlist.itemClicked.connect(self.window.item_clicked)
         self.catlist.itemDoubleClicked.connect(self.window.doubleclick)
-        self.animallist = AnimalList(window=self.window)
+        self.animallist = AnimalList(
+            window=self.window,
+            current=self.window.current_animal_name(),
+            visuals=self.window.get_displayed_animals()
+        )
         self.animallist.itemClicked.connect(self.window.set_animal)
         self.seglist = SegmentationList(
             self.window.get_segmentation_cats(), window=self.window

@@ -263,6 +263,7 @@ class VideoCanvas(SceneCanvas):
                 self.load_data()
         if self.index_dict[self.current] is not None:
             self.window.change_displayed_animals(self.index_dict[self.current])
+        self.update()
 
     def start_loading(self):
         if self.next_bunch is not None:
@@ -326,52 +327,33 @@ class VideoCanvas(SceneCanvas):
         self.set_play(self.play)
 
     def load_data(self, start=None, end=None, al_ind=None):
-        # print(f'loading {start=}, {end=}, {al_ind=}')
         if self.videos[0] is None:
             return
         if self.window.al_mode and al_ind is None:
             al_ind = self.window.cur_al_point
         if self.window.al_mode:
-            # print('enter 1')
             self.loading_al_ind = al_ind
             loaded = self.loaded[al_ind]
             videos = self.videos[al_ind]
-            # print('finish 1')
         else:
-            # print('enter 2')
             loaded = self.loaded
             videos = self.videos
-            # print('finish 2')
         self.loading_status = True
         if start is None or (start < loaded[1] and start > loaded[0]):
-            # print('enter 4')
             start = loaded[1]
-            # print('finish 4')
         if end is None or (end > loaded[0] and end < loaded[1]):
-            # print('enter 5')
             if len(videos[0]) + self.load_chunk >= self.max_len:
-                # print('enter 6')
                 extra = max(self.current - loaded[0] - self.buffer, 0)
                 end = min(loaded[0] + self.max_len + extra, start + self.load_chunk)
-                # print('finish 6')
             else:
-                # print('enter 7')
                 end = start + self.load_chunk
-                # print('finish 7')
-            # print('finish 5')
         if end > self.len_global:
-            # print('enter 8')
             end = self.len_global
-            # print('finish 8')
         if start < 0:
-            # print('enter 9')
             start = 0
-            # print('finish 9')
-        # print(f'{start=}, {end=}')
         if start >= end:
             self.loading_status = False
             return
-        # print(f'fixed to {start=}, {end=}, {al_ind=}')
         self.loading = (start, end)
         try:
             self.worker.stop()
@@ -543,6 +525,7 @@ class VideoCanvas(SceneCanvas):
                         data_2d=self.data_2d[n],
                         skeleton=self.skeleton,
                         bodyparts_3d=self.bodyparts_3d,
+                        length=self.len_global,
                     )
                     self.grid.add_widget(vb, i, j)
                     vb.initialize(self.current, mask_opacity)
@@ -567,6 +550,7 @@ class VideoCanvas(SceneCanvas):
                         color_len=color_len,
                         bodyparts=self.window.settings["3d_bodyparts"],
                         skeleton=self.skeleton,
+                        length=self.len_global,
                     )
                     vb.initialize(self.current)
                     vb.camera = "turntable"
@@ -646,6 +630,25 @@ class VideoCanvas(SceneCanvas):
             self.window.set_animal(int(event.key.name))
         else:
             print(f"canvas didn't recognise key {event.key.name}")
+
+    def get_ind_start_end(self, animal):
+        starts = []
+        ends = []
+        for vb in self.viewboxes:
+            start, end = vb.get_ind_start_end(animal)
+            if start is not None:
+                starts.append(start)
+            if end is not None:
+                ends.append(end)
+        if len(starts) == 0:
+            start = None
+        else:
+            start = min(starts)
+        if len(ends) == 0:
+            end = None
+        else:
+            end = max(ends)
+        return start, end
 
     # def on_mouse_press(self, event):
     #     tr = self.scene.node_transform(self.line)

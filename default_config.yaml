@@ -51,7 +51,7 @@ detection_files: [null] #pickled lists of per-frame detections in [y_min, x_min,
 skeleton_files: [null] #the DLC output files (one per video view)
 3d_suffix: null #the suffix of the 3d pose file
 calibration_path: #the path to a numpy calibration file that can be used with the 3d pose file to display reprojections
-suffix: "_annotation"   #if not null it will be used to create a default output file name
+suffix: "_annotation.pickle"   #if not null it will be used to create a default output file name
 prefix_separator: null #if not null, everything before the first occurence of the separator will be stripped from the default output file name
 prior_suffix: null #a suffix or a list of suffixes that will be used to load and display pre-existing annotations; in that case the new and the old annotations will be kept in separate files
 DLC_suffix:

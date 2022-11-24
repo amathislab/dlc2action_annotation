@@ -3,7 +3,7 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtWidgets import (
     QWidget,
@@ -19,7 +19,7 @@ from datetime import datetime
 import numpy as np
 from random import sample as smp
 import os
-from collections import defaultdict
+from collections import defaultdict, deque
 import pickle
 from copy import copy, deepcopy
 from PIL import Image
@@ -50,12 +50,12 @@ class Viewer(QWidget):
 
     def __init__(
         self,
-        app,
         stacks,
         shapes,
         lengths,
         output_file,
         labels,
+        suggestions,
         settings,
         sequential,
         filenames,
@@ -65,7 +65,6 @@ class Viewer(QWidget):
         al_points=None,
     ):
         super(Viewer, self).__init__()
-        self.app = app
         self.settings = settings
         self.filepaths = filepaths
         self.filenames = filenames
@@ -88,33 +87,10 @@ class Viewer(QWidget):
         self.displayed_animals = []
         self.sequential = sequential
         self.animals = None
-        self.animal_colors = [
-            "blue",
-            "yellow",
-            "darkmagenta",
-            "purple",
-            "pink",
-            "red",
-            "green",
-            "magenta",
-            "cyan",
-            "lawngreen",
-            "gold",
-            "indigo",
-            "maroon",
-            "palegreen",
-            "darkviolet",
-            "orange",
-            "teal",
-            "dodgerblue",
-            "saddlebrown",
-            "deeppink",
-            "lime",
-            "coral",
-            "steelblue",
-            "indianred",
-            "navy",
-        ]
+        with open("colors.txt") as f:
+            self.animal_colors = [
+                list(map(lambda x: float(x) / 255, line.split())) for line in f.readlines()
+            ]
         self.active = True
         self.display_categories = True
         if self.display_categories:
@@ -123,6 +99,7 @@ class Viewer(QWidget):
             self.active_list = "base"
         self.output_file = output_file
         self.labels_file = labels
+        self.suggestions_file = suggestions
         self.n_ind = self.settings["n_ind"]
 
         if self.al_mode:
@@ -152,24 +129,26 @@ class Viewer(QWidget):
         self.basename = os.path.join(filepath, filename.split(".")[0])
 
         if self.labels_file is None and self.settings["suffix"] is not None:
-            self.labels_file = self.basename + self.settings["suffix"] + ".pickle"
-            if not os.path.exists(self.labels_file):
-                print(f"{self.labels_file} does not exist")
-                self.labels_file = os.path.join(
-                    filepath, filename.split(".")[0] + self.settings["suffix"] + ".h5"
-                )
+            self.labels_file = self.basename + self.settings["suffix"]
             if not os.path.exists(self.labels_file):
                 print(f"{self.labels_file} does not exist")
                 self.labels_file = None
+
+        if self.suggestions_file is None:
+            self.suggestions_file = self.basename + "_suggestion.pickle"
+            if self.suggestions_file == self.labels_file:
+                self.suggestions_file = None
+            elif not os.path.exists(self.suggestions_file):
+                print(f"{self.suggestions_file} does not exist")
+                self.suggestions_file = None
 
         if self.output_file is None:
             if self.labels_file is not None:
                 self.output_file = self.labels_file
             elif self.settings["suffix"] is not None:
-                self.output_file = self.basename + self.settings["suffix"] + ".pickle"
+                self.output_file = self.basename + self.settings["suffix"]
             else:
                 self.output_file = None
-
         self.load_labels()
 
         data_2d = [None for _ in self.filenames]
@@ -268,7 +247,7 @@ class Viewer(QWidget):
             self.al_end,
             self.correct_animal,
             None,
-            QFontMetrics(self.app.font()),
+            QFontMetrics(self.font()),
         )
         self.bar.setFixedHeight(self.bar.h)
         self.bar.clicked.connect(self.on_bar_clicked)
@@ -424,8 +403,10 @@ class Viewer(QWidget):
 
     def redraw(self):
         if self.active:
-            self.update()
-            self.canvas.update()
+            self.bar.update()
+            self.progressbar.update()
+            # self.canvas.update()
+            # self.bar.update()
 
     def on_play(self, value=None):
         self.canvas.set_play(value)
@@ -682,7 +663,7 @@ class Viewer(QWidget):
         self.get_ncat()
         try:
             self.console.catlist.update_list()
-            self.console.animallist.update_list()
+            self.update_animals()
             self.console.seglist.update_list()
             self.update()
         except:
@@ -715,7 +696,10 @@ class Viewer(QWidget):
 
     def current_animal(self):
         cur = self.canvas.current_animal
-        return self.canvas.animals.index(cur)
+        if cur not in self.canvas.animals:
+            return 0
+        else:
+            return self.canvas.animals.index(cur)
 
     def current_animal_name(self):
         cur = self.current_animal()
@@ -771,7 +755,9 @@ class Viewer(QWidget):
 
         cat_labels = [self.catDict["base"][i] for i in self.catDict["base"]]
         neg_classes = self.settings["hard_negative_classes"]
-        if neg_classes is not None:
+        if neg_classes == 'all':
+            neg_classes = [x for x in cat_labels if x not in self.invisible_actions]
+        if neg_classes is not None and self.al_points is not None:
             for neg_class in neg_classes:
                 neg_ind = cat_labels.index(neg_class)
                 cat_labels.append(f"negative {neg_class}")
@@ -827,6 +813,7 @@ class Viewer(QWidget):
         metadata["annotator"] = self.settings["annotator"]
         metadata["length"] = self.video_len()
         metadata["video_file"] = self.filenames[0]
+        metadata["skeleton_files"] = self.settings["skeleton_files"]
 
         with open(self.output_file, "wb") as f:
             pickle.dump((metadata, cat_labels, self.animals, times), f)
@@ -944,27 +931,33 @@ class Viewer(QWidget):
             elif self.labels_file is not None:
                 print(f"annotation file {self.labels_file} does not exist")
 
-        priors = self.settings["prior_suffix"]
-        if priors is None:
-            priors = []
-        elif type(priors) is not list:
-            priors = [priors]
-        priors = priors + ["_suggestion"]
-        for prior in priors:
-            if prior == "_suggestion":
-                amb = 2
+        if self.suggestions_file is not None:
+            if self.loaded_times is None:
+                self.load_annotation(self.suggestions_file, 2)
             else:
-                amb = 3
-            file = (
-                self.output_file.split(".")[0][: -len(self.settings["suffix"])]
-                + prior
-                + ".pickle"
-            )
-            if os.path.exists(file):
-                if self.loaded_times is None:
-                    self.load_annotation(file, amb)
-                else:
-                    self.load_prior(file, amb)
+                self.load_prior(self.suggestions_file, 2)
+
+        # priors = self.settings["prior_suffix"]
+        # if priors is None:
+        #     priors = []
+        # elif type(priors) is not list:
+        #     priors = [priors]
+        # priors = priors + ["_suggestion"]
+        # for prior in priors:
+        #     if prior == "_suggestion":
+        #         amb = 2
+        #     else:
+        #         amb = 3
+        #     file = (
+        #         self.output_file.split(".")[0][: -len(self.settings["suffix"])]
+        #         + prior
+        #         + ".pickle"
+        #     )
+        #     if os.path.exists(file):
+        #         if self.loaded_times is None:
+        #             self.load_annotation(file, amb)
+        #         else:
+        #             self.load_prior(file, amb)
 
     def load_annotation(self, file, amb=None):
         if self.settings["data_type"] == "dlc":
@@ -976,8 +969,10 @@ class Viewer(QWidget):
                     self.loaded_times,
                 ) = pickle.load(f)
 
-            if self.animals is None or len(self.animals) < len(self.loaded_animals):
+            if self.animals is None:
                 self.animals = self.loaded_animals
+            else:
+                self.anmals = list(set(self.animals + self.loaded_animals))
             self.n_ind = len(self.animals)
             if amb is not None:
                 for i, ind_list in enumerate(self.loaded_times):
@@ -1030,7 +1025,7 @@ class Viewer(QWidget):
                     self.al_animal,
                 )
         self.bar.get_labels()
-        self.console.animallist.update_list()
+        self.update_animals()
 
     def change_tracklet(self):
         if self.annotate_anyway:
@@ -1069,19 +1064,19 @@ class Viewer(QWidget):
 
     def load_animals(self, skeleton_file):
         if skeleton_file is not None:
-            try:
-                points_df, index_dict = read_skeleton(
-                    skeleton_file,
-                    self.settings["data_type"],
-                    self.settings["likelihood_cutoff"],
-                    self.settings["min_length_frames"],
-                )
-                animals = points_df.animals
-            except:
-                print(f"skeleton file {skeleton_file} is invalid or does not exist")
-                points_df = None
-                animals = [f"ind{i}" for i in range(self.settings["n_ind"])]
-                index_dict = defaultdict(lambda: None)
+            # try:
+            points_df, index_dict = read_skeleton(
+                skeleton_file,
+                self.settings["data_type"],
+                self.settings["likelihood_cutoff"],
+                self.settings["min_length_frames"],
+            )
+            animals = points_df.animals
+            # except:
+            #     print(f"skeleton file {skeleton_file} is invalid or does not exist")
+            #     points_df = None
+            #     animals = [f"ind{i}" for i in range(self.settings["n_ind"])]
+            #     index_dict = defaultdict(lambda: None)
         else:
             points_df = None
             animals = [f"ind{i}" for i in range(self.settings["n_ind"])]
@@ -1163,12 +1158,22 @@ class Viewer(QWidget):
         self.on_next()
 
     def next_video_f(self):
-        success = self.save()
+        if self.show_question(
+            message="Save the current annotation?", default="yes"
+        ):
+            success = self.save()
+        else:
+            success = True
         if success:
             self.next_video.emit()
 
     def prev_video_f(self):
-        success = self.save()
+        if self.show_question(
+                message="Save the current annotation?", default="yes"
+        ):
+            success = self.save()
+        else:
+            success = True
         if success:
             self.prev_video.emit()
 
@@ -1180,7 +1185,7 @@ class Viewer(QWidget):
                 self.sampler.compute()
                 self.set_assessment_al()
             elif self.show_question(
-                message="Move on to a different video?", default="yes"
+                message="Move on from this video?", default="yes"
             ):
                 self.next_video_f()
         else:
@@ -1208,10 +1213,16 @@ class Viewer(QWidget):
         self.canvas.set_al_point(al_point=self.cur_al_point)
         self.set_animal(animal)
 
+    def update_animals(self):
+        self.console.animallist.update_list(
+            self.current_animal_name(),
+            self.get_displayed_animals()
+        )
+
     def change_displayed_animals(self, ind_list):
         if set(self.displayed_animals) != set(ind_list):
             self.displayed_animals = ind_list
-            self.console.animallist.update_list()
+            self.update_animals()
             if self.current_animal_name() not in self.displayed_animals:
                 self.set_correct_animal(False)
                 if len(self.bar.grow_rects) > 0:
@@ -1441,6 +1452,14 @@ class Viewer(QWidget):
                 return False
         else:
             return False
+
+    def set_tracklet_al(self):
+        self.al_points = []
+        for ind in self.animals:
+            start, end = self.canvas.get_ind_start_end(ind)
+            if start is not None and end is not None:
+                self.al_points.append([start, end, ind])
+        self.canvas.al_points = self.al_points
 
     def set_cat_id(self, cat_id):
         self.canvas.set_cat_id(cat_id)

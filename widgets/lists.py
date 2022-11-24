@@ -6,6 +6,7 @@
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPixmap, QIcon, QKeySequence
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QAbstractItemView
+from collections import deque
 
 
 class List(QListWidget):
@@ -38,6 +39,7 @@ class List(QListWidget):
             QKeySequence(key)[0] for key in self.window.active_shortcuts()
         ]:
             self.window.on_shortcut(event.text().upper())
+            self.window.on_shortcut(event.text().upper())
         elif event.key() in self.animal_shortcuts:
             self.window.set_animal(int(event.text()))
         else:
@@ -46,16 +48,14 @@ class List(QListWidget):
 
 
 class AnimalList(List):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, current, visuals, *args, **kwargs):
         super(AnimalList, self).__init__(*args, **kwargs)
-        self.update_list()
+        self.update_list(current, visuals)
 
-    def update_list(self):
+    def update_list(self, current, visuals):
         self.clear()
-        current = self.window.current_animal_name()
-        visuals = self.window.get_displayed_animals()
         for i, (animal, color) in enumerate(visuals):
-            col = QColor(color)
+            col = QColor(*[x * 255 for x in color])
             pixmap = QPixmap(100, 100)
             pixmap.fill(col)
             item = QListWidgetItem(f"{animal} ({i})")
@@ -85,7 +85,7 @@ class CatList(List):
         inv = self.window.shortCutInv(key=cat_key)
         for cat in self.window.catDict[cat_key]:
             if self.window.catDict[cat_key][cat] not in self.window.invisible_actions:
-                col = self.window.bar.colors[cat % len(self.window.bar.colors)]
+                col = QColor(*self.window.bar.get_color(self.window.catDict[cat_key][cat]))
                 pixmap = QPixmap(100, 100)
                 pixmap.fill(col)
                 try:
@@ -108,7 +108,8 @@ class SegmentationList(List):
         with open("colors.txt") as f:
             colors = [
                 list(map(lambda x: float(x), line.split())) for line in f.readlines()
-            ]
+            ][::-1]
+
         for i, cat in enumerate(cats):
             if type(cat) is int:
                 cat = f"category {cat}"

@@ -33,6 +33,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
         skeleton_color,
         al_mode,
         al_animal,
+        length,
         correct_mode,
         data_2d=None,
         skeleton=None,
@@ -63,6 +64,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
         self.current = current
         self.display_skeleton = len(skeleton) > 0
         self.display_repr = data_2d is not None
+        self.length = length
 
         if self.video is not None:
             self.len = len(self.video)
@@ -104,7 +106,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
             self.boxes = boxes
             self.box_visuals = dict()
             for i in range(self.n_ind):
-                seq = np.array([box[i] for box in self.boxes])
+                seq = np.array([box[self.animals[i]] for box in self.boxes])
                 self.box_visuals[i] = BoxVisual(
                     self.font_size,
                     self.animals[i],
@@ -416,10 +418,15 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
         for key, vis in self.points.items():
             self.points[key].rainbow = not vis.rainbow
 
+    def get_ind_start_end(self, animal):
+        if self.points_df is None:
+            return 0, self.length
+        return self.points_df.get_start_end(animal)
+
 
 class VideoViewBox3D(vispy.scene.widgets.ViewBox):
     def __init__(
-        self, data_3d, parent, skeleton_size, skeleton, bodyparts, color_len=None
+        self, data_3d, parent, skeleton_size, skeleton, bodyparts, length, color_len=None
     ):
         super(VideoViewBox3D, self).__init__(parent=parent)
         self.unfreeze()
@@ -427,6 +434,7 @@ class VideoViewBox3D(vispy.scene.widgets.ViewBox):
         self.skeleton_size = skeleton_size
         self.color_len = color_len
         self.skeleton = []
+        self.length = length
         if bodyparts is not None:
             for a, b in skeleton:
                 if a in bodyparts and b in bodyparts:
@@ -473,3 +481,8 @@ class VideoViewBox3D(vispy.scene.widgets.ViewBox):
     def switch_skeleton(self):
         if len(self.skeleton) > 0:
             self.display_skeleton = not self.display_skeleton
+
+    def get_ind_start_end(self, animal):
+        return 0, self.length
+
+

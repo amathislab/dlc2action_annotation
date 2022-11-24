@@ -15,66 +15,58 @@ from PyQt5.QtWidgets import (
 )
 from widgets.dialog import Form
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import pyqtSignal
 from widgets.viewer import Viewer as Viewer
 from widgets.settings import SettingsWindow
+import cluster
 import click
 import os
 import pickle
-import shutil
-from ruamel.yaml import YAML
 
-from utils import read_settings, read_video
+from utils import get_settings, read_video, read_settings
 
 
 class MainWindow(QMainWindow):
+    closed = pyqtSignal()
+
     def __init__(
         self,
-        app,
         videos,
-        output_file,
-        labels,
-        multiview,
-        dev,
-        active_learning,
-        show_settings,
-        config_file,
+        output_file=None,
+        multiview=True,
+        dev=False,
+        active_learning=False,
+        show_settings=False,
+        config_file="config.yaml",
+        al_points_dictionary=None,
+        clustering_parameters=None,
+        skeleton_files=None,
+        annotation_files=None,
+        suggestion_files=None,
+        hard_negatives=None,
     ):
         super(MainWindow, self).__init__()
         self.toolbar = None
         self.menubar = None
         self.cur_video = 0
-        self.app = app
         self.output_file = output_file
-        if not os.path.exists(config_file):
-            shutil.copyfile("default_config.yaml", config_file)
-            show_settings = True
-        else:
-            with open(config_file) as f:
-                config = YAML().load(f)
-            with open("default_config.yaml") as f:
-                default_config = YAML().load(f)
-            to_remove = []
-            for key, value in default_config.items():
-                if key in config:
-                    to_remove.append(key)
-            for key in to_remove:
-                default_config.pop(key)
-            config.update(default_config)
-            with open(config_file, "w") as f:
-                YAML().dump(config, f)
+        self.clustering_parameters = clustering_parameters
+        self.settings = get_settings(config_file, show_settings)
+
         self.settings_file = config_file
-        if show_settings:
-            SettingsWindow(self.settings_file).exec_()
-        self.settings = read_settings(self.settings_file)
         self.sequential = False
-        self.labels = labels
         self.dev = dev
         self.multiview = multiview
         self.al_mode = self.settings["start_al"]
+        if skeleton_files is not None:
+            self.settings["skeleton_files"] = skeleton_files
         if active_learning:
             self.al_mode = True
-        self.al_points_file = self.settings["al_points_file"]
-
+        if al_points_dictionary is not None:
+            self.al_points_file = self.settings["al_points_file"]
+        else:
+            self.al_points_file = None
+        self.al_points_dict = al_points_dictionary
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
 
@@ -90,15 +82,33 @@ class MainWindow(QMainWindow):
                 self.videos = videos
                 if type(self.videos) is not list:
                     self.videos = list(self.videos)
+        if annotation_files is None:
+            annotation_files = [None for _ in self.videos]
+        self.annotation_files = annotation_files
+        if suggestion_files is None:
+            suggestion_files = [None for _ in self.videos]
+        self.suggestion_files = suggestion_files
         self.run_video(self.multiview)
+        if hard_negatives is not None:
+            self.settings["hard_negative_classes"] = hard_negatives
 
         self._createActions()
         self._createToolBar()
         self._createMenuBar()
 
+    def closeEvent(self, a0) -> None:
+        self.closed.emit()
+        super().closeEvent(a0)
+
     def next_video(self):
-        self.cur_video = (self.cur_video + 1) % len(self.videos)
-        self.run_viewer_single()
+        if self.clustering_parameters is not None and self.cur_video == len(self.videos) - 1:
+            self.close()
+            # window = cluster.MainWindow(*self.clustering_parameters)
+            # window.show()
+        else:
+            self.cur_video = (self.cur_video + 1) % len(self.videos)
+            self.settings = read_settings(self.settings_file)
+            self.run_viewer_single()
 
     def prev_video(self):
         self.cur_video = self.cur_video - 1
@@ -178,7 +188,16 @@ class MainWindow(QMainWindow):
 
     def run_viewer_single(self, current=0):
         stacks, shapes, lens, filename, filepath = self.read_video_stack(self.cur_video)
-        self.run_viewer(stacks, shapes, lens, [filename], [filepath], current)
+        self.run_viewer(
+            stacks,
+            shapes,
+            lens,
+            [filename],
+            [filepath],
+            self.annotation_files[self.cur_video],
+            self.suggestion_files[self.cur_video],
+            current,
+        )
 
     def run_viewer(
         self,
@@ -187,18 +206,24 @@ class MainWindow(QMainWindow):
         lens,
         filenames,
         filepaths,
+        annotation,
+        suggestion,
         current=0,
     ):
         al_points = self.get_al_points(filenames[0])
         if al_points is None:
             self.al_mode = False
+        if annotation is None:
+            annotation = self.annotation_files[0]
+        if annotation is None:
+            suggestion = self.suggestion_files[0]
         self.viewer = Viewer(
-            self.app,
             stacks,
             shapes,
             lens,
             None,
-            self.labels,
+            annotation,
+            suggestion,
             self.settings,
             self.sequential,
             filenames,
@@ -218,17 +243,18 @@ class MainWindow(QMainWindow):
             al_points = [[(107, 283, "ind6"), (222, 388, "ind14"), (226, 258, "ind16")]]
             return al_points[self.cur_video]
         else:
-            try:
+            sep = self.settings["prefix_separator"]
+            name = filename.split(".")[0]
+            if sep is not None:
+                name = sep.join(name.split(sep)[1:])
+            if self.al_points_file is not None:
                 with open(self.al_points_file, "rb") as f:
                     al_points = pickle.load(f)
-                    sep = self.settings["prefix_separator"]
-                    name = filename.split(".")[0]
-                    if sep is not None:
-                        name = sep.join(name.split(sep)[1:])
-                    al_points = al_points[name]
-                    return al_points
-            except:
+            elif self.al_points_dict is not None:
+                al_points = self.al_points_dict
+            else:
                 return None
+            return al_points.get(name)
 
     def load_data(self, type):
         update = False
@@ -261,13 +287,13 @@ class MainWindow(QMainWindow):
             if skeleton is not None:
                 settings_update["skeleton_files"] = skeleton
                 update = True
-        if type == "labels":
-            labels = QFileDialog.getOpenFileName(
-                self, "Open file", filter="Annotation files (*.h5 *.pickle)"
-            )[0]
-            if labels != "":
-                self.labels = labels
-                update = True
+        # if type == "labels":
+        #     labels = QFileDialog.getOpenFileName(
+        #         self, "Open file", filter="Annotation files (*.h5 *.pickle)"
+        #     )[0]
+        #     if labels != "":
+        #         self.labels = labels
+        #         update = True
         if update:
             self.viewer.save(verbose=False, ask=True)
             self.run_video(
@@ -386,6 +412,11 @@ class MainWindow(QMainWindow):
             "Find the intervals annotated with a specific label in the video"
         )
         labelAction.triggered.connect(self.set_label_al)
+        trackletAction = QAction("&Start tracklet navigation", self)
+        trackletAction.setStatusTip(
+            "Go through tracklets one by one"
+        )
+        trackletAction.triggered.connect(self.set_tracklet_al)
         exampleAction = QAction("&Export example clips", self)
         exampleAction.setStatusTip("Export example clips of the behaviors")
         exampleAction.triggered.connect(self.viewer.export_examples)
@@ -437,6 +468,7 @@ class MainWindow(QMainWindow):
         al.addAction(activeLearningAction)
         al.addAction(unlabeledAction)
         al.addAction(labelAction)
+        al.addAction(trackletAction)
         al.addAction(assAction)
         display = self.menubar.addMenu("Display")
         display.addAction(rainbowAction)
@@ -476,6 +508,11 @@ class MainWindow(QMainWindow):
 
     def set_unlabeled_al(self, event):
         self.viewer.set_unlabeled_al()
+        self.al_mode = True
+        self.viewer.change_al_mode(self.al_mode)
+
+    def set_tracklet_al(self, event):
+        self.viewer.set_tracklet_al()
         self.al_mode = True
         self.viewer.change_al_mode(self.al_mode)
 
@@ -532,20 +569,17 @@ def main(
     app = QApplication(sys.argv)
 
     window = MainWindow(
-        app,
-        video,
-        output,
-        labels,
-        multiview,
-        dev,
-        active_learning,
-        open_settings,
-        config_file,
+        videos=video,
+        output_file=output,
+        multiview=multiview,
+        dev=dev,
+        active_learning=active_learning,
+        show_settings=open_settings,
+        config_file=config_file,
     )
     window.show()
 
     app.exec_()
-
 
 if __name__ == "__main__":
     main()
