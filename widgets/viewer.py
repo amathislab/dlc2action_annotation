@@ -298,12 +298,9 @@ class Viewer(QWidget):
         self.status.emit(self.message)
 
     def change_al_mode(self, value):
-        print("changing")
-        print(f'{value=}, {self.al_points=}')
         if value and self.al_points is None:
             return
         self.canvas.change_al_mode(value)
-        print('success')
 
     def finish_setting(self, value):
         if not value:
@@ -671,7 +668,6 @@ class Viewer(QWidget):
         return self.canvas.current
 
     def loaded(self):
-        print(f'{self.al_mode=}')
         if self.al_mode:
             loaded = self.canvas.loaded[self.cur_al_point]
         else:
@@ -1437,16 +1433,13 @@ class Viewer(QWidget):
             0,
             False,
         )
-        print(f'{ok=}')
         if ok:
             self.al_points = []
             label_id = cat_labels.index(label)
             for ind_i, ind in enumerate(self.animals):
                 for start, end, _ in self.times[ind_i][label_id]:
                     self.al_points.append([start, end, ind])
-            print(f'{self.al_points=}')
             if len(self.al_points) > 0:
-                print('true')
                 self.canvas.al_points = self.al_points
                 return True
             else:
