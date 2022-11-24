@@ -166,7 +166,6 @@ def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
         )
         return arr
     elif backend == "pyav_fast":
-        print(f'{start=}, {end=}, {fs=}')
         with catch_warnings():
             filterwarnings("ignore", message="VideoStream.seek is deprecated")
             arr = np.stack([stack[i] for i in range(start, end, fs)])
