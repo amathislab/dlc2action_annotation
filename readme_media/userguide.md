@@ -6,20 +6,21 @@ run these commands in your terminal.
 conda activate AnnotationGUI
 python annotator.py
 ```
-The app will prompt you to open the video you are going to annotate and (optionally) a DLC output file or an existing annotation file. Note that you can open multiple videos. In that case you will be asked whether you want to open them sequentially or in multiview mode.
+The app will prompt you to open the video you are going to annotate. 
+It can be multiple videos and in that case you will be asked whether you want to open them sequentially or in multiview mode.
 
 Alternatively, you can set the video and/or the output paths in the 
 terminal. In that case the file dialogs will not open. 
 ```bash
-python annotator.py --video path/to/video1.mp4 --video path/to/video2.mkv --config_file path/to/config.yaml --labels_file path/to/annotation_file.pickle --multiview
+python annotator.py --video path/to/video1.mp4 --video path/to/video2.mkv --multiview
 ```
-You can also configure advanced settings in the config file (`config.yaml` by default). Among other things, you can use it to set:
-- the number of individuals if keypoint and annotation files are not available,
-- a suffix to automatically determine the output and the detection file paths from the video filename,
-- a default list of labels (if it is particularly long you can also opt to pick only the necessary labels from the saved list before each annotation).
-
-You can modify the config file through the settings window. It will open by default the first time you run the interface and you can always go 
+You can modify the GUI configuration through the settings window. It will open by default the first time you run the interface and you can always go 
 back by adding an `-s` / `--open_settings` option when you run the app or pressing 'Settings' in the menu bar when it's already open.
+
+The results of your work will be saved at `path/to/video1_annotation.pickle`. The `_annotation.pickle` 
+suffix is the default, you can change it in the settings window (at Files / Annotation suffix). If you 
+open a video that already has a corresponding annotation file in the same folder, that file will be loaded 
+automatically.
 
 After you start the app it might take up to a couple of minutes for the program to load if the video file is large.
 When it does you will be prompted to enter the labels you want to use.

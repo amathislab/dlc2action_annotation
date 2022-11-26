@@ -434,26 +434,7 @@ class Bar(QWidget):
                 self.times[cat] = [
                     x for x in self.times[cat] if not np.array_equal(x, element)
                 ]
-        # self.labels = labels
         self.nrows = int(np.max(np.sum(labels > 0, axis=0))) + 1
-        # print(f'{self.labels[np.sum(labels > 0, axis=0) == self.nrows]=}')
-
-    # def set_times_from_labels(self):
-    #     times = []
-    #     for i in range(self.labels.shape[0]):
-    #         l = copy(self.labels[i, :])
-    #         l = (l == 0.5).astype(int)
-    #         list_amb = [[*x, 1] for x in
-    #                     np.flatnonzero(np.diff(np.r_[0, l, 0]) != 0).reshape(-1, 2)]
-    #         l = copy(self.labels[i, :])
-    #         l = (l == 1).astype(int)
-    #         list_sure = [[*x, 0] for x in
-    #                     np.flatnonzero(np.diff(np.r_[0, l, 0]) != 0).reshape(-1, 2)]
-    #         l = (l == 0.1).astype(int)
-    #         list_suggested = [[*x, 0.5] for x in
-    #                      np.flatnonzero(np.diff(np.r_[0, l, 0]) != 0).reshape(-1, 2)]
-    #         times.append(np.array(list_amb + list_sure + list_suggested))
-    #     self.times = times
 
     def set_data_from_rects(self, final=False):
         self.times = [[] for i in range(self.window.ncat)]
