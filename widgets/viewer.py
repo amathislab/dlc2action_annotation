@@ -148,7 +148,7 @@ class Viewer(QWidget):
             elif self.settings["suffix"] is not None:
                 self.output_file = self.basename + self.settings["suffix"]
             else:
-                self.output_file = None
+                raise ValueError("Please set the annotation suffix in settings!")
         self.load_labels()
 
         data_2d = [None for _ in self.filenames]

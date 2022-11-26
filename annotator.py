@@ -32,7 +32,6 @@ class MainWindow(QMainWindow):
     def __init__(
         self,
         videos,
-        output_file=None,
         multiview=True,
         dev=False,
         active_learning=False,
@@ -49,7 +48,6 @@ class MainWindow(QMainWindow):
         self.toolbar = None
         self.menubar = None
         self.cur_video = 0
-        self.output_file = output_file
         self.clustering_parameters = clustering_parameters
         self.settings = get_settings(config_file, show_settings)
 
@@ -287,12 +285,12 @@ class MainWindow(QMainWindow):
             if skeleton is not None:
                 settings_update["skeleton_files"] = skeleton
                 update = True
-        # if type == "labels":
-        #     labels = QFileDialog.getOpenFileName(
+        # if type == "load_labels_file":
+        #     load_labels_file = QFileDialog.getOpenFileName(
         #         self, "Open file", filter="Annotation files (*.h5 *.pickle)"
         #     )[0]
-        #     if labels != "":
-        #         self.labels = labels
+        #     if load_labels_file != "":
+        #         self.load_labels_file = load_labels_file
         #         update = True
         if update:
             self.viewer.save(verbose=False, ask=True)
@@ -541,14 +539,6 @@ class MainWindow(QMainWindow):
     help="The video file to annotate (for more views repeat several times)",
 )
 @click.option(
-    "--output",
-    help="The path where the annotation output will be saved (in HDF5 format)",
-)
-@click.option(
-    "--labels",
-    help="The path to previous annotation results (in HDF5 or pickled format)",
-)
-@click.option(
     "--multiview",
     "-m",
     is_flag=True,
@@ -564,13 +554,12 @@ class MainWindow(QMainWindow):
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
 @click.option("--config_file", "-c", default="config.yaml", help="The config file path")
 def main(
-    video, output, labels, multiview, dev, active_learning, open_settings, config_file
+    video, multiview, dev, active_learning, open_settings, config_file
 ):
     app = QApplication(sys.argv)
 
     window = MainWindow(
         videos=video,
-        output_file=output,
         multiview=multiview,
         dev=dev,
         active_learning=active_learning,

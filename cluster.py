@@ -724,7 +724,6 @@ class MainWindow(QWidget):
             )
             self.label_dict = {0: "zero", 1: "one", 2: "two"}
             self.data = X
-            # self.labels = y
             self.labels = []
 
             videos = [f.split(".")[0] for f in self.filenames]
