@@ -4,6 +4,8 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import random
+from typing import Tuple
+
 from PyQt5.QtCore import QThread
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtWidgets import QWidget
@@ -279,7 +281,8 @@ def read_tracklets(filename, min_frames=0, verbose=True):
         data_p = pickle.load(f)
     header = data_p["header"]
     names = header.unique("bodyparts")
-    keys = sorted([key for key in data_p.keys() if key != "header"])
+    # TODO: Need support for unique_bodyparts
+    keys = sorted([key for key in data_p.keys() if isinstance(key, int)])
     coords = defaultdict(lambda: {})
     index_dict = defaultdict(lambda: [])
     animals = []
