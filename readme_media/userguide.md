@@ -47,7 +47,7 @@ with the colored keypoint markers.
 This bar zooms in on the frames closest to the one currently displayed. The thick gray line shows
 where you are at the moment. As soon as you start the annotation the labels will be displayed here. If an annotated clip is too short, the label will not
 be displayed on the bar. However, you can always see it in the status bar when you hover over an action.
-You can mark actions as ambiguous (eigher manually in the **Ambiguous** mode or during shortcut annotation, more on both opttions
+You can mark actions as ambiguous (eigher manually in the **Ambiguous** mode or during shortcut annotation, more on both options
 in the corresponding sections). In that case the actions will be transparent on the action bar (like jumping in this
 example).
 Also, clicking anywhere on the bar will take you to the corresponding frame.  
