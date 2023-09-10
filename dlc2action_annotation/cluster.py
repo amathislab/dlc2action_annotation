@@ -33,14 +33,14 @@ import pyqtgraph as pg
 import inspect
 import torch
 import os
-from utils import read_video, read_stack, read_skeleton, get_settings
-from widgets.viewbox import VideoViewBox
-from widgets.dialog import EpisodeSelector, EpisodeParamsSelector, SuggestionParamsSelector
-import annotator
+from dlc2action_annotation.utils import read_video, read_stack, read_skeleton, get_settings
+from dlc2action_annotation.widgets.viewbox import VideoViewBox
+from dlc2action_annotation.widgets.dialog import EpisodeSelector, EpisodeParamsSelector, SuggestionParamsSelector
+import dlc2action_annotation.annotator
 from collections import defaultdict
 from sklearn.ensemble import RandomForestClassifier
 from typing import Iterable
-from utils import get_color
+from dlc2action_annotation.utils import get_color
 from itertools import groupby
 
 

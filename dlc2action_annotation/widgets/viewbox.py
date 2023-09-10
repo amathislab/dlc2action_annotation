@@ -10,7 +10,7 @@ import numpy as np
 from collections import defaultdict
 import warnings
 from .visuals import BoxVisual, AnimalMarkers, Markers3d
-from utils import SignalEmitter
+from dlc2action_annotation.utils import SignalEmitter
 from matplotlib.pyplot import cm
 from copy import deepcopy
 

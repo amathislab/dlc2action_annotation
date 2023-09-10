@@ -18,7 +18,7 @@ from warnings import catch_warnings, filterwarnings
 import os
 import shutil
 from ruamel.yaml import YAML
-from widgets.settings import SettingsWindow
+from dlc2action_annotation.widgets.settings import SettingsWindow
 import string
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
@@ -310,12 +310,12 @@ def read_settings(settings_file):
 
 def get_settings(config_file, show_settings):
     if not os.path.exists(config_file):
-        shutil.copyfile("default_config.yaml", config_file)
+        shutil.copyfile("dlc2action_annotation/default_config.yaml", config_file)
         show_settings = True
     else:
         with open(config_file) as f:
             config = YAML().load(f)
-        with open("default_config.yaml") as f:
+        with open("dlc2action_annotation/default_config.yaml") as f:
             default_config = YAML().load(f)
         to_remove = []
         for key, value in default_config.items():

@@ -11,7 +11,7 @@ import math
 from PyQt5.QtWidgets import QWidget
 from collections import defaultdict
 from copy import copy
-from utils import get_color
+from dlc2action_annotation.utils import get_color
 
 
 class ActionRect:

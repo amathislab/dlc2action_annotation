@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap, QColor, QFont, QIntValidator
 from PyQt5.QtCore import Qt, pyqtSignal
 from collections import defaultdict
-from utils import get_color
+from dlc2action_annotation.utils import get_color
 import pickle
 
 

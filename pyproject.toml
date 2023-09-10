@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dlc2action_annotation"
+version = "0.0.1"
+requires-python = ">=3.8"
+dependencies = [
+    "click",
+    "dask",
+    "pandas",
+    "numpy",
+    "PyYaml",
+    "pycocotools",
+    "scikit-image",
+    "pyqtgraph",
+    "scikit-learn",
+    "ruamel.yaml",
+    "vispy",
+    "PIMS",
+    "ttf_opensans",
+    "tqdm",
+    "msgpack",
+    "qtwidgets",
+    "opencv-python",
+    "torch",
+    "statsmodels",
+]
+
+[project.scripts]
+annotator = "dlc2action_annotation.annotator:main"
+
+
+[tool.setuptools.packages]
+find = {}

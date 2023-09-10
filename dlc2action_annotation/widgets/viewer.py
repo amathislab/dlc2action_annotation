@@ -38,7 +38,7 @@ from .console import Console
 from .progressbar import ProgressBar
 from .canvas import VideoCanvas
 from .viewbox import VideoViewBox
-from utils import BoxLoader, read_skeleton, Segmentation, get_2d_files
+from dlc2action_annotation.utils import BoxLoader, read_skeleton, Segmentation, get_2d_files
 
 
 class Viewer(QWidget):

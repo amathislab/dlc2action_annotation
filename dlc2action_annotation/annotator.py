@@ -13,17 +13,17 @@ from PyQt5.QtWidgets import (
     QActionGroup,
     QMessageBox,
 )
-from widgets.dialog import Form
+from dlc2action_annotation.widgets.dialog import Form
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal
-from widgets.viewer import Viewer as Viewer
-from widgets.settings import SettingsWindow
-import cluster
+from dlc2action_annotation.widgets.viewer import Viewer as Viewer
+from dlc2action_annotation.widgets.settings import SettingsWindow
+import dlc2action_annotation.cluster
 import click
 import os
 import pickle
 
-from utils import get_settings, read_video, read_settings
+from dlc2action_annotation.utils import get_settings, read_video, read_settings
 
 
 class MainWindow(QMainWindow):
