@@ -159,6 +159,8 @@ class CategoryInputWidget(QWidget):
             for line in self.lines
             if line[0].text() != "" and line[1].text() != ""
         }
+    
+    
 
 
 class SettingsWindow(QDialog):
