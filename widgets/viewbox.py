@@ -3,16 +3,16 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-import pandas as pd
+import warnings
+from collections import defaultdict
+
+import numpy as np
 import vispy
 from vispy.scene import SceneCanvas
-import numpy as np
-from collections import defaultdict
-import warnings
-from .visuals import BoxVisual, AnimalMarkers, Markers3d
+
 from utils import SignalEmitter
-from matplotlib.pyplot import cm
-from copy import deepcopy
+
+from .visuals import AnimalMarkers, BoxVisual, Markers3d
 
 
 class VideoViewBox(vispy.scene.widgets.ViewBox):
@@ -426,7 +426,14 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
 
 class VideoViewBox3D(vispy.scene.widgets.ViewBox):
     def __init__(
-        self, data_3d, parent, skeleton_size, skeleton, bodyparts, length, color_len=None
+        self,
+        data_3d,
+        parent,
+        skeleton_size,
+        skeleton,
+        bodyparts,
+        length,
+        color_len=None,
     ):
         super(VideoViewBox3D, self).__init__(parent=parent)
         self.unfreeze()
@@ -484,5 +491,3 @@ class VideoViewBox3D(vispy.scene.widgets.ViewBox):
 
     def get_ind_start_end(self, animal):
         return 0, self.length
-
-

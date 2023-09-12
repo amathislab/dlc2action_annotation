@@ -5,19 +5,17 @@
 #
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QVBoxLayout,
-    QLabel,
+    QCheckBox,
     QFormLayout,
+    QHBoxLayout,
+    QLabel,
     QPushButton,
     QSlider,
-    QCheckBox,
-    QListWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QSize
-from .lists import AnimalList, CatList, SegmentationList, List
+
+from .lists import AnimalList, CatList, SegmentationList
 
 
 class Console(QWidget):
@@ -44,7 +42,7 @@ class Console(QWidget):
         self.animallist = AnimalList(
             window=self.window,
             current=self.window.current_animal_name(),
-            visuals=self.window.get_displayed_animals()
+            visuals=self.window.get_displayed_animals(),
         )
         self.animallist.itemClicked.connect(self.window.set_animal)
         self.seglist = SegmentationList(
