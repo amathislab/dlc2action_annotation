@@ -3,27 +3,27 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QStatusBar,
-    QFileDialog,
-    QAction,
-    QActionGroup,
-    QMessageBox,
-)
-from widgets.dialog import Form
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal
-from widgets.viewer import Viewer as Viewer
-from widgets.settings import SettingsWindow
-import cluster
-import click
 import os
 import pickle
+import sys
 
-from utils import get_settings, read_video, read_settings
+import click
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
+    QAction,
+    QActionGroup,
+    QApplication,
+    QFileDialog,
+    QMainWindow,
+    QMessageBox,
+    QStatusBar,
+)
+
+from utils import get_settings, read_settings, read_video
+from widgets.dialog import Form
+from widgets.settings import SettingsWindow
+from widgets.viewer import Viewer as Viewer
 
 
 class MainWindow(QMainWindow):
@@ -99,7 +99,10 @@ class MainWindow(QMainWindow):
         super().closeEvent(a0)
 
     def next_video(self):
-        if self.clustering_parameters is not None and self.cur_video == len(self.videos) - 1:
+        if (
+            self.clustering_parameters is not None
+            and self.cur_video == len(self.videos) - 1
+        ):
             self.close()
             # window = cluster.MainWindow(*self.clustering_parameters)
             # window.show()
@@ -411,9 +414,7 @@ class MainWindow(QMainWindow):
         )
         labelAction.triggered.connect(self.set_label_al)
         trackletAction = QAction("&Start tracklet navigation", self)
-        trackletAction.setStatusTip(
-            "Go through tracklets one by one"
-        )
+        trackletAction.setStatusTip("Go through tracklets one by one")
         trackletAction.triggered.connect(self.set_tracklet_al)
         exampleAction = QAction("&Export example clips", self)
         exampleAction.setStatusTip("Export example clips of the behaviors")
@@ -553,9 +554,7 @@ class MainWindow(QMainWindow):
 @click.option("--active_learning", "-a", is_flag=True, help="Active learning mode")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
 @click.option("--config_file", "-c", default="config.yaml", help="The config file path")
-def main(
-    video, multiview, dev, active_learning, open_settings, config_file
-):
+def main(video, multiview, dev, active_learning, open_settings, config_file):
     app = QApplication(sys.argv)
 
     window = MainWindow(
@@ -569,6 +568,7 @@ def main(
     window.show()
 
     app.exec_()
+
 
 if __name__ == "__main__":
     main()

@@ -3,48 +3,51 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-from sklearn import datasets, decomposition, manifold
-import copy
+import inspect
+import os
+import pickle
+import sys
+from collections import defaultdict
+from itertools import groupby
+from typing import Iterable
+
+import click
+import numpy as np
+import pyqtgraph as pg
+import torch
+from PyQt5.Qt import Qt, pyqtSignal
+from PyQt5.QtCore import QPoint, QPointF, QRectF, QSize, QTimer
+from PyQt5.QtGui import QBrush, QColor, QPen
 from PyQt5.QtWidgets import (
     QApplication,
-    QWidget,
-    QHBoxLayout,
-    QVBoxLayout,
-    QPushButton,
-    QLabel,
-    QRadioButton,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
     QFormLayout,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
-    QComboBox,
+    QPushButton,
+    QRadioButton,
     QStackedLayout,
-    QCheckBox,
-    QFileDialog,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt5.QtCore import QTimer, QSize, QRectF, QPoint, QPointF
-from PyQt5.QtGui import QBrush, QColor, QPen
-from PyQt5.Qt import Qt, pyqtSignal
+from sklearn import datasets, decomposition, manifold
 from vispy.scene import SceneCanvas
-import numpy as np
-import sys
-import click
-import pickle
-import pyqtgraph as pg
-import inspect
-import torch
-import os
-from utils import read_video, read_stack, read_skeleton, get_settings
-from widgets.viewbox import VideoViewBox
-from widgets.dialog import EpisodeSelector, EpisodeParamsSelector, SuggestionParamsSelector
+
 import annotator
-from collections import defaultdict
-from sklearn.ensemble import RandomForestClassifier
-from typing import Iterable
-from utils import get_color
-from itertools import groupby
+from utils import get_color, get_settings, read_skeleton, read_stack, read_video
+from widgets.dialog import (
+    EpisodeParamsSelector,
+    EpisodeSelector,
+    SuggestionParamsSelector,
+)
+from widgets.viewbox import VideoViewBox
 
 
-class Annotation():
+class Annotation:
     def __init__(self, filename):
         self.inds = None
         self.cats = None
@@ -93,12 +96,11 @@ class Annotation():
                         arr[ind_i * length + start, ind_i * length + end, cat_i] = 1
         return arr, cats
 
-
     @staticmethod
     def get_filename(filepaths, filenames, video_id, suffix):
         for fn, fp in zip(filenames, filepaths):
-            if fn.split('.')[0] == video_id:
-                return os.path.join(fp, video_id + suffix + '.pickle')
+            if fn.split(".")[0] == video_id:
+                return os.path.join(fp, video_id + suffix + ".pickle")
 
     def unannotated(self):
         if self.data is None:
@@ -124,14 +126,14 @@ class Annotation():
         for cat, cat_list in zip(self.cats, self.data[self.inds.index(ind)]):
             for s, e, _ in cat_list:
                 if s < end and e > start:
-                    cats[cat] += (min(e, end) - max(s, start))
+                    cats[cat] += min(e, end) - max(s, start)
         total_annotated = sum(cats.values())
         if total_annotated == 0:
             return "unknown"
         result = set()
         for cat, ann in cats.items():
             if ann >= (end - start) * 0.1:
-                if cat.startswith('negative'):
+                if cat.startswith("negative"):
                     result.add("no behavior")
                 else:
                     result.add(cat)
@@ -481,11 +483,12 @@ class Console(QWidget):
 
 
 class MainWindow(QWidget):
-
     switch = pyqtSignal()
     status = pyqtSignal(str)
 
-    def __init__(self, filenames,
+    def __init__(
+        self,
+        filenames,
         filepaths,
         open_settings,
         config_file,
@@ -498,8 +501,8 @@ class MainWindow(QWidget):
         dlc2action_path,
         skip_dlc2action,
         *args,
-        **kwargs
-        ):
+        **kwargs,
+    ):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         if annotation_folder is None:
@@ -518,14 +521,16 @@ class MainWindow(QWidget):
             os.mkdir(annotation_folder)
         for fn, fp in zip(self.filenames, self.filepaths):
             ann_folder = annotation_folder if annotation_folder is not None else fp
-            ann_path = os.path.join(ann_folder, fn.split('.')[0] + self.settings["suffix"])
+            ann_path = os.path.join(
+                ann_folder, fn.split(".")[0] + self.settings["suffix"]
+            )
             self.annotation_files.append(ann_path)
         self.skeleton_files = []
         for fn, fp in zip(self.filenames, self.filepaths):
             sk_folder = skeleton_folder if skeleton_folder is not None else fp
             sk_path = None
             for s in self.settings["DLC_suffix"]:
-                path = os.path.join(sk_folder, fn.split('.')[0] + s)
+                path = os.path.join(sk_folder, fn.split(".")[0] + s)
                 if os.path.exists(path):
                     sk_path = path
                     break
@@ -598,11 +603,14 @@ class MainWindow(QWidget):
             self.dlc2action_name = None
             return
         from dlc2action.project import Project
+
         if self.dlc2action_name is None:
             i = 0
-            while not Project.project_name_available(self.dlc2action_path, f'cluster_project_{i}'):
+            while not Project.project_name_available(
+                self.dlc2action_path, f"cluster_project_{i}"
+            ):
                 i += 1
-            self.dlc2action_name = f'cluster_project_{i}'
+            self.dlc2action_name = f"cluster_project_{i}"
         project = Project(
             self.dlc2action_name,
             data_type="features",
@@ -625,7 +633,7 @@ class MainWindow(QWidget):
                     "metric_functions": {"f1"},
                     "only_load_annotated": True,
                     "len_segment": 128,
-                    "overlap": 1/2,
+                    "overlap": 1 / 2,
                     "model_name": "mlp",
                     "exclusive": False,
                 },
@@ -647,7 +655,9 @@ class MainWindow(QWidget):
     def load_animals(self, skeleton_file):
         if skeleton_file is not None:
             try:
-                points_df, _ = read_skeleton(skeleton_file, data_type=self.settings["data_type"])
+                points_df, _ = read_skeleton(
+                    skeleton_file, data_type=self.settings["data_type"]
+                )
             except:
                 print("skeleton file is invalid or does not exist")
                 points_df = None
@@ -660,7 +670,12 @@ class MainWindow(QWidget):
         return points_df
 
     def load_files(self):
-        self.loading_dict = {fn.split('.')[0]: (fp, fn, skeleton) for fp, fn, skeleton in zip(self.filepaths, self.filenames, self.skeleton_files)}
+        self.loading_dict = {
+            fn.split(".")[0]: (fp, fn, skeleton)
+            for fp, fn, skeleton in zip(
+                self.filepaths, self.filenames, self.skeleton_files
+            )
+        }
         self.points_df_dict = {}
         self.stacks = {}
         self.shapes = {}
@@ -729,15 +744,19 @@ class MainWindow(QWidget):
             videos = [f.split(".")[0] for f in self.filenames]
             videos_rand = [videos[random.randint(0, len(videos) - 1)] for _ in range(n)]
             start_frames = list(range(0, 1000, 50))
-            self.frames = [(v, start_frames[i % len(start_frames)], start_frames[i % len(start_frames)] + 50, "ind0")
-                           for i, v in enumerate(videos_rand)]
+            self.frames = [
+                (
+                    v,
+                    start_frames[i % len(start_frames)],
+                    start_frames[i % len(start_frames)] + 50,
+                    "ind0",
+                )
+                for i, v in enumerate(videos_rand)
+            ]
             for video in videos:
                 annotation = Annotation(
                     Annotation.get_filename(
-                        self.filepaths,
-                        self.filenames,
-                        video,
-                        self.settings["suffix"]
+                        self.filepaths, self.filenames, video, self.settings["suffix"]
                     )
                 )
                 for v, s, e, clip in self.frames:
@@ -750,8 +769,16 @@ class MainWindow(QWidget):
             inv_dict = {x: i for i, x in enumerate(labels)}
             self.labels = [inv_dict[x] for x in self.labels]
         else:
-            self.filenames = [x for i, x in enumerate(self.filenames) if self.feature_files[i] is not None]
-            self.filepaths = [x for i, x in enumerate(self.filepaths) if self.feature_files[i] is not None]
+            self.filenames = [
+                x
+                for i, x in enumerate(self.filenames)
+                if self.feature_files[i] is not None
+            ]
+            self.filepaths = [
+                x
+                for i, x in enumerate(self.filepaths)
+                if self.feature_files[i] is not None
+            ]
             self.feature_files = [x for x in self.feature_files if x is not None]
             self.frames = []
             self.data = []
@@ -774,13 +801,22 @@ class MainWindow(QWidget):
                     # print(f'{clip_arr.shape=}')
                     n = clip_arr.shape[0]
                     if n != 2048:
-                    # if not ((n & (n-1) == 0) and n != 0):
+                        # if not ((n & (n-1) == 0) and n != 0):
                         clip_arr = clip_arr.T
                     for s in range(0, clip_arr.shape[-1], frames_step):
                         end = min(clip_arr.shape[-1], s + frames_step)
-                        main_labels = annotation.main_labels(s + min_frames[clip], end + min_frames[clip], clip)
-                        self.frames.append((video.split('.')[0], s + min_frames[clip], end + min_frames[clip], clip))
-                        self.data.append(clip_arr[:, s: end].mean(-1))
+                        main_labels = annotation.main_labels(
+                            s + min_frames[clip], end + min_frames[clip], clip
+                        )
+                        self.frames.append(
+                            (
+                                video.split(".")[0],
+                                s + min_frames[clip],
+                                end + min_frames[clip],
+                                clip,
+                            )
+                        )
+                        self.data.append(clip_arr[:, s:end].mean(-1))
                         self.labels.append(main_labels)
             labels = sorted(list(set(self.labels)))
             self.label_dict = {i: x for i, x in enumerate(labels)}
@@ -842,7 +878,7 @@ class MainWindow(QWidget):
             return QPen(Qt.blue, 0.3)
         else:
             if n in self.visited:
-                col = pg.mkColor(121,92,178)
+                col = pg.mkColor(121, 92, 178)
                 return QPen(col, 0.2)
             else:
                 return QPen(Qt.gray, 0.2)
@@ -921,7 +957,6 @@ class MainWindow(QWidget):
         self.console.save_button.setDisabled(len(self.chosen) == 0)
         self.console.open_button.setDisabled(len(self.chosen) == 0)
 
-
     def set_select_mode(self):
         self.select_mode = True
         self.graph.select_mode = True
@@ -948,11 +983,13 @@ class MainWindow(QWidget):
                 al_points += [[id, *x] for x in intervals]
         self.open_intervals(intervals=al_points)
 
-    def open_intervals(self, intervals=None, suggestions_folder=None, sort_intervals=False):
+    def open_intervals(
+        self, intervals=None, suggestions_folder=None, sort_intervals=False
+    ):
         self.hide()
         self.data = None
         if intervals is None or not isinstance(intervals, Iterable):
-            intervals = np.array(self.frames)[self.chosen] # (video, start, end, clip)
+            intervals = np.array(self.frames)[self.chosen]  # (video, start, end, clip)
         al_dict = None
         suggestion_files = None
         if al_dict is None:
@@ -974,27 +1011,37 @@ class MainWindow(QWidget):
             suggestion_files = []
             files = os.listdir(suggestions_folder)
             for fn in self.filenames:
-                video_id = fn.split('.')[0]
+                video_id = fn.split(".")[0]
                 if video_id not in al_dict:
                     continue
                 for file in files:
                     if file.startswith(video_id):
                         suggestion_files.append(os.path.join(suggestions_folder, file))
-        print(f'{al_dict=}')
-        videos = [os.path.join(fp, fn) for fp, fn in zip(self.filepaths, self.filenames) if fn.split(".")[0] in al_dict]
-        annotation_files = [ann for ann, fn in zip(self.annotation_files, self.filenames) if fn.split(".")[0] in al_dict]
+        print(f"{al_dict=}")
+        videos = [
+            os.path.join(fp, fn)
+            for fp, fn in zip(self.filepaths, self.filenames)
+            if fn.split(".")[0] in al_dict
+        ]
+        annotation_files = [
+            ann
+            for ann, fn in zip(self.annotation_files, self.filenames)
+            if fn.split(".")[0] in al_dict
+        ]
         if sort_intervals:
             if suggestion_files is not None:
                 iterator = zip(videos, suggestion_files)
             else:
                 iterator = zip(videos, annotation_files)
             for file, ann in iterator:
-                video = os.path.basename(file).split('.')[0]
+                video = os.path.basename(file).split(".")[0]
                 if video in al_dict:
                     labels_dict = defaultdict(lambda: [])
                     annotation = Annotation(ann)
                     for start, end, clip in al_dict[video]:
-                        labels_dict[annotation.main_labels(start, end, clip)].append([start, end, clip])
+                        labels_dict[annotation.main_labels(start, end, clip)].append(
+                            [start, end, clip]
+                        )
                     al_dict[video] = []
                     for label in sorted(labels_dict.keys()):
                         al_dict[video] += labels_dict[label]
@@ -1015,6 +1062,7 @@ class MainWindow(QWidget):
 
     def open_dlc2action_project(self):
         from dlc2action.project import Project
+
         return Project(name=self.dlc2action_name, projects_path=self.dlc2action_path)
 
     def get_behaviors(self):
@@ -1024,20 +1072,25 @@ class MainWindow(QWidget):
                 continue
             with open(os.path.join(self.annotation_folder, file), "rb") as f:
                 data = pickle.load(f)
-            file_behaviors = [x for i, x in enumerate(data[1]) if any([len(y[i]) > 0 for y in data[3]])]
-            file_behaviors = [x for x in file_behaviors if not x.startswith("negative") and not x.startswith("unknown")]
+            file_behaviors = [
+                x
+                for i, x in enumerate(data[1])
+                if any([len(y[i]) > 0 for y in data[3]])
+            ]
+            file_behaviors = [
+                x
+                for x in file_behaviors
+                if not x.startswith("negative") and not x.startswith("unknown")
+            ]
             behaviors.update(file_behaviors)
         return sorted(behaviors)
 
     def get_episode(self, behaviors):
         episode_name = EpisodeSelector(self.open_dlc2action_project()).exec_()
         if episode_name is None:
-            (
-                episode_name,
-                load_episode,
-                num_epochs,
-                behaviors
-            ) = EpisodeParamsSelector(self.open_dlc2action_project(), behaviors).exec_()
+            (episode_name, load_episode, num_epochs, behaviors) = EpisodeParamsSelector(
+                self.open_dlc2action_project(), behaviors
+            ).exec_()
             project = self.open_dlc2action_project()
             project.run_episode(
                 episode_name,
@@ -1045,7 +1098,7 @@ class MainWindow(QWidget):
                 force=True,
                 parameters_update={
                     "data": {"behaviors": behaviors},
-                    "training": {"num_epochs": num_epochs}
+                    "training": {"num_epochs": num_epochs},
                 },
             )
         return episode_name
@@ -1055,12 +1108,18 @@ class MainWindow(QWidget):
         del self.data
         behaviors = self.get_behaviors()
         episode_name = self.get_episode(behaviors)
-        behaviors = list(self.open_dlc2action_project().get_behavior_dictionary(episode_name).values())
+        behaviors = list(
+            self.open_dlc2action_project()
+            .get_behavior_dictionary(episode_name)
+            .values()
+        )
         suggestion_name, suggestion_params = SuggestionParamsSelector(behaviors).exec_()
         self.run_suggestion(suggestion_name, episode_name, suggestion_params)
 
     def open_suggestions(self):
-        suggestion_name = EpisodeSelector(suggestions=True, project=self.open_dlc2action_project()).exec_()
+        suggestion_name = EpisodeSelector(
+            suggestions=True, project=self.open_dlc2action_project()
+        ).exec_()
         self.browse_suggestions(suggestion_name)
 
     def run_suggestion(self, suggestion_name, episode_name, suggestion_params):
@@ -1070,7 +1129,7 @@ class MainWindow(QWidget):
             suggestion_episodes=[episode_name],
             parameters_update={
                 "general": {"only_load_annotated": False},
-                "data": {"filter_annotated": False}
+                "data": {"filter_annotated": False},
             },
             force=True,
             delete_dataset=True,
@@ -1082,13 +1141,15 @@ class MainWindow(QWidget):
 
     def browse_suggestions(self, suggestion_name: str):
         project = self.open_dlc2action_project()
-        suggestions_path = os.path.join(project.project_path, "results", "suggestions", suggestion_name)
+        suggestions_path = os.path.join(
+            project.project_path, "results", "suggestions", suggestion_name
+        )
         self.open_intervals(suggestions_folder=suggestions_path, sort_intervals=True)
 
 
 def get_file(folder, filename, suffix, filepath):
     res = None
-    id = filename.split('.')[0]
+    id = filename.split(".")[0]
     if folder is None:
         folder = filepath
     if suffix is not None:
@@ -1096,6 +1157,7 @@ def get_file(folder, filename, suffix, filepath):
         if os.path.exists(feature_path):
             res = feature_path
     return res
+
 
 @click.option(
     "--video",
@@ -1108,49 +1170,42 @@ def get_file(folder, filename, suffix, filepath):
 @click.option(
     "--feature_folder",
 )
-@click.option(
-    "--feature_suffix"
-)
-@click.option(
-    "--annotation_folder"
-)
-@click.option(
-    "--skeleton_folder"
-)
-@click.option(
-    "--dlc2action_name"
-)
+@click.option("--feature_suffix")
+@click.option("--annotation_folder")
+@click.option("--skeleton_folder")
+@click.option("--dlc2action_name")
 @click.option(
     "--skip_dlc2action",
     is_flag=True,
 )
-@click.option(
-    "--dlc2action_path"
-)
+@click.option("--dlc2action_path")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
 @click.option("--config_file", "-c", default="config.yaml", help="The config file path")
 @click.command()
 def main(
-        video,
-        video_folder,
-        open_settings,
-        config_file,
-        feature_folder,
-        feature_suffix,
-        annotation_folder,
-        skeleton_folder,
-        dlc2action_name,
-        skip_dlc2action,
-        dlc2action_path
+    video,
+    video_folder,
+    open_settings,
+    config_file,
+    feature_folder,
+    feature_suffix,
+    annotation_folder,
+    skeleton_folder,
+    dlc2action_name,
+    skip_dlc2action,
+    dlc2action_path,
 ):
-
     app = QApplication(sys.argv)
     filenames = []
     filepaths = []
     features = []
     video = list(video)
     if video_folder is not None:
-        video += [os.path.join(video_folder, x) for x in os.listdir(video_folder) if x.split('.')[-1] in ["mp4", "mkv", "mov", "avi"]]
+        video += [
+            os.path.join(video_folder, x)
+            for x in os.listdir(video_folder)
+            if x.split(".")[-1] in ["mp4", "mkv", "mov", "avi"]
+        ]
     for f in video:
         filepath, filename = os.path.split(f)
         filepaths.append(filepath)
@@ -1175,7 +1230,6 @@ def main(
     )
     window.show()
     app.exec_()
-
 
 
 if __name__ == "__main__":
