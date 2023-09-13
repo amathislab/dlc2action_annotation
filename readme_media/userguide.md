@@ -30,7 +30,8 @@ will save backups every 2 hours (120 minutes) in the `/path/to/backups` folder.
 The results of your work will be saved at `path/to/video1_annotation.pickle`. The `_annotation.pickle` 
 suffix is the default, you can change it in the settings window (at Files / Annotation suffix). If you 
 open a video that already has a corresponding annotation file in the same folder, that file will be loaded 
-automatically.
+automatically. A human-readable version of the annotations will also be saved in CSV 
+format (with the same suffix, and `.csv` extension).
 
 After you start the app it might take up to a couple of minutes for the program to load if the video file is large.
 When it does you will be prompted to enter the labels you want to use.
