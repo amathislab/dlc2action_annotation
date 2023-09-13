@@ -17,6 +17,16 @@ python annotator.py --video path/to/video1.mp4 --video path/to/video2.mkv --mult
 You can modify the GUI configuration through the settings window. It will open by default the first time you run the interface and you can always go 
 back by adding an `-s` / `--open_settings` option when you run the app or pressing 'Settings' in the menu bar when it's already open.
 
+Backups for your annotated data are automatically created every **30 minutes** in a folder 
+located next to your first video: `path/to/video1_backups`. You can change the directory
+where backups are saved for your project, and the interval at which they are saved. 
+Running
+```bash
+python annotator.py --backup-dir /path/to/backups --backup-interval 120
+```
+will save backups every 2 hours (120 minutes) in the `/path/to/backups` folder.
+
+
 The results of your work will be saved at `path/to/video1_annotation.pickle`. The `_annotation.pickle` 
 suffix is the default, you can change it in the settings window (at Files / Annotation suffix). If you 
 open a video that already has a corresponding annotation file in the same folder, that file will be loaded 

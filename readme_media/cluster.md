@@ -30,7 +30,7 @@ In that window you can also see the label assigned to the clip and a colored fra
 instead of the dot on the clustering plot **4**. When you click on another dot, by default this clip will close and another will open but you can change 
 this behavior at **5** and open multiple clips in parallel. The plot is interactive. You can zoom in and out and move around with your mouse. 
 Alternatively, you can use the mouse to make a selection of the clips and save the selected indices in a pickled file. Hold Shift to add to your selection
-and click anywhere on the plot to cancel it.
+and click anywhere on the plot to stop it.
 
 ![](select.gif)
 
