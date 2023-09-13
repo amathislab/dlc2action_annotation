@@ -11,6 +11,7 @@ import csv
 import pickle
 from pathlib import Path
 
+import numpy
 import numpy as np
 
 
@@ -34,10 +35,9 @@ def form_annotations_csv(
     annotation_data = []
     for animal_idx, animal in enumerate(animals):
         for cat_idx, category_label in enumerate(cat_labels):
-            cat_times = times[animal_idx][cat_idx].tolist()
-            for time in cat_times:
+            for time in times[animal_idx][cat_idx]:
                 annotation_data.append(
-                    (animal, category_label, time[0], time[1])
+                    (animal, category_label, int(time[0]), int(time[1]))
                 )
 
     return annotation_data
