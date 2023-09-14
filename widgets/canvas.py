@@ -5,7 +5,9 @@
 #
 from PyQt5.QtCore import QTimer
 from vispy.scene import SceneCanvas
-from utils import WorkerThread, read_stack, SignalEmitter, get_2d_files
+
+from utils import SignalEmitter, WorkerThread, read_stack
+
 from .viewbox import VideoViewBox, VideoViewBox3D
 
 

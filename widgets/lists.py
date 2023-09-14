@@ -4,9 +4,8 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 from PyQt5.Qt import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QPixmap, QIcon, QKeySequence
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QAbstractItemView
-from collections import deque
+from PyQt5.QtGui import QColor, QIcon, QKeySequence, QPixmap
+from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem
 
 
 class List(QListWidget):
@@ -85,7 +84,9 @@ class CatList(List):
         inv = self.window.shortCutInv(key=cat_key)
         for cat in self.window.catDict[cat_key]:
             if self.window.catDict[cat_key][cat] not in self.window.invisible_actions:
-                col = QColor(*self.window.bar.get_color(self.window.catDict[cat_key][cat]))
+                col = QColor(
+                    *self.window.bar.get_color(self.window.catDict[cat_key][cat])
+                )
                 pixmap = QPixmap(100, 100)
                 pixmap.fill(col)
                 try:

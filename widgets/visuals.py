@@ -3,11 +3,11 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-import vispy
-from vispy.scene import SceneCanvas
-from ttf_opensans import opensans
-from matplotlib.pyplot import cm
 import numpy as np
+import vispy
+from matplotlib.pyplot import cm
+from ttf_opensans import opensans
+from vispy.scene import SceneCanvas
 
 
 class BoxVisual:

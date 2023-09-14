@@ -3,46 +3,50 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.Qt import pyqtSignal
-from PyQt5.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QVBoxLayout,
-    QMessageBox,
-    QFileDialog,
-    QInputDialog,
-)
-from PyQt5.QtGui import QFontMetrics
-
-from datetime import datetime
-import numpy as np
-from random import sample as smp
 import os
-from collections import defaultdict, deque
 import pickle
+import warnings
+from collections import defaultdict
 from copy import copy, deepcopy
-from PIL import Image
-import pandas as pd
+from datetime import datetime
+from pathlib import Path
+from random import sample as smp
+from typing import Tuple
 
+import numpy as np
+import pandas as pd
+from PIL import Image
+from PyQt5.Qt import pyqtSignal
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QFontMetrics
+from PyQt5.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QInputDialog,
+    QMessageBox,
+    QVBoxLayout,
+    QWidget,
+)
+
+from utils import BoxLoader, Segmentation, get_2d_files, read_skeleton
+
+from .actionbar import Bar
+from .canvas import VideoCanvas
+from .console import Console
+from .core.annotations import save_annotations
 from .dialog import (
+    AssessmentDialog,
     CatDialog,
-    LoadDialog,
     ChoiceDialog,
     ChoiceDialogExample,
-    AssessmentDialog,
+    LoadDialog,
 )
-from .sampler import Sampler
-from .actionbar import Bar
-from .console import Console
 from .progressbar import ProgressBar
-from .canvas import VideoCanvas
+from .sampler import Sampler
 from .viewbox import VideoViewBox
-from utils import BoxLoader, read_skeleton, Segmentation, get_2d_files
 
 
 class Viewer(QWidget):
-
     status = pyqtSignal(str)
     mode_changed = pyqtSignal(str)
     next_video = pyqtSignal()
@@ -89,7 +93,8 @@ class Viewer(QWidget):
         self.animals = None
         with open("colors.txt") as f:
             self.animal_colors = [
-                list(map(lambda x: float(x) / 255, line.split())) for line in f.readlines()
+                list(map(lambda x: float(x) / 255, line.split()))
+                for line in f.readlines()
             ]
         self.active = True
         self.display_categories = True
@@ -734,16 +739,18 @@ class Viewer(QWidget):
         inv = {v: k for k, v in self.catDict[key].items()}
         return inv
 
-    def save(self, event=None, verbose=True, new_file=False, ask=False):
-        if ask:
-            msg = QMessageBox()
-            msg.setText("Save the current annotation?")
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            reply = msg.exec_()
-            if reply == QMessageBox.No:
-                return
-        self.update_labels()
+    def export_annotation_data(self) -> Tuple[dict, list, list, list]:
+        """
+        Updates the annotation times by calling self.update_labels(), and then prepares
+        the annotation data to be exported
 
+        Returns:
+            metadata
+            category_labels
+            animals
+            times
+        """
+        self.update_labels()
         times = deepcopy(self.times)
         for i, ind_list in enumerate(times):
             for j, cat_list in enumerate(ind_list):
@@ -755,8 +762,9 @@ class Viewer(QWidget):
 
         cat_labels = [self.catDict["base"][i] for i in self.catDict["base"]]
         neg_classes = self.settings["hard_negative_classes"]
-        if neg_classes == 'all':
+        if neg_classes == "all":
             neg_classes = [x for x in cat_labels if x not in self.invisible_actions]
+
         if neg_classes is not None and self.al_points is not None:
             for neg_class in neg_classes:
                 neg_ind = cat_labels.index(neg_class)
@@ -777,22 +785,45 @@ class Viewer(QWidget):
                     times[i].append([])
                     for start, end in zip(idx[:-1:2], idx[1::2]):
                         times[i][-1].append([start, end, 0])
+
         for j, a in enumerate(self.neg_actions):
             if self.neg_actions[j] not in cat_labels:
                 cat_labels.append(self.neg_actions[j])
                 for i in range(len(times)):
                     times[i].append(self.negative_times[i][j])
+
         for j, a in enumerate(self.unknown_actions):
             if self.unknown_actions[j] not in cat_labels:
                 cat_labels.append(self.unknown_actions[j])
                 for i in range(len(times)):
                     times[i].append(self.unknown_times[i][j])
+
+        metadata = {
+            "datetime": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            "annotator": self.settings["annotator"],
+            "length": self.video_len(),
+            "video_file": self.filenames[0],
+            "skeleton_files": self.settings["skeleton_files"],
+        }
+        return metadata, cat_labels, self.animals, times
+
+    def save(self, event=None, verbose=True, new_file=False, ask=False):
+        if ask:
+            msg = QMessageBox()
+            msg.setText("Save the current annotations?")
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            reply = msg.exec_()
+            if reply == QMessageBox.No:
+                return
+
+        metadata, cat_labels, animals, times = self.export_annotation_data()
         if self.output_file is None or new_file:
             self.output_file = QFileDialog.getSaveFileName(self, "Save file")[0]
             if len(self.output_file) == 0:
                 self.output_file = None
                 return False
 
+        # TODO: WHY IS THE LAST ACTION CHOICE SAVED HERE
         with open("../last_action_choice.pickle", "wb") as f:
             loaded_shortcuts = defaultdict(lambda: {})
             for k in self.catDict:
@@ -808,17 +839,22 @@ class Viewer(QWidget):
                 f,
             )
 
-        metadata = {}
-        metadata["datetime"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        metadata["annotator"] = self.settings["annotator"]
-        metadata["length"] = self.video_len()
-        metadata["video_file"] = self.filenames[0]
-        metadata["skeleton_files"] = self.settings["skeleton_files"]
+        # TODO: SAVING
+        try:
+            save_annotations(
+                output_path=Path(self.output_file),
+                metadata=metadata,
+                animals=animals,
+                cat_labels=cat_labels,
+                times=times,
+                human_readable=True,
+                overwrite=True,
+            )
+            if verbose:
+                self.show_warning("Saved successfully!")
+        except IOError as err:
+            warnings.warn(f"Failed to save annotation data: {err}")
 
-        with open(self.output_file, "wb") as f:
-            pickle.dump((metadata, cat_labels, self.animals, times), f)
-        if verbose:
-            self.show_warning("Saved successfully!")
         return True
 
     def show_warning(self, message):
@@ -1158,9 +1194,7 @@ class Viewer(QWidget):
         self.on_next()
 
     def next_video_f(self):
-        if self.show_question(
-            message="Save the current annotation?", default="yes"
-        ):
+        if self.show_question(message="Save the current annotation?", default="yes"):
             success = self.save()
         else:
             success = True
@@ -1168,9 +1202,7 @@ class Viewer(QWidget):
             self.next_video.emit()
 
     def prev_video_f(self):
-        if self.show_question(
-                message="Save the current annotation?", default="yes"
-        ):
+        if self.show_question(message="Save the current annotation?", default="yes"):
             success = self.save()
         else:
             success = True
@@ -1184,9 +1216,7 @@ class Viewer(QWidget):
             if self.sampler.assessment():
                 self.sampler.compute()
                 self.set_assessment_al()
-            elif self.show_question(
-                message="Move on from this video?", default="yes"
-            ):
+            elif self.show_question(message="Move on from this video?", default="yes"):
                 self.next_video_f()
         else:
             self.cur_al_point = cur_al_point
@@ -1215,8 +1245,7 @@ class Viewer(QWidget):
 
     def update_animals(self):
         self.console.animallist.update_list(
-            self.current_animal_name(),
-            self.get_displayed_animals()
+            self.current_animal_name(), self.get_displayed_animals()
         )
 
     def change_displayed_animals(self, ind_list):
@@ -1352,6 +1381,7 @@ class Viewer(QWidget):
                             data = pickle.load(f)
                             data.update(corrections)
                             corrections = data
+                    # TODO: DUMPING CORRECTIONS
                     with open(file, "wb") as f:
                         pickle.dump(corrections, f)
                     im = Image.fromarray(vb.get_image(self.current()))
@@ -1481,8 +1511,8 @@ class Viewer(QWidget):
         self.canvas.switch_repr()
 
     def export_examples(self, value):
-        from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
         from moviepy.editor import VideoFileClip
+        from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 
         dlg = ChoiceDialogExample(self.action_dict)
         labels = dlg.exec_()

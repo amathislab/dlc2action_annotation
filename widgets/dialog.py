@@ -3,36 +3,37 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
+from collections import defaultdict
+
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QFont, QPixmap
 from PyQt5.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
     QDialog,
-    QPushButton,
-    QWidget,
-    QHBoxLayout,
-    QFormLayout,
-    QLineEdit,
-    QMessageBox,
-    QVBoxLayout,
-    QLabel,
+    QDialogButtonBox,
+    QDoubleSpinBox,
     QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMessageBox,
+    QPushButton,
+    QRadioButton,
+    QScrollArea,
+    QSlider,
+    QSpinBox,
     QTreeWidget,
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
-    QCheckBox,
-    QScrollArea,
-    QComboBox,
-    QSlider,
-    QRadioButton,
-    QDialogButtonBox,
-    QListWidget,
-    QDoubleSpinBox,
-    QSpinBox,
-    QButtonGroup
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt5.QtGui import QPixmap, QColor, QFont, QIntValidator
-from PyQt5.QtCore import Qt, pyqtSignal
-from collections import defaultdict
+
 from utils import get_color
-import pickle
 
 
 class LineEdit(QLineEdit):
@@ -136,7 +137,6 @@ class CatLine(QWidget):
             self.window.show_warning("used", value)
         else:
             self.sc_field.setText(value)
-
 
     def switch(self):
         if len(self.sc_field.text()) > 0:
@@ -568,6 +568,7 @@ class Form(QDialog):
             if button.isChecked():
                 return self.videos[i]
 
+
 class EpisodeSelector(QDialog):
     def __init__(self, project, suggestions=False):
         super().__init__()
@@ -594,13 +595,16 @@ class EpisodeSelector(QDialog):
             chosen = None
         return chosen
 
+
 class EpisodeParamsSelector(QDialog):
     def __init__(self, project, behaviors):
         super().__init__()
         self.check_name_validity = project._check_episode_validity
         self.name_le = QLineEdit()
         self.load_episode_combobox = QComboBox()
-        self.load_episode_combobox.addItems(["none"] + list(project.list_episodes().index))
+        self.load_episode_combobox.addItems(
+            ["none"] + list(project.list_episodes().index)
+        )
         self.load_episode_combobox.setCurrentText("none")
         self.num_epochs_le = QSpinBox()
         self.num_epochs_le.setMinimum(1)
@@ -627,7 +631,7 @@ class EpisodeParamsSelector(QDialog):
             self.check_name_validity(episode_name)
             super().accept()
         except ValueError as e:
-            print('error')
+            print("error")
             msg = QMessageBox()
             msg.setText(str(e))
             msg.setWindowTitle("Warning")
@@ -641,15 +645,9 @@ class EpisodeParamsSelector(QDialog):
         if load_episode == "none":
             load_episode = None
         num_epochs = self.num_epochs_le.value()
-        behaviors = [
-            item.text() for item in self.behavior_list.selectedItems()
-        ]
-        return (
-            episode_name,
-            load_episode,
-            num_epochs,
-            behaviors
-        )
+        behaviors = [item.text() for item in self.behavior_list.selectedItems()]
+        return (episode_name, load_episode, num_epochs, behaviors)
+
 
 class SuggestionParamsSelector(QDialog):
     def __init__(self, behaviors):
@@ -740,8 +738,11 @@ class SuggestionParamsSelector(QDialog):
         self.behavior_layout.addRow(behavior, layout)
 
     def accept(self) -> None:
-        if sum([x.isChecked() for x in self.include.values()]) == 0 and sum([x.isChecked() for x in self.exclude.values()]) == 0:
-            print('here')
+        if (
+            sum([x.isChecked() for x in self.include.values()]) == 0
+            and sum([x.isChecked() for x in self.exclude.values()]) == 0
+        ):
+            print("here")
             msg = QMessageBox()
             msg.setText("Please choose to include or exclude at least one behavior!")
             msg.setWindowTitle("Warning")
@@ -773,10 +774,3 @@ class SuggestionParamsSelector(QDialog):
                 params[f"{prefix}_hysteresis"].append(hysteresis)
         name = self.name_le.text()
         return name, params
-
-
-
-
-
-
-

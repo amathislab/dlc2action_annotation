@@ -3,27 +3,30 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QStatusBar,
-    QFileDialog,
-    QAction,
-    QActionGroup,
-    QMessageBox,
-)
-from widgets.dialog import Form
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal
-from widgets.viewer import Viewer as Viewer
-from widgets.settings import SettingsWindow
-import cluster
-import click
 import os
 import pickle
+import sys
+from pathlib import Path
+from typing import Optional
 
-from utils import get_settings, read_video, read_settings
+import click
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (
+    QAction,
+    QActionGroup,
+    QApplication,
+    QFileDialog,
+    QMainWindow,
+    QMessageBox,
+    QStatusBar,
+)
+
+from utils import get_settings, read_settings, read_video
+from widgets.core.backup import BackupManager
+from widgets.dialog import Form
+from widgets.settings import SettingsWindow
+from widgets.viewer import Viewer as Viewer
 
 
 class MainWindow(QMainWindow):
@@ -43,10 +46,17 @@ class MainWindow(QMainWindow):
         annotation_files=None,
         suggestion_files=None,
         hard_negatives=None,
+        backup_dir: Optional[str] = None,
+        backup_interval: int = 30,
     ):
         super(MainWindow, self).__init__()
         self.toolbar = None
         self.menubar = None
+        self.viewer: Optional[Viewer] = None
+        self.backup_manager: Optional[BackupManager] = None
+        self.backup_dir = backup_dir
+        self.backup_interval = backup_interval
+
         self.cur_video = 0
         self.clustering_parameters = clustering_parameters
         self.settings = get_settings(config_file, show_settings)
@@ -95,11 +105,15 @@ class MainWindow(QMainWindow):
         self._createMenuBar()
 
     def closeEvent(self, a0) -> None:
+        self.backup_manager.stop()
         self.closed.emit()
         super().closeEvent(a0)
 
     def next_video(self):
-        if self.clustering_parameters is not None and self.cur_video == len(self.videos) - 1:
+        if (
+            self.clustering_parameters is not None
+            and self.cur_video == len(self.videos) - 1
+        ):
             self.close()
             # window = cluster.MainWindow(*self.clustering_parameters)
             # window.show()
@@ -215,6 +229,10 @@ class MainWindow(QMainWindow):
             annotation = self.annotation_files[0]
         if annotation is None:
             suggestion = self.suggestion_files[0]
+
+        if self.backup_manager is not None:
+            self.backup_manager.stop()
+
         self.viewer = Viewer(
             stacks,
             shapes,
@@ -235,6 +253,18 @@ class MainWindow(QMainWindow):
         self.viewer.next_video.connect(self.next_video)
         self.viewer.prev_video.connect(self.prev_video)
         self.viewer.mode_changed.connect(self.on_mode)
+
+        if self.backup_dir is None:
+            default_video_path = Path(self.videos[0])
+            backup_path = default_video_path.with_name(default_video_path.stem + "_backups")
+        else:
+            backup_path = Path(self.backup_dir)
+        self.backup_manager = BackupManager(
+            backup_path=backup_path,
+            viewer=self.viewer,
+            interval=self.backup_interval,
+        )
+        self.backup_manager.start()
 
     def get_al_points(self, filename):
         if self.dev:
@@ -411,9 +441,7 @@ class MainWindow(QMainWindow):
         )
         labelAction.triggered.connect(self.set_label_al)
         trackletAction = QAction("&Start tracklet navigation", self)
-        trackletAction.setStatusTip(
-            "Go through tracklets one by one"
-        )
+        trackletAction.setStatusTip("Go through tracklets one by one")
         trackletAction.triggered.connect(self.set_tracklet_al)
         exampleAction = QAction("&Export example clips", self)
         exampleAction.setStatusTip("Export example clips of the behaviors")
@@ -553,9 +581,9 @@ class MainWindow(QMainWindow):
 @click.option("--active_learning", "-a", is_flag=True, help="Active learning mode")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
 @click.option("--config_file", "-c", default="config.yaml", help="The config file path")
-def main(
-    video, multiview, dev, active_learning, open_settings, config_file
-):
+@click.option("--backup-dir", "-b", default=None, help="The directory where backups are saved")
+@click.option("--backup-interval", default=30, type=int, help="The interval between backups, in minutes")
+def main(video, multiview, dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
     app = QApplication(sys.argv)
 
     window = MainWindow(
@@ -565,10 +593,13 @@ def main(
         active_learning=active_learning,
         show_settings=open_settings,
         config_file=config_file,
+        backup_dir=backup_dir,
+        backup_interval=backup_interval,
     )
     window.show()
 
     app.exec_()
+
 
 if __name__ == "__main__":
     main()
