@@ -45,10 +45,11 @@ class BackupManager:
         """
         self.backup_path = backup_path
         self.interval = interval
+        self._viewer = viewer
         self.timer = RepeatingTimer(60 * self.interval, self.create_backup)
 
-        self._viewer = viewer
         self.backup_path.mkdir(exist_ok=True, parents=True)
+        self.create_backup()  # create initial backup
 
     def create_backup(self) -> None:
         """ Backs up the viewer data """
