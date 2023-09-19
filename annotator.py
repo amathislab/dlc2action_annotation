@@ -175,6 +175,8 @@ class MainWindow(QMainWindow):
                 lens,
                 filenames,
                 filepaths,
+                self.annotation_files[self.cur_video],
+                self.suggestion_files,
                 current,
             )
         else:
