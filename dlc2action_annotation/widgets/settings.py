@@ -49,7 +49,7 @@ class MultipleInputWidget(QWidget):
         if isinstance(values, str):
             values = [values]
         for value in values:
-            self.lines.append(QLineEdit(value))
+            self.lines.append(QLineEdit(str(value)))
             self.lines_layout.addWidget(self.lines[-1])
             self.lines[-1].setMinimumHeight(20)
         self.button = QPushButton("Add")

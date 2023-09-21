@@ -14,6 +14,8 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QLineEdit,
     QSlider,
+    QFileDialog,
+    QMessageBox,
 )
 from PyQt5.QtCore import QSize
 from PyQt5.QtCore import Qt
@@ -25,6 +27,12 @@ from dlc2action.options import input_stores, annotation_stores
 from qtwidgets import Toggle
 import os
 
+
+class NewCheckbox(QCheckBox):
+    def isChecked(self):
+        is_checked = super().checkState()
+        value_dict = {0: False, 2: True, 1: "???"}
+        return value_dict[is_checked]
 
 
 class TypeChoice(QWidget):
@@ -121,10 +129,25 @@ class ProjectSettings(QWidget):
         self.set_features_tab()
         self.create_data_tab()
         self.set_data_tab()
+        self.create_metrics_tab()
+        self.set_metrics_tab()
         self.setLayout(self.layout)
 
     def accept(self):
-        print("Accepted")
+        self.collect_general()
+        self.collect_training()
+        self.collect_augmentations()
+        self.collect_features()
+        self.collect_data()
+        self.collect_metrics()
+        blanks_ok = self.check_blanks(self.settings)
+        if blanks_ok:  
+            print("Accepted")
+        else:
+            msg = QMessageBox()
+            msg.setText("Please fill in all fields.")
+            msg.setInformativeText("The necessary fields are marked with ???")
+            msg.exec_()
     
     def reject(self):
         print("Rejected")
@@ -156,8 +179,28 @@ class ProjectSettings(QWidget):
     def create_data_tab(self):
         self.data_tab = QWidget()
         self.tabs.addTab(self.data_tab, "Data")
+        scroll = QScrollArea()
+        layout = QVBoxLayout()
+        layout.addWidget(scroll)
+        self.data_tab.setLayout(layout)
+        scroll.setWidgetResizable(True)
+        scrollContent = QWidget(scroll)
         self.data_layout = QFormLayout()
-        self.data_tab.setLayout(self.data_layout)
+        scrollContent.setLayout(self.data_layout)
+        scroll.setWidget(scrollContent)
+
+    def create_metrics_tab(self):
+        self.metrics_tab = QWidget()
+        self.tabs.addTab(self.metrics_tab, "Metrics")
+        scroll = QScrollArea()
+        layout = QVBoxLayout()
+        layout.addWidget(scroll)
+        self.metrics_tab.setLayout(layout)
+        scroll.setWidgetResizable(True)
+        scrollContent = QWidget(scroll)
+        self.metrics_layout = QFormLayout()
+        scrollContent.setLayout(self.metrics_layout)
+        scroll.setWidget(scrollContent)
     
     def set_general_tab(self):
         self.clearLayout(self.general_layout)
@@ -201,6 +244,148 @@ class ProjectSettings(QWidget):
         self.features_layout.addRow("Features: ", self.keys)
         self.features_layout.addRow("Distance pairs: ", self.distance_pairs)
 
+    def set_data_tab(self):
+        self.clearLayout(self.data_layout)
+        self.set_data_tab_data()
+        if "behaviors" in self.settings["data"]:
+            self.data_layout.addRow("Behaviors: ", self.behaviors)
+        if "ignored_classes" in self.settings["data"]:
+            self.data_layout.addRow("Ignored classes: ", self.ignored_classes)
+        if "correction" in self.settings["data"]:
+            self.data_layout.addRow("Correction: ", self.correction)
+        if "error_class" in self.settings["data"]:
+            self.data_layout.addRow("Error class: ", self.error_class)
+        if "min_frames_action" in self.settings["data"]:
+            self.data_layout.addRow("Minimum frames per action: ", self.min_frames_action)
+        if "filter_annotated" in self.settings["data"]:
+            self.data_layout.addRow("Filter annotated: ", self.filter_annotated)
+        if "filter_background" in self.settings["data"]:
+            self.data_layout.addRow("Filter background: ", self.filter_background)
+        if "visibility_min_score" in self.settings["data"]:
+            self.data_layout.addRow("Visibility min score: ", self.visibility_min_score)
+        if "visibility_min_frac" in self.settings["data"]:
+            self.data_layout.addRow("Visibility min fraction: ", self.visibility_min_frac)
+        if "annotation_suffix" in self.settings["data"]:
+            self.data_layout.addRow("Annotation suffix: ", self.annotation_suffix)
+        if "use_hard_negatives" in self.settings["data"]:
+            self.data_layout.addRow("Use hard negatives: ", self.use_hard_negatives)
+        if "separator" in self.settings["data"]:
+            self.data_layout.addRow("Separator: ", self.separator)
+        if "treba_files" in self.settings["data"]:
+            self.data_layout.addRow("Use treba files: ", self.treba_files)
+        if "task_n" in self.settings["data"]:
+            self.data_layout.addRow("Task number: ", self.task_n)
+        if "tracking_suffix" in self.settings["data"]:
+            self.data_layout.addRow("Tracking suffix: ", self.tracking_suffix)
+        if "tracking_path" in self.settings["data"]:
+            self.data_layout.addRow("Tracking path: ", self.tracking_path)
+        if "frame_limit" in self.settings["data"]:
+            self.data_layout.addRow("Frame limit: ", self.frame_limit)
+        if "default_agent_name" in self.settings["data"]:
+            self.data_layout.addRow("Default agent name: ", self.default_agent_name)
+        if "data_suffix" in self.settings["data"]:
+            self.data_layout.addRow("Data suffix: ", self.data_suffix)
+        if "data_prefix" in self.settings["data"]:
+            self.data_layout.addRow("Data prefix: ", self.data_prefix)
+        if "feature_suffix" in self.settings["data"]:
+            self.data_layout.addRow("Feature suffix: ", self.feature_suffix)
+        if "convert_int_indices" in self.settings["data"]:
+            self.data_layout.addRow("Convert int indices: ", self.convert_int_indices)
+        if "canvas_shape" in self.settings["data"]:
+            self.data_layout.addRow("Canvas shape: ", self.canvas_shape)
+        if "ignored_bodyparts" in self.settings["data"]:
+            self.data_layout.addRow("Ignored bodyparts: ", self.ignored_bodyparts)
+        if "likelihood_threshold" in self.settings["data"]:
+            self.data_layout.addRow("Likelihood threshold: ", self.likelihood_threshold)
+        if "centered" in self.settings["data"]:
+            self.data_layout.addRow("Centered: ", self.centered)
+        if "use_features" in self.settings["data"]:
+            self.data_layout.addRow("Use features: ", self.use_features)
+        if "behavior_file" in self.settings["data"]:
+            self.data_layout.addRow("Behavior file: ", self.behavior_file)
+        if "fps" in self.settings["data"]:
+            self.data_layout.addRow("FPS: ", self.fps)
+    
+    def set_metrics_tab(self):
+        self.clearLayout(self.metrics_layout)
+        self.set_metrics_tab_data()
+        label = QLabel("Recall:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.recall_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.recall_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.recall_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.recall_threshold_value)
+        label = QLabel("\nPrecision:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.precision_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.precision_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.precision_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.precision_threshold_value)
+        label = QLabel("\nF1:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.f1_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.f1_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.f1_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.f1_threshold_value)
+        label = QLabel("\nF beta:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Beta: ", self.f_beta_beta)
+        self.metrics_layout.addRow("Average: ", self.f_beta_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.f_beta_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.f_beta_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.f_beta_threshold_value)
+        label = QLabel("\nCount:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Classes: ", self.count_classes)
+        label = QLabel("\nSegmental precision:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.segmental_precision_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.segmental_precision_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.segmental_precision_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.segmental_precision_threshold_value)
+        label = QLabel("\nSegmental recall:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.segmental_recall_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.segmental_recall_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.segmental_recall_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.segmental_recall_threshold_value)
+        label = QLabel("\nSegmental F1:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.segmental_f1_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.segmental_f1_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.segmental_f1_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.segmental_f1_threshold_value)
+        label = QLabel("\nSegmental F beta:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Beta: ", self.segmental_f_beta_beta)
+        self.metrics_layout.addRow("Average: ", self.segmental_f_beta_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.segmental_f_beta_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.segmental_f_beta_tag_average)
+        self.metrics_layout.addRow("Threshold value: ", self.segmental_f_beta_threshold_value)
+        label = QLabel("\nRecall:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.pr_auc_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.pr_auc_ignored_classes)
+        self.metrics_layout.addRow("Tag average: ", self.pr_auc_tag_average)
+        self.metrics_layout.addRow("Threshold step: ", self.pr_auc_threshold_step)
+        label = QLabel("\nRecall:")
+        label.setStyleSheet("font-weight: bold;")
+        self.metrics_layout.addRow(label)
+        self.metrics_layout.addRow("Average: ", self.map_average)
+        self.metrics_layout.addRow("Ignored classes: ", self.map_ignored_classes)
+        self.metrics_layout.addRow("IoU threshold: ", self.map_iou_threshold)
+        self.metrics_layout.addRow("Threshold value: ", self.map_threshold_value)
+
     def set_general_tab_data(self):
         self.exclusive = self.set_toggle("general", "exclusive")
         self.only_annotated = self.set_toggle("general", "only_load_annotated")
@@ -238,80 +423,122 @@ class ProjectSettings(QWidget):
         # not including the rest of the features because writing the input fields is a pain
 
     def set_data_tab_data(self):
-        input_functions = {
-            "calms21": self.set_calms21_input,
-            "clip": self.set_clip_input,
-            "dlc_track": self.set_dlc_track_input,
-            "dlc_tracklet": self.set_dlc_tracklet_input,
-            "features": self.set_features_input,
-            "np_3d": self.set_np_3d_input,
-            "pku_mmd": self.set_pku_mmd_input,
-            "simba": self.set_simba_input,
-        }
-    
-    def set_calms21_input(self):
-        self.treba_files = self.set_toggle("data", "treba_files")
-        self.task_n = self.set_combo("data", "task_n", [1, 2])
-    
-    def set_clip_input(self):
-        self.tracking_suffix = self.set_le("data", "tracking_suffix", set_int=False, set_float=False)
-        self.tracking_path = self.set_file("data", "tracking_path", dir=True)
-        self.frame_limit = self.set_le("data", "frame_limit", set_int=True, set_float=False)
-        self.default_agent_name = self.set_le("data", "default_agent_name", set_int=False, set_float=False)
-    
-    def set_dlc_track_input(self):
-        self.data_suffix = self.set_le("data", "data_suffix", set_int=False, set_float=False)
-        self.data_prefix = self.set_le("data", "data_prefix", set_int=False, set_float=False)
-        self.feature_suffix = self.set_le("data", "feature_suffix", set_int=False, set_float=False)
-        self.convert_int_indices = self.set_toggle("data", "convert_int_indices")
-        self.canvas_shape = self.set_dimensions("data", "canvas_shape")
-        self.ignored_bodyparts = self.set_multiple_input("data", "ignored_bodyparts")
-        self.default_agent_name = self.set_le("data", "default_agent_name", set_int=False, set_float=False)
-        self.likelihood_threshold = self.set_le("data", "likelihood_threshold", set_int=False, set_float=True)
+        if "behaviors" in self.settings["data"]:
+            self.behaviors = self.set_multiple_input("data", "behaviors")
+        if "ignored_classes" in self.settings["data"]:
+            self.ignored_classes = self.set_multiple_input("data", "ignored_classes")
+        if "correction" in self.settings["data"]:
+            self.correction = self.set_multiple_input("data", "correction", type="double")
+        if "error_class" in self.settings["data"]:
+            self.error_class = self.set_le("data", "error_class", set_int=False, set_float=False)
+        if "min_frames_action" in self.settings["data"]:
+            self.min_frames_action = self.set_le("data", "min_frames_action", set_int=True, set_float=False)
+        if "filter_annotated" in self.settings["data"]:
+            self.filter_annotated = self.set_toggle("data", "filter_annotated")
+        if "filter_background" in self.settings["data"]:
+            self.filter_background = self.set_toggle("data", "filter_background")
+        if "visibility_min_score" in self.settings["data"]:
+            self.visibility_min_score = self.set_slider("data", "visibility_min_score", 0, 1, percent=True)
+        if "visibility_min_frac" in self.settings["data"]:
+            self.visibility_min_frac = self.set_slider("data", "visibility_min_frac", 0, 1, percent=True)
+        if "annotation_suffix" in self.settings["data"]:
+            self.annotation_suffix = self.set_le("data", "annotation_suffix", set_int=False, set_float=False)
+        if "use_hard_negatives" in self.settings["data"]:
+            self.use_hard_negatives = self.set_toggle("data", "use_hard_negatives")
+        if "separator" in self.settings["data"]:
+            self.separator = self.set_le("data", "separator", set_int=False, set_float=False)
+        if "treba_files" in self.settings["data"]:
+            self.treba_files = self.set_toggle("data", "treba_files")
+        if "task_n" in self.settings["data"]:
+            self.task_n = self.set_combo("data", "task_n", [1, 2])
+        if "tracking_suffix" in self.settings["data"]:
+            self.tracking_suffix = self.set_le("data", "tracking_suffix", set_int=False, set_float=False)
+        if "tracking_path" in self.settings["data"]:
+            self.tracking_path = self.set_file("data", "tracking_path", dir=True)
+        if "frame_limit" in self.settings["data"]:
+            self.frame_limit = self.set_le("data", "frame_limit", set_int=True, set_float=False)
+        if "default_agent_name" in self.settings["data"]:
+            self.default_agent_name = self.set_le("data", "default_agent_name", set_int=False, set_float=False)
+        if "data_suffix" in self.settings["data"]:
+            self.data_suffix = self.set_le("data", "data_suffix", set_int=False, set_float=False)
+        if "data_prefix" in self.settings["data"]:
+            self.data_prefix = self.set_le("data", "data_prefix", set_int=False, set_float=False)
+        if "feature_suffix" in self.settings["data"]:
+            self.feature_suffix = self.set_le("data", "feature_suffix", set_int=False, set_float=False)
+        if "convert_int_indices" in self.settings["data"]:
+            self.convert_int_indices = self.set_toggle("data", "convert_int_indices")
+        if "canvas_shape" in self.settings["data"]:
+            self.canvas_shape = self.set_dimensions("data", "canvas_shape", num_fields = 3 if self.settings["general"]["data_type"] == "np_3d" else 2)
+        if "ignored_bodyparts" in self.settings["data"]:
+            self.ignored_bodyparts = self.set_multiple_input("data", "ignored_bodyparts")
+        if "likelihood_threshold" in self.settings["data"]:
+            self.likelihood_threshold = self.set_le("data", "likelihood_threshold", set_int=False, set_float=True)
+        if "centered" in self.settings["data"]:
+            self.centered = self.set_toggle("data", "centered")
+        if "use_features" in self.settings["data"]:
+            self.use_features = self.set_toggle("data", "use_features")
+        if "behavior_file" in self.settings["data"]:
+            self.behavior_file = self.set_file("data", "behavior_file", dir=False)
+        if "fps" in self.settings["data"]:
+            self.fps = self.set_le("data", "fps", set_int=False, set_float=True)
+        if "annotation_suffix" in self.settings["data"]:
+            self.annotation_suffix = self.set_le("data", "annotation_suffix", set_int=False, set_float=False)
+        if "ignored_classes" in self.settings["data"]:
+            self.ignored_classes = self.set_multiple_input("data", "ignored_classes")
+        if "correction" in self.settings["data"]:
+            self.correction = self.set_multiple_input("data", "correction", type="double") 
 
-    def set_dlc_tracklet_input(self):
-        self.data_suffix = self.set_le("data", "data_suffix", set_int=False, set_float=False)
-        self.data_prefix = self.set_le("data", "data_prefix", set_int=False, set_float=False)
-        self.feature_suffix = self.set_le("data", "feature_suffix", set_int=False, set_float=False)
-        self.convert_int_indices = self.set_toggle("data", "convert_int_indices")
-        self.canvas_shape = self.set_dimensions("data", "canvas_shape")
-        self.ignored_bodyparts = self.set_multiple_input("data", "ignored_bodyparts")
-        self.default_agent_name = self.set_le("data", "default_agent_name", set_int=False, set_float=False)
-        self.likelihood_threshold = self.set_le("data", "likelihood_threshold", set_int=False, set_float=True)
-        self.frame_limit = self.set_le("data", "frame_limit", set_int=True, set_float=False)
-    
-    def set_features_input(self):
-        self.feature_suffix = self.set_le("data", "feature_suffix", set_int=False, set_float=False)
-        self.default_agent_name = self.set_le("data", "default_agent_name", set_int=False, set_float=False)
-        self.frame_limit = self.set_le("data", "frame_limit", set_int=True, set_float=False)
-    
-    def set_np_3d_input(self):
-        self.data_suffix = self.set_le("data", "data_suffix", set_int=False, set_float=False)
-        self.feature_suffix = self.set_le("data", "feature_suffix", set_int=False, set_float=False)
-        self.canvas_shape = self.set_dimensions("data", "canvas_shape")
-        self.ignored_bodyparts = self.set_multiple_input("data", "ignored_bodyparts")
-        self.default_agent_name = self.set_le("data", "default_agent_name", set_int=False, set_float=False)
-        self.frame_limit = self.set_le("data", "frame_limit", set_int=True, set_float=False)
-    
-    def set_pku_mmd_input(self):
-        pass
+    def set_metrics_tab_data(self):
+        self.recall_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="recall")
+        self.recall_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="recall")
+        self.recall_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="recall")
+        self.recall_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="recall")
+        self.precision_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="precision")
+        self.precision_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="precision")
+        self.precision_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="precision")
+        self.precision_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="precision")
+        self.f1_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="f1")
+        self.f1_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="f1")
+        self.f1_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="f1")
+        self.f1_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="f1")
+        self.f_beta_beta = self.set_le("metrics", "beta", set_int=False, set_float=True, subcategory="f_beta")
+        self.f_beta_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="f_beta")
+        self.f_beta_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="f_beta")
+        self.f_beta_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="f_beta")
+        self.f_beta_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="f_beta")
+        self.count_classes = self.set_multiple_input("metrics", "classes", subcategory="count")
+        self.segmental_precision_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="segmental_precision")
+        self.segmental_precision_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="segmental_precision")
+        self.segmental_precision_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="segmental_precision")
+        self.segmental_precision_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="segmental_precision")
+        self.segmental_recall_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="segmental_recall")
+        self.segmental_recall_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="segmental_recall")
+        self.segmental_recall_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="segmental_recall")
+        self.segmental_recall_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="segmental_recall")
+        self.segmental_f1_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="segmental_f1")
+        self.segmental_f1_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="segmental_f1")
+        self.segmental_f1_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="segmental_f1")
+        self.segmental_f1_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="segmental_f1")
+        self.segmental_f_beta_beta = self.set_le("metrics", "beta", set_int=False, set_float=True, subcategory="segmental_f_beta")
+        self.segmental_f_beta_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="segmental_f_beta")
+        self.segmental_f_beta_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="segmental_f_beta")
+        self.segmental_f_beta_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="segmental_f_beta")
+        self.segmental_f_beta_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="segmental_f_beta")
+        self.pr_auc_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="pr-auc")
+        self.pr_auc_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="pr-auc")
+        self.pr_auc_tag_average = self.set_combo("metrics", "tag_average", ["micro", "macro", "none"], subcategory="pr-auc")
+        self.pr_auc_threshold_step = self.set_slider("metrics", "threshold_step", 0, 1, percent=True, subcategory="pr-auc")
+        self.map_average = self.set_combo("metrics", "average", ["micro", "macro", "none"], subcategory="mAP")
+        self.map_ignored_classes = self.set_multiple_input("metrics", "ignored_classes", subcategory="mAP")
+        self.map_iou_threshold = self.set_slider("metrics", "iou_threshold", 0, 1, percent=True, subcategory="mAP")
+        self.map_threshold_value = self.set_slider("metrics", "threshold_value", 0, 1, percent=True, subcategory="mAP")
 
-    def set_simba_input(self):
-        self.data_suffix = self.set_le("data", "data_suffix", set_int=False, set_float=False)
-        self.data_prefix = self.set_le("data", "data_prefix", set_int=False, set_float=False)
-        self.feature_suffix = self.set_le("data", "feature_suffix", set_int=False, set_float=False)
-        self.canvas_shape = self.set_dimensions("data", "canvas_shape")
-        self.ignored_bodyparts = self.set_multiple_input("data", "ignored_bodyparts")
-        self.likelihood_threshold = self.set_le("data", "likelihood_threshold", set_int=False, set_float=True)
-        self.centered = self.set_toggle("data", "centered")
-        self.use_features = self.set_toggle("data", "use_features")
-        
     def collect_general(self):
         self.settings["general"]["exclusive"] = self.exclusive.isChecked()
         self.settings["general"]["only_load_annotated"] = self.only_annotated.isChecked()
-        self.settings["general"]["ignored_clips"] = self.ignored_agents.get_data()
+        self.settings["general"]["ignored_clips"] = self.ignored_agents.values()
         self.settings["general"]["num_cpus"] = int(self.num_cpus.text())
-        self.settings["general"]["overlap"] = self.overlap.value() / 100
+        self.settings["general"]["overlap"] = self.overlap.itemAt(0).widget().value() / 100
         self.settings["general"]["interactive"] = self.interactive.isChecked()
     
     def collect_training(self):
@@ -324,11 +551,11 @@ class ProjectSettings(QWidget):
         self.settings["training"]["model_save_epochs"] = int(self.model_save_epochs.text())
         self.settings["training"]["normalize"] = self.normalize.isChecked()
         self.settings["training"]["parallel"] = self.parallel.isChecked()
-        self.settings["training"]["temporal_subsampling_size"] = self.temporal_subsampling_size.value() / 100
+        self.settings["training"]["temporal_subsampling_size"] = self.temporal_subsampling_size.itemAt(0).widget().value() / 100
         self.settings["training"]["partition_method"] = self.partition_method.currentText()
-        self.settings["training"]["val_frac"] = self.val_frac.value() / 100
-        self.settings["training"]["test_frac"] = self.test_frac.value() / 100
-        self.settings["training"]["split_path"] = self.split_path[0].text()
+        self.settings["training"]["val_frac"] = self.val_frac.itemAt(0).widget().value() / 100
+        self.settings["training"]["test_frac"] = self.test_frac.itemAt(0).widget().value() / 100
+        self.settings["training"]["split_path"] = self.split_path.itemAt(0).widget().text()
 
     def collect_augmentations(self):
         self.settings["augmentations"]["augmentations"] = set([x.text() for x in self.augmentations.findChildren(QCheckBox) if x.isChecked()])
@@ -337,24 +564,150 @@ class ProjectSettings(QWidget):
         self.settings["augmentations"]["noise_std"] = float(self.noise_std.text())
         self.settings["augmentations"]["zoom_limits"] = [float(x.text()) for x in self.zoom_limits.findChildren(QLineEdit)]
 
-    def set_toggle(self, category, field):
-        toggle = QCheckBox()
-        value = self.settings[category][field]
+    def collect_features(self):
+        self.settings["features"]["keys"] = set([x.text() for x in self.keys.findChildren(QCheckBox) if x.isChecked()])
+        self.settings["features"]["distance_pairs"] = self.distance_pairs.values()
+    
+    def collect_data(self):
+        if "behaviors" in self.settings["data"]:
+            self.settings["data"]["behaviors"] = self.behaviors.values()
+        if "ignored_classes" in self.settings["data"]:
+            self.settings["data"]["ignored_classes"] = self.ignored_classes.values()
+        if "correction" in self.settings["data"]:
+            self.settings["data"]["correction"] = self.correction.values()
+        if "error_class" in self.settings["data"]:
+            self.settings["data"]["error_class"] = self.error_class.text()
+        if "min_frames_action" in self.settings["data"]:
+            self.settings["data"]["min_frames_action"] = int(self.min_frames_action.text())
+        if "filter_annotated" in self.settings["data"]:
+            self.settings["data"]["filter_annotated"] = self.filter_annotated.isChecked()
+        if "filter_background" in self.settings["data"]:
+            self.settings["data"]["filter_background"] = self.filter_background.isChecked()
+        if "visibility_min_score" in self.settings["data"]:
+            self.settings["data"]["visibility_min_score"] = self.visibility_min_score.itemAt(0).widget().value() / 100
+        if "visibility_min_frac" in self.settings["data"]:
+            self.settings["data"]["visibility_min_frac"] = self.visibility_min_frac.itemAt(0).widget().value() / 100
+        if "annotation_suffix" in self.settings["data"]:
+            self.settings["data"]["annotation_suffix"] = self.annotation_suffix.text()
+        if "use_hard_negatives" in self.settings["data"]:
+            self.settings["data"]["use_hard_negatives"] = self.use_hard_negatives.isChecked()
+        if "separator" in self.settings["data"]:
+            self.settings["data"]["separator"] = self.separator.text()
+        if "treba_files" in self.settings["data"]:
+            self.settings["data"]["treba_files"] = self.treba_files.isChecked()
+        if "task_n" in self.settings["data"]:
+            self.settings["data"]["task_n"] = int(self.task_n.currentText())
+        if "tracking_suffix" in self.settings["data"]:
+            self.settings["data"]["tracking_suffix"] = self.tracking_suffix.text()
+        if "tracking_path" in self.settings["data"]:
+            self.settings["data"]["tracking_path"] = self.tracking_path.itemAt(0).widget().text()
+        if "frame_limit" in self.settings["data"]:
+            self.settings["data"]["frame_limit"] = int(self.frame_limit.text())
+        if "default_agent_name" in self.settings["data"]:
+            self.settings["data"]["default_agent_name"] = self.default_agent_name.text()
+        if "data_suffix" in self.settings["data"]:
+            self.settings["data"]["data_suffix"] = self.data_suffix.text()
+        if "data_prefix" in self.settings["data"]:
+            self.settings["data"]["data_prefix"] = self.data_prefix.text()
+        if "feature_suffix" in self.settings["data"]:
+            self.settings["data"]["feature_suffix"] = self.feature_suffix.text()
+        if "convert_int_indices" in self.settings["data"]:
+            self.settings["data"]["convert_int_indices"] = self.convert_int_indices.isChecked()
+        if "canvas_shape" in self.settings["data"]:
+            texts = [self.canvas_shape.itemAt(i).widget().text() for i in range(self.canvas_shape.count())]
+            if any([x == "???" for x in texts]):
+                self.settings["data"]["canvas_shape"] = "???"
+            else:
+                self.settings["data"]["canvas_shape"] = [int(x) for x in texts]
+        if "ignored_bodyparts" in self.settings["data"]:
+            self.settings["data"]["ignored_bodyparts"] = self.ignored_bodyparts.values()
+        if "likelihood_threshold" in self.settings["data"]:
+            self.settings["data"]["likelihood_threshold"] = float(self.likelihood_threshold.text())
+        if "centered" in self.settings["data"]:
+            self.settings["data"]["centered"] = self.centered.isChecked()
+        if "use_features" in self.settings["data"]:
+            self.settings["data"]["use_features"] = self.use_features.isChecked()
+        if "behavior_file" in self.settings["data"]:
+            self.settings["data"]["behavior_file"] = self.behavior_file.itemAt(0).widget().text()
+        if "fps" in self.settings["data"]:
+            self.settings["data"]["fps"] = float(self.fps.text())
+        if "annotation_suffix" in self.settings["data"]:
+            self.settings["data"]["annotation_suffix"] = self.annotation_suffix.text()
+        if "ignored_classes" in self.settings["data"]:
+            self.settings["data"]["ignored_classes"] = self.ignored_classes.values()
+        if "correction" in self.settings["data"]:
+            self.settings["data"]["correction"] = {k: v for k, v in self.correction.values()}
+
+    def collect_metrics(self):
+        self.settings["metrics"]["recall"]["average"] = self.recall_average.currentText()
+        self.settings["metrics"]["recall"]["ignored_classes"] = self.recall_ignored_classes.values()
+        self.settings["metrics"]["recall"]["tag_average"] = self.recall_tag_average.currentText()
+        self.settings["metrics"]["recall"]["threshold_value"] = self.recall_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["precision"]["average"] = self.precision_average.currentText()
+        self.settings["metrics"]["precision"]["ignored_classes"] = self.precision_ignored_classes.values()
+        self.settings["metrics"]["precision"]["tag_average"] = self.precision_tag_average.currentText()
+        self.settings["metrics"]["precision"]["threshold_value"] = self.precision_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["f1"]["average"] = self.f1_average.currentText()
+        self.settings["metrics"]["f1"]["ignored_classes"] = self.f1_ignored_classes.values()
+        self.settings["metrics"]["f1"]["tag_average"] = self.f1_tag_average.currentText()
+        self.settings["metrics"]["f1"]["threshold_value"] = self.f1_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["f_beta"]["beta"] = float(self.f_beta_beta.text())
+        self.settings["metrics"]["f_beta"]["average"] = self.f_beta_average.currentText()
+        self.settings["metrics"]["f_beta"]["ignored_classes"] = self.f_beta_ignored_classes.values()
+        self.settings["metrics"]["f_beta"]["tag_average"] = self.f_beta_tag_average.currentText()
+        self.settings["metrics"]["f_beta"]["threshold_value"] = self.f_beta_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["count"]["classes"] = self.count_classes.values()
+        self.settings["metrics"]["segmental_precision"]["average"] = self.segmental_precision_average.currentText()
+        self.settings["metrics"]["segmental_precision"]["ignored_classes"] = self.segmental_precision_ignored_classes.values()
+        self.settings["metrics"]["segmental_precision"]["tag_average"] = self.segmental_precision_tag_average.currentText()
+        self.settings["metrics"]["segmental_precision"]["threshold_value"] = self.segmental_precision_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["segmental_recall"]["average"] = self.segmental_recall_average.currentText()
+        self.settings["metrics"]["segmental_recall"]["ignored_classes"] = self.segmental_recall_ignored_classes.values()
+        self.settings["metrics"]["segmental_recall"]["tag_average"] = self.segmental_recall_tag_average.currentText()
+        self.settings["metrics"]["segmental_recall"]["threshold_value"] = self.segmental_recall_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["segmental_f1"]["average"] = self.segmental_f1_average.currentText()
+        self.settings["metrics"]["segmental_f1"]["ignored_classes"] = self.segmental_f1_ignored_classes.values()
+        self.settings["metrics"]["segmental_f1"]["tag_average"] = self.segmental_f1_tag_average.currentText()
+        self.settings["metrics"]["segmental_f1"]["threshold_value"] = self.segmental_f1_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["segmental_f_beta"]["beta"] = float(self.segmental_f_beta_beta.text())
+        self.settings["metrics"]["segmental_f_beta"]["average"] = self.segmental_f_beta_average.currentText()
+        self.settings["metrics"]["segmental_f_beta"]["ignored_classes"] = self.segmental_f_beta_ignored_classes.values()
+        self.settings["metrics"]["segmental_f_beta"]["tag_average"] = self.segmental_f_beta_tag_average.currentText()
+        self.settings["metrics"]["segmental_f_beta"]["threshold_value"] = self.segmental_f_beta_threshold_value.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["pr-auc"]["average"] = self.pr_auc_average.currentText()
+        self.settings["metrics"]["pr-auc"]["ignored_classes"] = self.pr_auc_ignored_classes.values()
+        self.settings["metrics"]["pr-auc"]["tag_average"] = self.pr_auc_tag_average.currentText()
+        self.settings["metrics"]["pr-auc"]["threshold_step"] = self.pr_auc_threshold_step.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["mAP"]["average"] = self.map_average.currentText()
+        self.settings["metrics"]["mAP"]["ignored_classes"] = self.map_ignored_classes.values()
+        self.settings["metrics"]["mAP"]["iou_threshold"] = self.map_iou_threshold.itemAt(0).widget().value() / 100
+        self.settings["metrics"]["mAP"]["threshold_value"] = self.map_threshold_value.itemAt(0).widget().value() / 100
+
+    def get_value(self, category, field, subcategory=None):
+        if subcategory is None:
+            return self.settings[category][field]
+        else:
+            return self.settings[category][subcategory][field]
+
+    def set_toggle(self, category, field, subcategory=None):
+        toggle = NewCheckbox()
+        value = self.get_value(category, field, subcategory)
         if value != "???":
-            toggle.setChecked(self.settings[category][field])
+            toggle.setChecked(value)
         else:
             toggle.tristate = True
             toggle.setCheckState(Qt.PartiallyChecked)
         return toggle
     
-    def set_multiple_input(self, category, field, type="single"):
-        if self.settings[category][field] is None:
+    def set_multiple_input(self, category, field, type="single", subcategory=None):
+        value = self.get_value(category, field, subcategory)
+        if value is None:
             if type == "category":
                 x = {}
             else:
                 x = []
         else:
-            x = self.settings[category][field]
+            x = value
         if type == "double":
             widget = MultipleDoubleInputWidget(x)
         elif type == "category":
@@ -363,17 +716,18 @@ class ProjectSettings(QWidget):
             widget = MultipleInputWidget(x)
         return widget
     
-    def set_le(self, category, field, set_int=True, set_float=False):
+    def set_le(self, category, field, set_int=True, set_float=False, subcategory=None):
         le = QLineEdit()
         if set_int:
             le.setValidator(QIntValidator())
         elif set_float:
             le.setValidator(QDoubleValidator())
-        le.setText(str(self.settings[category][field]))
+        le.setText(str(self.get_value(category, field, subcategory=subcategory)))
         return le
     
-    def set_slider(self, category, field, minimum, maximum, percent=False):
-        value = self.settings[category][field]
+    def set_slider(self, category, field, minimum, maximum, percent=False, subcategory=None):
+        slider_layout = QHBoxLayout()
+        value = self.get_value(category, field, subcategory=subcategory)
         if percent:
             minimum *= 100
             maximum *= 100
@@ -382,40 +736,50 @@ class ProjectSettings(QWidget):
         slider.setMinimum(minimum)
         slider.setMaximum(maximum)
         slider.setValue(value)
-        return slider
+        label = QLabel(str(value))
+        slider.valueChanged.connect(lambda: self.update_label(slider, label))
+        slider_layout.addWidget(slider)
+        slider_layout.addWidget(label)
+        return slider_layout
     
-    def set_combo(self, category, field, options):
+    def set_combo(self, category, field, options, subcategory=None):
         combo = QComboBox()
         for o in options:
-            combo.addItem(o)
-        combo.setCurrentIndex(options.index(self.settings[category][field]))
+            combo.addItem(str(o))
+        combo.setCurrentIndex(options.index(self.get_value(category, field, subcategory=subcategory)))
         return combo
     
-    def set_file(self, category, field, filter=None, dir=False):
+    def set_file(self, category, field, filter=None, dir=False, subcategory=None):
         layout = QHBoxLayout()
-        file = self.settings[category][field]
+        file = self.get_value(category, field, subcategory=subcategory)
         file = file if file is not None else "None"
         button = QPushButton("Find")
         label = QLabel(os.path.basename(file))
         if dir:
-            button.clicked.connect(lambda: self.get_dir(label, field, filter))
+            button.clicked.connect(lambda: self.get_dir(label, category, field, filter))
         else:
-            button.clicked.connect(lambda: self.get_file(label, field, filter))
+            button.clicked.connect(lambda: self.get_file(label, category, field, filter))
         layout.addWidget(label)
         layout.addWidget(button)
         return layout
     
-    def set_options(self, category, field, options):
+    def get_file(self, label_widget, category, field, filter=None):
+        file = QFileDialog().getOpenFileName(self, filter=filter)[0]
+        label_widget.setText(os.path.basename(file))
+        self.settings[category][field] = file
+    
+    def set_options(self, category, field, options, subcategory=None):
         layout = QFormLayout()
+        settings_options = self.get_value(category, field, subcategory) or []
         for option in options:
             toggle = QCheckBox(str(option))
-            toggle.setChecked(option in self.settings[category][field])
+            toggle.setChecked(option in settings_options)
             layout.addRow(toggle)
         return layout
     
-    def set_limits(self, category, field, minimum, maximum, middle=0, factor=1):
+    def set_limits(self, category, field, minimum, maximum, middle=0, factor=1, subcategory=None):
         layout = QHBoxLayout()
-        min_value, max_value = self.settings[category][field]
+        min_value, max_value = self.get_value(category, field, subcategory)
         min_value /= factor
         max_value /= factor
         layout.addWidget(QLabel("Min: "))
@@ -430,9 +794,12 @@ class ProjectSettings(QWidget):
         layout.addWidget(le)
         return layout
     
-    def set_dimensions(self, category, field):
+    def set_dimensions(self, category, field, subcategory=None, num_fields=2):
         layout = QHBoxLayout()
-        for value in self.settings[category][field]:
+        value_ = self.get_value(category, field, subcategory=subcategory)
+        if value_ == "???":
+            value_ = ["???"] * num_fields
+        for value in value_:
             le = QLineEdit()
             le.setValidator(QIntValidator())
             le.setText(str(value))
@@ -441,7 +808,6 @@ class ProjectSettings(QWidget):
 
     def update_label(self, slider, label):
         label.setText(str(slider.value()))
-
     
     def clearLayout(self, layout):
         if layout is not None:
@@ -451,8 +817,13 @@ class ProjectSettings(QWidget):
                     child.widget().deleteLater()
                 elif child.layout() is not None:
                     self.clearLayout(child.layout())
-
     
+    def check_blanks(self, parameters):
+        for big_key, big_value in parameters.items():
+            for key, value in big_value.items():
+                if value == "???":
+                    return False
+        return True
 
 
 def main():
