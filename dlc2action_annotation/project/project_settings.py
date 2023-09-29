@@ -107,9 +107,11 @@ class TypeChoice(QWidget):
     
 
 class ProjectSettings(QWidget):
-    def __init__(self, project_path="/Users/liza/DLC2Action/test"):
+    def __init__(self, settings, enabled=True, title=None):
         super().__init__()
-        self.settings = Project(project_path)._read_parameters(catch_blanks=False)
+        self.settings = settings
+        self.enabled = enabled
+        self.setWindowTitle(title)
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.labels = {}
         self.buttonBox = QDialogButtonBox(QBtn)
@@ -697,6 +699,7 @@ class ProjectSettings(QWidget):
         else:
             toggle.tristate = True
             toggle.setCheckState(Qt.PartiallyChecked)
+        toggle.setEnabled(self.enabled)
         return toggle
     
     def set_multiple_input(self, category, field, type="single", subcategory=None):
@@ -714,6 +717,7 @@ class ProjectSettings(QWidget):
             widget = CategoryInputWidget(x)
         else:
             widget = MultipleInputWidget(x)
+        widget.setEnabled(self.enabled)
         return widget
     
     def set_le(self, category, field, set_int=True, set_float=False, subcategory=None):
@@ -723,6 +727,7 @@ class ProjectSettings(QWidget):
         elif set_float:
             le.setValidator(QDoubleValidator())
         le.setText(str(self.get_value(category, field, subcategory=subcategory)))
+        le.setEnabled(self.enabled)
         return le
     
     def set_slider(self, category, field, minimum, maximum, percent=False, subcategory=None):
@@ -740,6 +745,7 @@ class ProjectSettings(QWidget):
         slider.valueChanged.connect(lambda: self.update_label(slider, label))
         slider_layout.addWidget(slider)
         slider_layout.addWidget(label)
+        slider.setEnabled(self.enabled)
         return slider_layout
     
     def set_combo(self, category, field, options, subcategory=None):
@@ -747,6 +753,7 @@ class ProjectSettings(QWidget):
         for o in options:
             combo.addItem(str(o))
         combo.setCurrentIndex(options.index(self.get_value(category, field, subcategory=subcategory)))
+        combo.setEnabled(self.enabled)
         return combo
     
     def set_file(self, category, field, filter=None, dir=False, subcategory=None):
@@ -760,7 +767,8 @@ class ProjectSettings(QWidget):
         else:
             button.clicked.connect(lambda: self.get_file(label, category, field, filter))
         layout.addWidget(label)
-        layout.addWidget(button)
+        if self.enabled:
+            layout.addWidget(button)
         return layout
     
     def get_file(self, label_widget, category, field, filter=None):
@@ -774,6 +782,7 @@ class ProjectSettings(QWidget):
         for option in options:
             toggle = QCheckBox(str(option))
             toggle.setChecked(option in settings_options)
+            toggle.setEnabled(self.enabled)
             layout.addRow(toggle)
         return layout
     
@@ -786,11 +795,13 @@ class ProjectSettings(QWidget):
         le = QLineEdit()
         le.setValidator(QDoubleValidator())
         le.setText(str(min_value))
+        le.setEnabled(self.enabled)
         layout.addWidget(le)
         layout.addWidget(QLabel("Max: "))
         le = QLineEdit()
         le.setValidator(QDoubleValidator())
         le.setText(str(max_value))
+        le.setEnabled(self.enabled)
         layout.addWidget(le)
         return layout
     
@@ -803,6 +814,7 @@ class ProjectSettings(QWidget):
             le = QLineEdit()
             le.setValidator(QIntValidator())
             le.setText(str(value))
+            le.setEnabled(self.enabled)
             layout.addWidget(le)
         return layout
 
@@ -828,11 +840,12 @@ class ProjectSettings(QWidget):
 
 def main():
     app = QApplication(sys.argv)
-
-    window = ProjectSettings()
+    project_path="/Users/liza/DLC2Action/test"
+    settings = Project(project_path)._read_parameters(catch_blanks=False)
+    window = ProjectSettings(settings, title="Hello")
     window.show()
-
     app.exec_()
+
 
 if __name__ == "__main__":
     main()

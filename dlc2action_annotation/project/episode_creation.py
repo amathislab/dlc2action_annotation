@@ -4,28 +4,13 @@ from PyQt5.QtWidgets import (
     QWidget,
     QComboBox,
     QVBoxLayout,
-    QHBoxLayout,
-    QFormLayout,
-    QPushButton,
     QDialogButtonBox,
     QLabel,
-    QScrollArea,
-    QTabWidget,
-    QCheckBox,
     QLineEdit,
-    QSlider,
-    QFileDialog,
     QMessageBox,
 )
-from PyQt5.QtCore import QSize
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIntValidator, QDoubleValidator
 from dlc2action_annotation.widgets.viewer import Viewer as Viewer
-from dlc2action_annotation.widgets.settings import MultipleInputWidget, MultipleDoubleInputWidget, CategoryInputWidget
 from dlc2action.project import Project
-from dlc2action.options import input_stores, annotation_stores
-from qtwidgets import Toggle
-import os
 
 
 class EpisodeCreation(QWidget):
