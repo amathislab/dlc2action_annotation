@@ -3,7 +3,7 @@ import pyqtgraph as pg
 import sys  # We need sys so that we can pass argv to QApplication
 import os
 from random import randint
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QTabWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QTabWidget
 from PyQt5.QtGui import QFont
 from dlc2action.project import Project
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
@@ -33,7 +33,8 @@ class Worker(QObject):
         self.finished.emit()
 
 
-class EpisodeTraining(QtWidgets.QWidget):
+class EpisodeTraining(QWidget):
+    finished = pyqtSignal()
 
     def __init__(self, project, episode, episode_settings=None, load_search=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,7 +94,6 @@ class EpisodeTraining(QtWidgets.QWidget):
         self.run_episode()
 
     def run_episode(self):
-        # Step 2: Create a QThread object
         self.thread = QThread()
         # Step 3: Create a worker object
         self.worker = Worker(self.project, self.episode, self.episode_settings, self.load_search)
@@ -109,9 +109,13 @@ class EpisodeTraining(QtWidgets.QWidget):
 
         # Final resets
         self.thread.finished.connect(
-            lambda: print("Finished!")
+            self.finish
         )
 
+    def finish(self):
+        print('THREAD FINISHED')
+        self.finished.emit()
+        self.close()
 
     def get_metric_log(self, mode: str):
         """Get the metric log.
@@ -150,6 +154,8 @@ class EpisodeTraining(QtWidgets.QWidget):
 
     def update_plot_data(self):
         val_data = self.get_metric_log("val")
+        if len(val_data) == 0:
+            return
         for key, values in val_data.items():
             if key == "loss":
                 continue

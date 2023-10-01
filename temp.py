@@ -12,10 +12,10 @@ DEVICE = "cpu"
 
 project = Project(
     "oft",
-    data_type="dlc_track",
-    annotation_type="csv",
-    data_path=DATA_PATH,
-    annotation_path=ANNOTATION_PATH,
+    # data_type="dlc_track",
+    # annotation_type="csv",
+    # data_path=DATA_PATH,
+    # annotation_path=ANNOTATION_PATH,
     projects_path=PROJECTS_PATH
 )
 
@@ -23,7 +23,7 @@ project.update_parameters(
     {
         "data": {
             "canvas_shape": [928, 576],
-            "data_suffix": {"DeepCut_resnet50_Blockcourse1May9shuffle1_1030000.csv"},
+            "data_suffix": "DeepCut_resnet50_Blockcourse1May9shuffle1_1030000.csv",
             "annotation_suffix": ".csv",
             "behaviors": ["Grooming", "Supported", "Unsupported"],
             "ignored_bodyparts": {"tl", "tr", "br", "bl", "centre"},
@@ -93,3 +93,5 @@ project.update_parameters(
         },
     }
 )
+
+project.remove_saved_features()

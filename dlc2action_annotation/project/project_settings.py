@@ -17,15 +17,14 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QMessageBox,
 )
-from PyQt5.QtCore import QSize
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QIntValidator, QDoubleValidator
 from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 from dlc2action_annotation.widgets.settings import MultipleInputWidget, MultipleDoubleInputWidget, CategoryInputWidget
 from dlc2action.project import Project
 from dlc2action.options import input_stores, annotation_stores
-from qtwidgets import Toggle
 import os
+
 
 
 class NewCheckbox(QCheckBox):
@@ -33,9 +32,18 @@ class NewCheckbox(QCheckBox):
         is_checked = super().checkState()
         value_dict = {0: False, 2: True, 1: "???"}
         return value_dict[is_checked]
+    
+class NewLineEdit(QLineEdit):
+    def text(self):
+        text = super().text()
+        if text == "None":
+            return None
+        return text
 
 
 class TypeChoice(QWidget):
+    accepted = pyqtSignal(tuple)
+
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
@@ -97,7 +105,8 @@ class TypeChoice(QWidget):
         return button
     
     def accept(self):
-        print("Accepted")
+        self.accepted.emit((self.data_type, self.annotation_type))
+        self.close()
 
     def reject(self):
         print("Rejected")
@@ -107,6 +116,8 @@ class TypeChoice(QWidget):
     
 
 class ProjectSettings(QWidget):
+    accepted = pyqtSignal(dict)
+
     def __init__(self, settings, enabled=True, title=None):
         super().__init__()
         self.settings = settings
@@ -144,7 +155,8 @@ class ProjectSettings(QWidget):
         self.collect_metrics()
         blanks_ok = self.check_blanks(self.settings)
         if blanks_ok:  
-            print("Accepted")
+            self.accepted.emit(self.settings)
+            self.close()
         else:
             msg = QMessageBox()
             msg.setText("Please fill in all fields.")
@@ -207,6 +219,7 @@ class ProjectSettings(QWidget):
     def set_general_tab(self):
         self.clearLayout(self.general_layout)
         self.set_general_tab_data()
+        self.general_layout.addRow("Model name: ", self.model_name)
         self.general_layout.addRow("Allow only one action per frame: ", self.exclusive)
         self.general_layout.addRow("Only use annotated videos: ", self.only_annotated)
         self.general_layout.addRow("Agent names to ignore: ", self.ignored_agents)
@@ -389,6 +402,7 @@ class ProjectSettings(QWidget):
         self.metrics_layout.addRow("Threshold value: ", self.map_threshold_value)
 
     def set_general_tab_data(self):
+        self.model_name = self.set_combo("general", "model_name", ["mlp", "c2f_tcn", "ms_tcn3", "asformer", "transformer", "c2f_transformer"])
         self.exclusive = self.set_toggle("general", "exclusive")
         self.only_annotated = self.set_toggle("general", "only_load_annotated")
         self.ignored_agents = self.set_multiple_input("general", "ignored_clips")
@@ -560,14 +574,17 @@ class ProjectSettings(QWidget):
         self.settings["training"]["split_path"] = self.split_path.itemAt(0).widget().text()
 
     def collect_augmentations(self):
-        self.settings["augmentations"]["augmentations"] = set([x.text() for x in self.augmentations.findChildren(QCheckBox) if x.isChecked()])
+        self.settings["augmentations"]["augmentations"] = self.collect_options(self.augmentations)
         self.settings["augmentations"]["rotation_limits"] = [float(x.text()) for x in self.rotation_limit.findChildren(QLineEdit)]
-        self.settings["augmentations"]["mirror_dim"] = set([int(x.text()) for x in self.mirror_dim.findChildren(QCheckBox) if x.isChecked()])
+        self.settings["augmentations"]["mirror_dim"] = self.collect_options(self.mirror_dim)
         self.settings["augmentations"]["noise_std"] = float(self.noise_std.text())
         self.settings["augmentations"]["zoom_limits"] = [float(x.text()) for x in self.zoom_limits.findChildren(QLineEdit)]
 
+    def collect_options(self, options_layout):
+        return set([options_layout.itemAt(i).widget().text() for i in range(options_layout.count()) if options_layout.itemAt(i).widget().isChecked()])
+
     def collect_features(self):
-        self.settings["features"]["keys"] = set([x.text() for x in self.keys.findChildren(QCheckBox) if x.isChecked()])
+        self.settings["features"]["keys"] = self.collect_options(self.keys)
         self.settings["features"]["distance_pairs"] = self.distance_pairs.values()
     
     def collect_data(self):
@@ -721,7 +738,7 @@ class ProjectSettings(QWidget):
         return widget
     
     def set_le(self, category, field, set_int=True, set_float=False, subcategory=None):
-        le = QLineEdit()
+        le = NewLineEdit()
         if set_int:
             le.setValidator(QIntValidator())
         elif set_float:
@@ -842,7 +859,8 @@ def main():
     app = QApplication(sys.argv)
     project_path="/Users/liza/DLC2Action/test"
     settings = Project(project_path)._read_parameters(catch_blanks=False)
-    window = ProjectSettings(settings, title="Hello")
+    # window = ProjectSettings(settings, title="Hello")
+    window = TypeChoice()
     window.show()
     app.exec_()
 
