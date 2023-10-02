@@ -118,10 +118,12 @@ class TypeChoice(QWidget):
 class ProjectSettings(QWidget):
     accepted = pyqtSignal(dict)
 
-    def __init__(self, settings, enabled=True, title=None):
+    def __init__(self, settings, enabled=True, title=None, project=None, show_model=False):
         super().__init__()
         self.settings = settings
         self.enabled = enabled
+        self.show_model = show_model
+        self.project = project
         self.setWindowTitle(title)
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.labels = {}
@@ -154,67 +156,57 @@ class ProjectSettings(QWidget):
         self.collect_data()
         self.collect_metrics()
         blanks_ok = self.check_blanks(self.settings)
-        if blanks_ok:  
-            self.accepted.emit(self.settings)
-            self.close()
-        else:
+        if not blanks_ok:
             msg = QMessageBox()
             msg.setText("Please fill in all fields.")
             msg.setInformativeText("The necessary fields are marked with ???")
             msg.exec_()
+            return
+        if self.project is not None:
+            if self.settings["general"]["model_name"] not in self.project.list_searches().index:
+                msg = QMessageBox()
+                msg.setText("Hyperparameter search is not available.")
+                msg.setInformativeText("There is no finished hyperparameter search for this model. Run the experiment with default parameters?")
+                msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                if msg.exec_() == QMessageBox.No:
+                    return
+        self.accepted.emit(self.settings)
+        self.close()
     
     def reject(self):
         print("Rejected")
+    
+    def create_tab(self, name):
+        new_tab = QWidget()
+        self.tabs.addTab(new_tab, name)
+        scroll = QScrollArea()
+        layout = QVBoxLayout()
+        layout.addWidget(scroll)
+        new_tab.setLayout(layout)
+        scroll.setWidgetResizable(True)
+        scrollContent = QWidget(scroll)
+        new_layout = QFormLayout()
+        scrollContent.setLayout(new_layout)
+        scroll.setWidget(scrollContent)
+        return new_tab, new_layout
 
     def create_general_tab(self):
-        self.general_tab = QWidget()
-        self.tabs.addTab(self.general_tab, "General")
-        self.general_layout = QFormLayout()
-        self.general_tab.setLayout(self.general_layout)
+        self.general_tab, self.general_layout = self.create_tab("General")
 
     def create_training_tab(self):
-        self.training_tab = QWidget()
-        self.tabs.addTab(self.training_tab, "Training")
-        self.training_layout = QFormLayout()
-        self.training_tab.setLayout(self.training_layout)
+        self.training_tab, self.training_layout = self.create_tab("Training")
 
     def create_augmentations_tab(self):
-        self.augmentation_tab = QWidget()
-        self.tabs.addTab(self.augmentation_tab, "Augmentations")
-        self.augmentation_layout = QFormLayout()
-        self.augmentation_tab.setLayout(self.augmentation_layout)
+        self.augmentation_tab, self.augmentation_layout = self.create_tab("Augmentations")
 
     def create_features_tab(self):
-        self.features_tab = QWidget()
-        self.tabs.addTab(self.features_tab, "Features")
-        self.features_layout = QFormLayout()
-        self.features_tab.setLayout(self.features_layout)
+        self.features_tab, self.features_layout = self.create_tab("Features")
     
     def create_data_tab(self):
-        self.data_tab = QWidget()
-        self.tabs.addTab(self.data_tab, "Data")
-        scroll = QScrollArea()
-        layout = QVBoxLayout()
-        layout.addWidget(scroll)
-        self.data_tab.setLayout(layout)
-        scroll.setWidgetResizable(True)
-        scrollContent = QWidget(scroll)
-        self.data_layout = QFormLayout()
-        scrollContent.setLayout(self.data_layout)
-        scroll.setWidget(scrollContent)
+        self.data_tab, self.data_layout = self.create_tab("Data")
 
     def create_metrics_tab(self):
-        self.metrics_tab = QWidget()
-        self.tabs.addTab(self.metrics_tab, "Metrics")
-        scroll = QScrollArea()
-        layout = QVBoxLayout()
-        layout.addWidget(scroll)
-        self.metrics_tab.setLayout(layout)
-        scroll.setWidgetResizable(True)
-        scrollContent = QWidget(scroll)
-        self.metrics_layout = QFormLayout()
-        scrollContent.setLayout(self.metrics_layout)
-        scroll.setWidget(scrollContent)
+        self.metrics_tab, self.metrics_layout = self.create_tab("Metrics")
     
     def set_general_tab(self):
         self.clearLayout(self.general_layout)
@@ -402,7 +394,7 @@ class ProjectSettings(QWidget):
         self.metrics_layout.addRow("Threshold value: ", self.map_threshold_value)
 
     def set_general_tab_data(self):
-        self.model_name = self.set_combo("general", "model_name", ["mlp", "c2f_tcn", "ms_tcn3", "asformer", "transformer", "c2f_transformer"])
+        self.model_name = self.set_combo("general", "model_name", ["mlp", "ms_tcn3", "c2f_tcn", "c2f_transformer", "asformer", "transformer"])
         self.exclusive = self.set_toggle("general", "exclusive")
         self.only_annotated = self.set_toggle("general", "only_load_annotated")
         self.ignored_agents = self.set_multiple_input("general", "ignored_clips")

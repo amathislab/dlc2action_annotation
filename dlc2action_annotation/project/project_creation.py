@@ -22,6 +22,7 @@ from pathlib import Path
 from dlc2action_annotation.project.episodes_list import EpisodesList
 from dlc2action_annotation.project.project_settings import ProjectSettings, TypeChoice
 from dlc2action.project import Project
+from dlc2action_annotation.project.utils import show_error
 
 
 class ProjectCreation(QWidget):
@@ -45,13 +46,6 @@ class ProjectCreation(QWidget):
         self.layout.addWidget(self.name)
         self.layout.addWidget(button)
         self.setLayout(self.layout)
-
-    def show_error(self, message):
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Critical)
-        msg.setText(message)
-        msg.setWindowTitle("Error")
-        msg.exec_()
 
     def make_path_choice(self):
         layout = QHBoxLayout()
@@ -126,10 +120,10 @@ class ProjectCreation(QWidget):
     def make_new_project(self):
         name = self.name_le.text()
         if name == "":
-            self.show_error("Please enter a name for the project")
+            show_error("Please enter a name for the project")
             return
         if name in os.listdir(self.projects_path):
-            self.show_error("Project already exists")
+            show_error("Project already exists")
             return
         self.type_choice = TypeChoice()
         self.type_choice.show()

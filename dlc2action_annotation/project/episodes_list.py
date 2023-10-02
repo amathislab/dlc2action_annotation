@@ -15,6 +15,7 @@ from dlc2action.project import Project
 from PyQt5.QtCore import Qt, QSize
 from dlc2action_annotation.project.project_settings import ProjectSettings
 from dlc2action_annotation.project.episode_training import EpisodeTraining
+from dlc2action_annotation.project.utils import show_error
 
 
 class EpisodesList(QWidget):
@@ -56,13 +57,18 @@ class EpisodesList(QWidget):
     def make_new_episode(self):
         name = self.episode_le.text()
         if name == "":
-            self.show_error("Please enter a name")
-        self.settings_window = ProjectSettings(self.project._read_parameters(), enabled=True, title=name)
+            show_error("Please enter a name")
+        self.settings_window = ProjectSettings(self.project._read_parameters(), enabled=True, title=name, project=self.project)
         self.settings_window.show()
         self.settings_window.accepted.connect(lambda x: self.create_episode(name, x))
     
     def create_episode(self, name, settings):
-        self.training_window = EpisodeTraining(self.project, name, episode_settings=settings, load_search=None)
+        model_name = settings["general"]["model_name"]
+        if model_name in self.project.list_searches().index:
+            load_search = model_name
+        else:
+            load_search = None
+        self.training_window = EpisodeTraining(self.project, name, episode_settings=settings, load_search=load_search)
         self.training_window.finished.connect(self.update_table)
         self.training_window.show()
 
