@@ -567,13 +567,16 @@ class ProjectSettings(QWidget):
 
     def collect_augmentations(self):
         self.settings["augmentations"]["augmentations"] = self.collect_options(self.augmentations)
-        self.settings["augmentations"]["rotation_limits"] = [float(x.text()) for x in self.rotation_limit.findChildren(QLineEdit)]
+        self.settings["augmentations"]["rotation_limits"] = self.collect_limits(self.rotation_limit)
         self.settings["augmentations"]["mirror_dim"] = self.collect_options(self.mirror_dim)
         self.settings["augmentations"]["noise_std"] = float(self.noise_std.text())
-        self.settings["augmentations"]["zoom_limits"] = [float(x.text()) for x in self.zoom_limits.findChildren(QLineEdit)]
+        self.settings["augmentations"]["zoom_limits"] = self.collect_limits(self.zoom_limits)
 
     def collect_options(self, options_layout):
         return set([options_layout.itemAt(i).widget().text() for i in range(options_layout.count()) if options_layout.itemAt(i).widget().isChecked()])
+    
+    def collect_limits(self, limits_layout):
+        return [float(limits_layout.itemAt(i).widget().text()) for i in range(limits_layout.count()) if isinstance(limits_layout.itemAt(i).widget(), QLineEdit)]
 
     def collect_features(self):
         self.settings["features"]["keys"] = self.collect_options(self.keys)

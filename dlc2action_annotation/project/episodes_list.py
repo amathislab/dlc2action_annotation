@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QLineEdit,
+    QAbstractItemView,
 )
 from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 from dlc2action.project import Project
@@ -24,11 +25,11 @@ class EpisodesList(QWidget):
         self.project = project
         self.scroll_area = QScrollArea()
         self.layout = QVBoxLayout(self)
+        self.name_field = self.set_name_field()
         self.layout.addWidget(self.scroll_area)
         self.scroll_area.setWidgetResizable(True)
         self.table = self.set_table()
         self.scroll_area.setWidget(self.table)
-        self.name_field = self.set_name_field()
         self.layout.addWidget(self.name_field)
 
     def set_buttons(self):
@@ -46,6 +47,10 @@ class EpisodesList(QWidget):
         name_widget = QWidget()
         name_layout = QHBoxLayout()
         name_widget.setLayout(name_layout)
+        self.annotation_button = QPushButton("Generate annotations")
+        self.annotation_button.setEnabled(False)
+        self.annotation_button.clicked.connect(self.generate_annotations)
+        name_layout.addWidget(self.annotation_button)
         name_layout.addStretch(1)
         self.episode_le = QLineEdit()
         name_layout.addWidget(self.episode_le)
@@ -88,11 +93,18 @@ class EpisodesList(QWidget):
             table.setItem(i, 0, QTableWidgetItem(episode))
             for j, metric in enumerate(metrics):
                 table.setItem(i, j + 1, QTableWidgetItem(str(df.loc[episode, ("results", metric)].round(3))))    
-                table.item(i, j).setFlags(Qt.ItemIsEnabled)
-        table.itemClicked.connect(self.onClicked)
+                # table.item(i, j).setFlags(Qt.ItemIsEnabled)
+        table.itemClicked.connect(self.name_clicked)
+        table.selectionModel().selectionChanged.connect(self.row_selected)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         return table
     
-    def onClicked(self, item):
+    def row_selected(self):
+        self.annotation_button.setEnabled(True)
+
+    def name_clicked(self, item):
         if item.column() != 0:
             return
         episode = item.text()
@@ -101,6 +113,11 @@ class EpisodesList(QWidget):
         settings = self.project._update(settings, settings_episode)
         self.window = ProjectSettings(settings, enabled=False, title=episode)
         self.window.show()
+
+    def generate_annotations(self):
+        row = self.table.selectionModel().selectedRows()[0].row()
+        episode = self.table.item(row, 0).text()
+        self.project.run_suggestion(episode, suggestion_episodes=[episode], suggestion_classes=["Grooming", "Supported", "Unsupported"])
 
     def sizeHint(self):
         return QSize(700, 500)

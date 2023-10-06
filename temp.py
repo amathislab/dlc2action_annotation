@@ -12,10 +12,10 @@ DEVICE = "cpu"
 
 project = Project(
     "oft",
-    # data_type="dlc_track",
-    # annotation_type="csv",
-    # data_path=DATA_PATH,
-    # annotation_path=ANNOTATION_PATH,
+    data_type="dlc_track",
+    annotation_type="csv",
+    data_path=DATA_PATH,
+    annotation_path=ANNOTATION_PATH,
     projects_path=PROJECTS_PATH
 )
 
