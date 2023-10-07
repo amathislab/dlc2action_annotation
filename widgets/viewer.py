@@ -214,30 +214,33 @@ class Viewer(QWidget):
             self.settings["3d_bodyparts"],
         )
 
-        if os.path.exists("../last_action_choice.pickle"):
-            msg = QMessageBox()
-            msg.setText("Load the last label choice?")
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            self.load_action_choice = msg.exec_() == QMessageBox.Yes
-        else:
-            self.load_action_choice = False
+#Remove the option to load last labels
+        # if os.path.exists("../last_action_choice.pickle"):
+        #     msg = QMessageBox()
+        #     msg.setText("Load the last label choice?")
+        #     msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        #     self.load_action_choice = msg.exec_() == QMessageBox.Yes
+        # else:
+        #     self.load_action_choice = False
 
+        # success = False
+        # if self.load_action_choice:
+        #     try:
+        #         with open("../last_action_choice.pickle", "rb") as f:
+        #             (
+        #                 self.settings["actions"],
+        #                 display_categories,
+        #                 self.loaded_shortcuts,
+        #             ) = pickle.load(f)
+        #             self.loaded_shortcuts = defaultdict(
+        #                 lambda: {}, self.loaded_shortcuts
+        #             )
+        #             self.set_display_categories(display_categories)
+        #             success = True
+        #     except:
+        #         pass
+        
         success = False
-        if self.load_action_choice:
-            try:
-                with open("../last_action_choice.pickle", "rb") as f:
-                    (
-                        self.settings["actions"],
-                        display_categories,
-                        self.loaded_shortcuts,
-                    ) = pickle.load(f)
-                    self.loaded_shortcuts = defaultdict(
-                        lambda: {}, self.loaded_shortcuts
-                    )
-                    self.set_display_categories(display_categories)
-                    success = True
-            except:
-                pass
 
         if not success and (type(self.action_dict) is dict or settings["cat_choice"]):
             self.choose_cats()
