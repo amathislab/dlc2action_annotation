@@ -17,6 +17,9 @@ from PyQt5.QtCore import Qt, QSize
 from dlc2action_annotation.project.project_settings import ProjectSettings
 from dlc2action_annotation.project.episode_training import EpisodeTraining
 from dlc2action_annotation.project.utils import show_error
+from dlc2action_annotation.annotator import MainWindow as Annotator
+import os
+import mimetypes
 
 
 class EpisodesList(QWidget):
@@ -117,7 +120,42 @@ class EpisodesList(QWidget):
     def generate_annotations(self):
         row = self.table.selectionModel().selectedRows()[0].row()
         episode = self.table.item(row, 0).text()
-        self.project.run_suggestion(episode, suggestion_episodes=[episode], suggestion_classes=["Grooming", "Supported", "Unsupported"])
+        settings = self.project._read_parameters()
+        data_path = settings["data"]["data_path"]
+        data_suffix = settings["data"]["data_suffix"]
+        videos = []
+        names = []
+        data_files = []
+        for file in os.listdir(data_path):
+            guess_type = mimetypes.guess_type(file)[0]
+            if guess_type is None or not guess_type.startswith('video'):
+                continue
+            name = file.split(".")[0]
+            if name + data_suffix in os.listdir(data_path):
+                videos.append(os.path.join(data_path, file))
+                names.append(name)
+                data_files.append(os.path.join(data_path, name + data_suffix))
+        self.project.remove_saved_features()
+        self.project.run_suggestion(
+            episode, 
+            suggestion_episodes=[episode], 
+            suggestion_classes=["Grooming", "Supported", "Unsupported"], 
+            force=True, 
+            file_paths=data_files,
+            parameters_update={"general": {"only_load_annotated": False}}
+        )
+        window = Annotator(
+            videos=videos,
+            output_file=None,
+            multiview=False,
+            dev=False,
+            active_learning=False,
+            show_settings=False,
+            config_file="config.yaml",
+            suggestion_files=[self.project._suggestion_path(name, episode) for name in names],
+        )
+        window.show()
+        self.close()
 
     def sizeHint(self):
         return QSize(700, 500)

@@ -576,6 +576,7 @@ def main(
         active_learning=active_learning,
         show_settings=open_settings,
         config_file=config_file,
+        suggestion_files=["/Users/liza/Documents/AR/video_example_sugg.pickle"]
     )
     window.show()
 
