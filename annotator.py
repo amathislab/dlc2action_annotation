@@ -436,11 +436,13 @@ class MainWindow(QMainWindow):
             "Activate or deactivate the more efficient active learning mode"
         )
         activeLearningAction.triggered.connect(self.change_al_mode)
-        correctAction = QAction("&Save a correction...", self)
-        correctAction.setStatusTip(
-            "Click ang drag keypoints to correct DLC errors, save the frame and the keypoints"
-        )
-        correctAction.triggered.connect(self.viewer.set_correct_mode)
+
+        # correctAction = QAction("&Save a correction...", self)
+        # correctAction.setStatusTip(
+        #     "Click ang drag keypoints to correct DLC errors, save the frame and the keypoints"
+        # )
+        # correctAction.triggered.connect(self.viewer.set_correct_mode)
+
         unlabeledAction = QAction("&Start unlabeled search", self)
         unlabeledAction.setStatusTip(
             "Navigate through the unlabeled intervals in the video"
