@@ -370,7 +370,7 @@ class LoadDialog(QDialog):
 
 class ChoiceDialog(QDialog):
 
-    def __init__(self, action_dict, filename):
+    def __init__(self, catDict, action_dict, filename, key):
         super(ChoiceDialog, self).__init__()
 
 
@@ -378,10 +378,16 @@ class ChoiceDialog(QDialog):
         self.display_cats = None
         self.action_dict = action_dict
         self.button = QPushButton("OK")
+        self.key = key
+        self.catDict = catDict
 
         # Add set labels option here
+        self.create_lines(main_key=self.key)
+        self.max_key = max(list(self.catDict["base"].keys()))
+        self.layout.addWidget(self.line_scroll)
+
         self.button_add_labels = QPushButton("Add label")
-        self.button_add_labels.clicked.connect(self.add_line)
+        self.button_add_labels.clicked.connect(CatDialog.add_line)
         
         self.button.clicked.connect(self.finish)
         self.cats_checkbox = QCheckBox("Nested annotation")
@@ -411,64 +417,18 @@ class ChoiceDialog(QDialog):
         self.layout.addWidget(self.cats_checkbox)
         self.setLayout(self.layout)
     
-    # def add_line(self, ind=None, name="", sc=""):
-    #     if type(ind) is not int:
-    #         ind = self.max_key + 1
-    #         self.max_key += 1
-    #     if type(name) is not str:
-    #         name = ""
-    #         sc = ""
-    #     col = [255, 255, 255] if name == "" else get_color(self.colors, name)
-    #     line = CatLine(self, col, name, sc, self.lines, self.hot_buttons, self.colors)
-    #     line.next_line.connect(self.new_line)
-    #     line.finished.connect(self.finish)
-    #     self.lines.append(line)
-    #     self.line_layout.addWidget(line)
-    #     line.name_field.setFocus()
-    #     self.update()
-    #     # self.cat_list[ind] = line
-
-    # def new_line(self, n):
-    #     if n + 1 < len(self.lines):
-    #         self.lines[n + 1].name_field.setFocus()
-    #     else:
-    #         self.add_line()
-    #         self.lines[-1].name_field.setFocus()
-
-    # def create_lines(self, main_key="base"):
-    #     self.lines = []
-    #     for cat in self.catDict[main_key]:
-    #         if self.catDict[main_key][cat] not in self.invisible:
-    #             sc = ""
-    #             for key in self.shortCut[main_key]:
-    #                 if self.shortCut[main_key][key] == cat:
-    #                     sc = key
-    #             self.add_line(cat, self.catDict[main_key][cat], sc)
-    #             self.cat_list[cat] = self.lines[-1]
-    #     if len(self.catDict[main_key]) == 0:
-    #         self.add_line()
-
-    # def keyPressEvent(self, event):
-    #     if event.modifiers() & Qt.ShiftModifier:
-    #         shift = True
-    #     else:
-    #         shift = False
-    #     if event.key() == Qt.Key_Enter or event.key() == 16777220:
-    #         if shift:
-    #             self.finish()
-    #     else:
-    #         super(CatDialog, self).keyPressEvent(event)
-
-    # def add_action(self, text, i, sc):
-    #     self.catDict[self.key][i] = text
-    #     self.catDict["base"][i] = text
-    #     self.actions.append(text)
-    #     if self.key == "categories" and text not in self.catDict.keys():
-    #         self.catDict[text] = {}
-    #     if len(sc) == 1:
-    #         self.shortCut[self.key][sc] = i
-
-    
+    def create_lines(self, main_key="base"):
+        self.lines = []
+        for cat in self.catDict[main_key]:
+            if self.catDict[main_key][cat] not in self.invisible:
+                sc = ""
+                for key in self.shortCut[main_key]:
+                    if self.shortCut[main_key][key] == cat:
+                        sc = key
+                self.add_line(cat, self.catDict[main_key][cat], sc)
+                self.cat_list[cat] = self.lines[-1]
+        if len(self.catDict[main_key]) == 0:
+            self.add_line()
 
     def finish(self, event):
         self.actions = []
@@ -485,6 +445,18 @@ class ChoiceDialog(QDialog):
         if len(titles) > 0:
             self.actions = {k: v for k, v in zip(titles, self.actions)}
         self.display_cats = self.cats_checkbox.isChecked()
+
+        max_key = max(list(self.catDict["base"].keys()))
+        for line in self.lines:
+            text = line.name_field.text()
+            if text in self.invisible:
+                self.actions.append(text)
+                self.invisible.remove(text)
+            sc = line.sc_field.text()
+            if text not in taken:
+                max_key += 1
+                self.add_action(text, max_key, sc)
+
         self.accept()
 
     def on_change(self, event):
