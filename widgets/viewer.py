@@ -1196,8 +1196,10 @@ class Viewer(QWidget):
         self.sampler.update_good(0)
         self.on_next()
 
+    # bug tracking 
+
     def next_video_f(self):
-        if self.show_question(message="Save the current annotation?", default="yes"):
+        if self.show_question(message="Save the current annotation? #1 ", default="yes"):
             success = self.save()
         else:
             success = True
@@ -1205,7 +1207,7 @@ class Viewer(QWidget):
             self.next_video.emit()
 
     def prev_video_f(self):
-        if self.show_question(message="Save the current annotation?", default="yes"):
+        if self.show_question(message="Save the current annotation? #2 ", default="yes"):
             success = self.save()
         else:
             success = True

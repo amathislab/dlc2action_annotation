@@ -85,7 +85,7 @@ class Console(QWidget):
         self.ind_names_tick.stateChanged.connect(self.window.set_display_names)
         self.ind_names_label = QLabel("Display names:")
 
-        self.correct_button = QPushButton("Save correction")
+        # self.correct_button = QPushButton("Save correction")
         self.correct_button.clicked.connect(self.window.save_correction)
         self.correct_button.setVisible(self.window.correct_mode)
 
