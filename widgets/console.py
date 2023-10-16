@@ -143,7 +143,7 @@ class Console(QWidget):
         self.layout.addWidget(self.catlist, 70)
         self.layout.addWidget(self.back_button)
         self.layout.addLayout(self.speed_form)
-        self.layout.addWidget(self.correct_button)
+        # self.layout.addWidget(self.correct_button)
         self.layout.addLayout(self.video_buttons)
         self.layout.addLayout(self.assessment_buttons)
         self.setLayout(self.layout)

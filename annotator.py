@@ -488,7 +488,7 @@ class MainWindow(QMainWindow):
         file.addAction(saveAction)
         file.addAction(saveasAction)
         file.addAction(openVideoAction)
-        file.addAction(correctAction)
+        # file.addAction(correctAction)
         file.addAction(exampleAction)
         loadMenu = file.addMenu("Load")
         loadMenu.addAction(loadDLCAction)
