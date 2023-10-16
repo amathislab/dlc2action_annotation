@@ -163,6 +163,8 @@ class MainWindow(QMainWindow):
                 lens,
                 filenames,
                 filepaths,
+                self.annotation_files[0],
+                self.suggestion_files[0],
                 current,
             )
         else:
@@ -215,7 +217,7 @@ class MainWindow(QMainWindow):
             self.al_mode = False
         if annotation is None:
             annotation = self.annotation_files[0]
-        if annotation is None:
+        if suggestion is None:
             suggestion = self.suggestion_files[0]
         self.viewer = Viewer(
             stacks,
@@ -541,18 +543,14 @@ class MainWindow(QMainWindow):
     help="The video file to annotate (for more views repeat several times)",
 )
 @click.option(
-    "--output",
-    help="The path where the annotation output will be saved (in HDF5 format)",
+    "--annotation_path",
+    default=None,
+    help="The path where to the annotation file will be saved (in pickled format)",
 )
 @click.option(
-    "--labels",
-    help="The path to previous annotation results (in HDF5 or pickled format)",
-)
-@click.option(
-    "--multiview",
-    "-m",
-    is_flag=True,
-    help="Display multiple videos in parallel (when False multiple videos will be displayed sequentially)",
+    "--suggestion_path",
+    default=None,
+    help="The path where to the suggestion file (in pickled format)",
 )
 @click.option(
     "--dev",
@@ -564,19 +562,19 @@ class MainWindow(QMainWindow):
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
 @click.option("--config_file", "-c", default="config.yaml", help="The config file path")
 def main(
-    video, output, labels, multiview, dev, active_learning, open_settings, config_file
+    video, annotation_path, suggestion_path, dev, active_learning, open_settings, config_file
 ):
     app = QApplication(sys.argv)
 
     window = MainWindow(
         videos=video,
-        output_file=output,
-        multiview=multiview,
+        multiview=True,
         dev=dev,
         active_learning=active_learning,
         show_settings=open_settings,
         config_file=config_file,
-        suggestion_files=["/Users/liza/Documents/AR/video_example_sugg.pickle"]
+        suggestion_files=[suggestion_path],
+        annotation_files=[annotation_path],
     )
     window.show()
 

@@ -24,6 +24,7 @@ from dlc2action_annotation.widgets.settings import MultipleInputWidget, Multiple
 from dlc2action.project import Project
 from dlc2action.options import input_stores, annotation_stores
 import os
+from pathlib import Path
 
 
 
@@ -852,10 +853,10 @@ class ProjectSettings(QWidget):
 
 def main():
     app = QApplication(sys.argv)
-    project_path="/Users/liza/DLC2Action/test"
+    project_path=os.path.join(str(Path.home()), "DLC2Action")
     settings = Project(project_path)._read_parameters(catch_blanks=False)
-    # window = ProjectSettings(settings, title="Hello")
-    window = TypeChoice()
+    window = ProjectSettings(settings, title="Hello")
+    # window = TypeChoice()
     window.show()
     app.exec_()
 
