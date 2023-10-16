@@ -23,6 +23,7 @@ from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 from dlc2action_annotation.widgets.settings import MultipleInputWidget, MultipleDoubleInputWidget, CategoryInputWidget
 from dlc2action.project import Project
 from dlc2action.options import input_stores, annotation_stores
+from dlc2action_annotation.project.utils import show_error, show_warning
 import os
 from pathlib import Path
 
@@ -75,6 +76,10 @@ class TypeChoice(QWidget):
 
         self.data_changed()
         self.annotation_changed()
+    
+    def data_changed(self, index=None):
+        self.data_type = self.data_combo.currentText()
+        self.data_label.setText(input_stores[self.data_type].__doc__)
 
     def make_data_combo(self):
         combo = QComboBox()
@@ -83,10 +88,6 @@ class TypeChoice(QWidget):
             combo.addItem(option)
         combo.currentIndexChanged.connect(self.data_changed)
         return combo
-    
-    def data_changed(self, index=None):
-        self.data_type = self.data_combo.currentText()
-        self.data_label.setText(input_stores[self.data_type].__doc__)
 
     def make_annotation_combo(self):
         combo = QComboBox()
@@ -98,6 +99,8 @@ class TypeChoice(QWidget):
     
     def annotation_changed(self, index=None):
         self.annotation_type = self.annotation_combo.currentText()
+        if self.annotation_type != "dlc":
+            show_warning("Annotation generation not supported.", "At the moment, only DLC annotations are supported directly; the other types would need to be converted manually.")
         self.annotation_label.setText(annotation_stores[self.annotation_type].__doc__)
 
     def make_button(self):
@@ -122,6 +125,24 @@ class ProjectSettings(QWidget):
     def __init__(self, settings, enabled=True, title=None, project=None, show_model=False):
         super().__init__()
         self.settings = settings
+        if not isinstance(self.settings["data"].get("data_path", ""), str) and self.settings["data"]["data_path"] is not None:
+            show_error("The interface does not support multiple data paths. Please edit the settings file manually.")
+            return
+        if not isinstance(self.settings["data"].get("annotation_path", ""), str) and self.settings["data"]["annotation_path"] is not None:
+            show_error("The interface does not support multiple annotation paths. Please edit the settings file manually.")
+            return
+        if not isinstance(self.settings["data"].get("data_suffix", ""), str) and self.settings["data"]["data_suffix"] is not None:
+            show_error("The interface does not support multiple data suffixes. Please edit the settings file manually.")
+            return
+        if not isinstance(self.settings["data"].get("annotation_suffix", ""), str) and self.settings["data"]["annotation_suffix"] is not None:
+            show_error("The interface does not support multiple annotation suffixes. Please edit the settings file manually.")
+            return
+        if not isinstance(self.settings["data"].get("data_prefix", ""), str) and self.settings["data"]["data_prefix"] is not None:
+            show_error("The interface does not support multiple data prefixes. Please edit the settings file manually.")
+            return
+        if not isinstance(self.settings["data"].get("feature_suffix", ""), str) and self.settings["data"]["feature_suffix"] is not None:
+            show_error("The interface does not support multiple feature suffixes. Please edit the settings file manually.")
+            return
         self.enabled = enabled
         self.show_model = show_model
         self.project = project
@@ -160,7 +181,7 @@ class ProjectSettings(QWidget):
         if not blanks_ok:
             msg = QMessageBox()
             msg.setText("Please fill in all fields.")
-            msg.setInformativeText("The necessary fields are marked with ???")
+            msg.setInformativeText("The necessary fields are marked with ??? or half-checked checkboxes.")
             msg.exec_()
             return
         if self.project is not None:
@@ -175,7 +196,7 @@ class ProjectSettings(QWidget):
         self.close()
     
     def reject(self):
-        print("Rejected")
+        return
     
     def create_tab(self, name):
         new_tab = QWidget()

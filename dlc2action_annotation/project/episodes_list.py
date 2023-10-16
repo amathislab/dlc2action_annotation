@@ -99,7 +99,6 @@ class EpisodesList(QWidget):
         self.annotation_button.setEnabled(False)
         self.annotation_button.clicked.connect(self.generate_annotations)
         self.new_annotation_button.clicked.connect(self.annotate_more_videos)
-        self.new_annotation_button.setEnabled(False)
         name_layout.addWidget(self.annotation_button)
         name_layout.addWidget(self.new_annotation_button)
         name_layout.addStretch(1)
@@ -145,7 +144,6 @@ class EpisodesList(QWidget):
             for j, metric in enumerate(metrics):
                 table.setItem(i, j + 1, QTableWidgetItem(str(df.loc[episode, ("results", metric)].round(3))))    
                 # table.item(i, j).setFlags(Qt.ItemIsEnabled)
-        table.itemClicked.connect(self.show_menu)
         table.setContextMenuPolicy(Qt.CustomContextMenu)
         table.customContextMenuRequested.connect(self.show_menu)
         table.selectionModel().selectionChanged.connect(self.row_selected)
@@ -172,15 +170,23 @@ class EpisodesList(QWidget):
     def _get_eligible_videos(self):
         settings = self.project._read_parameters()
         data_path = settings["data"]["data_path"]
+        if isinstance(data_path, str):
+            data_path = [data_path]
+        potential_files = []
+        for path in data_path:
+            potential_files.extend([os.path.join(path, file) for file in os.listdir(path)])
         data_suffix = settings["data"]["data_suffix"]
+        if isinstance(data_suffix, str):
+            data_suffix = [data_suffix]
         videos = []
-        for file in os.listdir(data_path):
+        for file in potential_files:
             guess_type = mimetypes.guess_type(file)[0]
             if guess_type is None or not guess_type.startswith('video'):
                 continue
             name = file.split(".")[0]
-            if name + data_suffix in os.listdir(data_path):
-                videos.append(os.path.join(data_path, file))
+            potential_data_files = [name + suffix for suffix in data_suffix]
+            if any([os.path.exists(potential_data_file) for potential_data_file in potential_data_files]):
+                videos.append(file)
         return videos
 
     def generate_annotations(self):
@@ -202,7 +208,15 @@ class EpisodesList(QWidget):
     def annotate_with_suggestion(self, episode, videos):
         settings = self.project._read_parameters()
         data_suffix = settings["data"]["data_suffix"]
-        data_files = [video.split('.')[0] + data_suffix for video in videos]
+        if isinstance(data_suffix, str):
+            data_suffix = [data_suffix[0]]
+        data_files = []
+        for video in videos:
+            name = video.split('.')[0]
+            for suffix in data_suffix:
+                if os.path.exists(name + suffix):
+                    data_files.append(name + suffix)
+                    break
         self.project.remove_saved_features()
         self.project.run_suggestion(
             episode, 
@@ -235,6 +249,10 @@ class EpisodesList(QWidget):
             suggestion_files = None
         annotation_path = self.project._read_parameters()["data"]["annotation_path"]
         annotation_suffix = self.project._read_parameters()["data"]["annotation_suffix"]
+        if not isinstance(annotation_path, str):
+            annotation_path = annotation_path[0]
+        if not isinstance(annotation_suffix, str):
+            annotation_suffix = annotation_suffix[0]
         annotation_files = [os.path.join(annotation_path, os.path.basename(name).split('.')[0] + annotation_suffix) for name in videos]
         window = Annotator(
             videos=videos,
