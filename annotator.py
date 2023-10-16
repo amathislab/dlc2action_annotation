@@ -29,8 +29,8 @@ from widgets.settings import SettingsWindow
 from widgets.viewer import Viewer as Viewer
 
 
-# class MainWindow(QMainWindow):
-#     closed = pyqtSignal()
+class MainWindow(QMainWindow):
+    closed = pyqtSignal()
 
     def __init__(
         self,
@@ -137,7 +137,7 @@ from widgets.viewer import Viewer as Viewer
         if len(self.videos) > 1:
             msg = QMessageBox()
             msg.setText(
-                "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+                "You have chosen more than one video file #3. Would you like to open them in multiple view mode?"
             )
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             reply = msg.exec_()
