@@ -29,8 +29,8 @@ from widgets.settings import SettingsWindow
 from widgets.viewer import Viewer as Viewer
 
 
-class MainWindow(QMainWindow):
-    closed = pyqtSignal()
+# class MainWindow(QMainWindow):
+#     closed = pyqtSignal()
 
     def __init__(
         self,
@@ -142,11 +142,17 @@ class MainWindow(QMainWindow):
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             reply = msg.exec_()
             if reply == QMessageBox.Yes:
-                self.multiview = True
+                multiview = True
+                # self.multiview = True
             else:
-                self.multiview = False
+                multiview = False
+                # self.multiview = False
 
-    def run_video(self, multiview=False, current=0, settings_update=None):
+    # Bug is we say yes load multiview
+    # Problem if the default is false
+    # def run_video(self, multiview=False, current=0, settings_update=None):
+    def run_video(self, multiview, current=0, settings_update=None):
+
         if settings_update is None:
             settings_update = {}
         videos = self.videos
@@ -154,6 +160,7 @@ class MainWindow(QMainWindow):
         self.settings = read_settings(self.settings_file)
         self.settings.update(settings_update)
         if multiview:
+      
             for i, video in enumerate(videos):
                 stack, shape, length = read_video(video, self.settings["backend"])
                 stacks.append(stack)
@@ -179,10 +186,12 @@ class MainWindow(QMainWindow):
                 self.suggestion_files,
                 current,
             )
+      
         else:
             if len(self.videos) > 1:
                 self.sequential = True
             self.run_viewer_single(current)
+         
 
     def open_video(self):
         self.viewer.save()
