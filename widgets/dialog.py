@@ -150,7 +150,7 @@ class CatLine(QWidget):
     def end(self):
         self.finished.emit()
 
-
+# Turn this into a module / reusable component? 
 class CatDialog(QDialog):
     def __init__(self, catDict, shortCut, invisible, key, *args, **kwargs):
         super(CatDialog, self).__init__(*args, **kwargs)
@@ -180,6 +180,7 @@ class CatDialog(QDialog):
         self.label.addWidget(self.text)
         self.layout.addLayout(self.label)
 
+# set labels here
         self.line_layout = QVBoxLayout()
         self.line_widget = QWidget()
         self.line_widget.setLayout(self.line_layout)
@@ -368,19 +369,29 @@ class LoadDialog(QDialog):
 
 
 class ChoiceDialog(QDialog):
+
     def __init__(self, action_dict, filename):
         super(ChoiceDialog, self).__init__()
+
+
         self.actions = None
         self.display_cats = None
         self.action_dict = action_dict
         self.button = QPushButton("OK")
+
+        # Add set labels option here
+        self.button_add_labels = QPushButton("Add label")
+        self.button_add_labels.clicked.connect(self.add_line)
+        
         self.button.clicked.connect(self.finish)
         self.cats_checkbox = QCheckBox("Nested annotation")
         self.cats_checkbox.setChecked(False)
         self.label = QLabel(f"Choose the actions you want to annotate in {filename}")
+        
         self.tree = QTreeWidget()
         self.tree.setHeaderHidden(True)
         self.tree.itemChanged.connect(self.on_change)
+
         for category in action_dict:
             parent = QTreeWidgetItem(self.tree)
             parent.setText(0, category)
@@ -394,8 +405,70 @@ class ChoiceDialog(QDialog):
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.tree)
         self.layout.addWidget(self.button)
+
+        self.layout.addWidget(self.button_add_labels)
+
         self.layout.addWidget(self.cats_checkbox)
         self.setLayout(self.layout)
+    
+    # def add_line(self, ind=None, name="", sc=""):
+    #     if type(ind) is not int:
+    #         ind = self.max_key + 1
+    #         self.max_key += 1
+    #     if type(name) is not str:
+    #         name = ""
+    #         sc = ""
+    #     col = [255, 255, 255] if name == "" else get_color(self.colors, name)
+    #     line = CatLine(self, col, name, sc, self.lines, self.hot_buttons, self.colors)
+    #     line.next_line.connect(self.new_line)
+    #     line.finished.connect(self.finish)
+    #     self.lines.append(line)
+    #     self.line_layout.addWidget(line)
+    #     line.name_field.setFocus()
+    #     self.update()
+    #     # self.cat_list[ind] = line
+
+    # def new_line(self, n):
+    #     if n + 1 < len(self.lines):
+    #         self.lines[n + 1].name_field.setFocus()
+    #     else:
+    #         self.add_line()
+    #         self.lines[-1].name_field.setFocus()
+
+    # def create_lines(self, main_key="base"):
+    #     self.lines = []
+    #     for cat in self.catDict[main_key]:
+    #         if self.catDict[main_key][cat] not in self.invisible:
+    #             sc = ""
+    #             for key in self.shortCut[main_key]:
+    #                 if self.shortCut[main_key][key] == cat:
+    #                     sc = key
+    #             self.add_line(cat, self.catDict[main_key][cat], sc)
+    #             self.cat_list[cat] = self.lines[-1]
+    #     if len(self.catDict[main_key]) == 0:
+    #         self.add_line()
+
+    # def keyPressEvent(self, event):
+    #     if event.modifiers() & Qt.ShiftModifier:
+    #         shift = True
+    #     else:
+    #         shift = False
+    #     if event.key() == Qt.Key_Enter or event.key() == 16777220:
+    #         if shift:
+    #             self.finish()
+    #     else:
+    #         super(CatDialog, self).keyPressEvent(event)
+
+    # def add_action(self, text, i, sc):
+    #     self.catDict[self.key][i] = text
+    #     self.catDict["base"][i] = text
+    #     self.actions.append(text)
+    #     if self.key == "categories" and text not in self.catDict.keys():
+    #         self.catDict[text] = {}
+    #     if len(sc) == 1:
+    #         self.shortCut[self.key][sc] = i
+
+    
 
     def finish(self, event):
         self.actions = []
@@ -435,6 +508,10 @@ class ChoiceDialogExample(ChoiceDialog):
         super(ChoiceDialogExample, self).__init__(action_dict, "")
         self.label.setText(f"Choose the actions you want to sample from")
         self.cats_checkbox.setVisible(False)
+        
+
+
+
 
     def exec_(self):
         super(ChoiceDialog, self).exec_()
