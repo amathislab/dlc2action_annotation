@@ -86,8 +86,8 @@ class Console(QWidget):
         self.ind_names_label = QLabel("Display names:")
 
         # self.correct_button = QPushButton("Save correction")
-        self.correct_button.clicked.connect(self.window.save_correction)
-        self.correct_button.setVisible(self.window.correct_mode)
+        # self.correct_button.clicked.connect(self.window.save_correction)
+        # self.correct_button.setVisible(self.window.correct_mode)
 
         self.speed_form = QFormLayout()
         self.speed_form.addRow(self.speed_label, self.speed_slider)
