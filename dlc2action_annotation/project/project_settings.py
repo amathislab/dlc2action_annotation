@@ -264,7 +264,7 @@ class ProjectSettings(QWidget):
         self.clearLayout(self.augmentation_layout)
         self.set_augmentations_tab_data()
         self.augmentation_layout.addRow("Augmentations: ", self.augmentations)
-        self.augmentation_layout.addRow("Rotation limit: ", self.rotation_limit)
+        self.augmentation_layout.addRow("Rotation limit (rad): ", self.rotation_limit)
         self.augmentation_layout.addRow("Mirror dimensions: ", self.mirror_dim)
         self.augmentation_layout.addRow("Noise standard deviation: ", self.noise_std)
         self.augmentation_layout.addRow("Zoom limits: ", self.zoom_limits)
@@ -444,10 +444,10 @@ class ProjectSettings(QWidget):
     
     def set_augmentations_tab_data(self):
         self.augmentations = self.set_options("augmentations", "augmentations", ['rotate', 'real_lens', 'add_noise', 'shift', 'zoom', 'mirror', 'switch'])
-        self.rotation_limit = self.set_limits("augmentations", "rotation_limits", -180, 180, factor=3.14/180)
+        self.rotation_limit = self.set_limits("augmentations", "rotation_limits")
         self.mirror_dim = self.set_options("augmentations", "mirror_dim", [0, 1, 2])
         self.noise_std = self.set_le("augmentations", "noise_std", set_int=False, set_float=True)
-        self.zoom_limits = self.set_limits("augmentations", "zoom_limits", 0, 10)
+        self.zoom_limits = self.set_limits("augmentations", "zoom_limits")
 
     def set_features_tab_data(self):
         self.keys = self.set_options("features", "keys", ["coords", "coord_diff", "center", "intra_distance", "inter_distance", "speed_direction", "speed_value", "acc_joints", "likelihood"])
@@ -823,11 +823,9 @@ class ProjectSettings(QWidget):
             layout.addRow(toggle)
         return layout
     
-    def set_limits(self, category, field, minimum, maximum, middle=0, factor=1, subcategory=None):
+    def set_limits(self, category, field, subcategory=None):
         layout = QHBoxLayout()
         min_value, max_value = self.get_value(category, field, subcategory)
-        min_value /= factor
-        max_value /= factor
         layout.addWidget(QLabel("Min: "))
         le = QLineEdit()
         le.setValidator(QDoubleValidator())
