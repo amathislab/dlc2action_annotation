@@ -8,7 +8,11 @@ This was tested on Ubuntu 20.04 (AM), Windows 10 and MacOS 10.15.7 (LK).
 git clone https://github.com/amathislab/dlc2action_annotation
 cd dlc2action_annotation
 conda env create -f AnnotationGUI.yaml
+conda activate AnnotationGUI
+python -m pip install -e .
 ``` 
+
+Next, optionally install `dlc2action` (not needed for annotation only).
 
 ### Updating
 

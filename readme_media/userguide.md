@@ -4,14 +4,14 @@ To start using the annotator you just need to go to the `classic_annotation` dir
 run these commands in your terminal.
 ```bash
 conda activate AnnotationGUI
-python annotator.py
+annotator
 ```
 The app will prompt you to open the video you are going to annotate and (optionally) a DLC output file or an existing annotation file. Note that you can open multiple videos. In that case you will be asked whether you want to open them sequentially or in multiview mode.
 
 Alternatively, you can set the video and/or the output paths in the 
 terminal. In that case the file dialogs will not open. 
 ```bash
-python annotator.py --video path/to/video1.mp4 --video path/to/video2.mkv --config_file path/to/config.yaml --labels_file path/to/annotation_file.pickle --multiview
+annotator --video path/to/video1.mp4 --video path/to/video2.mkv --config_file path/to/config.yaml --labels_file path/to/annotation_file.pickle --multiview
 ```
 You can also configure advanced settings in the config file (`config.yaml` by default). Among other things, you can use it to set:
 - the number of individuals if keypoint and annotation files are not available,
