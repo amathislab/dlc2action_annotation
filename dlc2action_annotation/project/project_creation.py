@@ -23,6 +23,7 @@ from dlc2action_annotation.project.episodes_list import EpisodesList
 from dlc2action_annotation.project.project_settings import ProjectSettings, TypeChoice
 from dlc2action.project import Project
 from dlc2action_annotation.project.utils import show_error, show_warning
+from dlc2action_annotation.utils import get_icon_path
 
 
 class ProjectCreation(QWidget):
@@ -140,7 +141,9 @@ class ProjectCreation(QWidget):
     
     def make_logo(self):
         pic = QLabel()
-        pixmap = QPixmap("icons/horizontal_logo.png")
+        icon_path = get_icon_path()
+        logo_path = os.path.join(icon_path, "horizontal_logo.png")
+        pixmap = QPixmap(logo_path)
         
         # Calculate the width to fit the QLabel's size while keeping proportions
         desired_width = pic.width()

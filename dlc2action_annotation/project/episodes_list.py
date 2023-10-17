@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QDialogButtonBox,
     QMenu,
+    QLabel,
 )
 from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 from dlc2action.project import Project
@@ -69,7 +70,7 @@ class EpisodesList(QWidget):
         self.project = project
         annotation_type = self.project._read_parameters()["general"]["annotation_type"]
         self.can_annotate = (annotation_type == "dlc")
-
+        self.setWindowTitle("Project: " + self.project.name)
         self.scroll_area = QScrollArea()
         self.layout = QVBoxLayout(self)
         self.name_field = self.set_name_field()
@@ -107,13 +108,18 @@ class EpisodesList(QWidget):
         self.create_episode_button = QPushButton("Create episode")
         name_layout.addWidget(self.create_episode_button)
         self.create_episode_button.clicked.connect(self.make_new_episode)
+        self.update_settings_button = QPushButton("Update settings")
+        self.update_settings_button.clicked.connect(self.update_settings)
+        name_layout.addStretch(1)
+        name_layout.addWidget(self.update_settings_button)
         return name_widget
     
     def make_new_episode(self):
         name = self.episode_le.text()
         if name == "":
             show_error("Please enter a name")
-        self.settings_window = ProjectSettings(self.project._read_parameters(), enabled=True, title=name, project=self.project)
+        title = f"Project: {self.project.name}, Episode: {name}"
+        self.settings_window = ProjectSettings(self.project._read_parameters(), enabled=True, title=title, project=self.project)
         self.settings_window.show()
         self.settings_window.accepted.connect(lambda x: self.create_episode(name, x))
     
@@ -228,10 +234,15 @@ class EpisodesList(QWidget):
         )
         self.annotate_videos(videos, suggestion=episode)
 
+    def update_settings(self):
+        self.settings = ProjectSettings(self.project._read_parameters())
+        self.settings.show()
+        self.settings.accepted.connect(lambda x: self.project.update_parameters(x))
+    
     def annotate_more_videos(self):
         if not self.can_annotate:
             show_warning(
-                "Different annotation types",
+                "Different annotation types"
                 "Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training."
             )
         videos = self._get_eligible_videos()
@@ -268,7 +279,7 @@ class EpisodesList(QWidget):
         self.close()
 
     def sizeHint(self):
-        return QSize(700, 500)
+        return QSize(900, 700)
     
     def eventFilter(self, source, event):
         if(event.type() == QEvent.MouseButtonPress and

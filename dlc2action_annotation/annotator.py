@@ -23,7 +23,7 @@ import click
 import os
 import pickle
 
-from dlc2action_annotation.utils import get_settings, read_video, read_settings
+from dlc2action_annotation.utils import get_settings, read_video, read_settings, get_icon_path, get_code_path
 
 
 class MainWindow(QMainWindow):
@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         dev=False,
         active_learning=False,
         show_settings=False,
-        config_file="config.yaml",
+        config_file=None,
         al_points_dictionary=None,
         clustering_parameters=None,
         skeleton_files=None,
@@ -46,6 +46,8 @@ class MainWindow(QMainWindow):
         hard_negatives=None,
     ):
         super(MainWindow, self).__init__()
+        if config_file is None:
+            config_file = os.path.join(get_code_path(), "config.yaml")
         self.toolbar = None
         self.menubar = None
         self.cur_video = 0
@@ -311,37 +313,37 @@ class MainWindow(QMainWindow):
         # File actions
         self.play_action = QAction(self)
         self.play_action.setText("Play / Stop")
-        self.play_action.setIcon(QIcon("icons/pause-button.png"))
+        self.play_action.setIcon(QIcon(os.path.join(get_icon_path(), "pause-button.png")))
         self.play_action.triggered.connect(lambda: self.viewer.on_play())
         self.move_action = QAction(self, checkable=True)
         self.move_action.setChecked(True)
         self.move_action.setText("Move")
         self.move_action.setShortcut("Ctrl+M")
-        self.move_action.setIcon(QIcon("icons/hand.png"))
+        self.move_action.setIcon(QIcon(os.path.join(get_icon_path(), "hand.png")))
         self.move_action.triggered.connect(self.viewer.set_move_mode)
         self.remove_action = QAction(self, checkable=True)
         self.remove_action.setText("Remove")
-        self.remove_action.setIcon(QIcon("icons/trash.png"))
+        self.remove_action.setIcon(QIcon(os.path.join(get_icon_path(), "trash.png")))
         self.remove_action.triggered.connect(self.viewer.set_remove_mode)
         self.remove_action.setShortcut("Ctrl+R")
         self.new_action = QAction(self, checkable=True)
         self.new_action.setText("New")
         self.new_action.triggered.connect(self.viewer.set_new_mode)
         self.new_action.setShortcut("Ctrl+N")
-        self.new_action.setIcon(QIcon("icons/plus.png"))
+        self.new_action.setIcon(QIcon(os.path.join(get_icon_path(), "plus.png")))
         self.cut_action = QAction(self, checkable=True)
         self.cut_action.setText("Cut")
-        self.cut_action.setIcon(QIcon("icons/scissors.png"))
+        self.cut_action.setIcon(QIcon(os.path.join(get_icon_path(), "scissors.png")))
         self.cut_action.triggered.connect(self.viewer.set_cut_mode)
         self.cut_action.setShortcut("Ctrl+C")
         self.ass_action = QAction(self, checkable=True)
         self.ass_action.setText("Assign")
-        self.ass_action.setIcon(QIcon("icons/pantone.png"))
+        self.ass_action.setIcon(QIcon(os.path.join(get_icon_path(), "pantone.png")))
         self.ass_action.triggered.connect(self.viewer.set_ass_mode)
         self.ass_action.setShortcut("Ctrl+A")
         self.amb_action = QAction(self, checkable=True)
         self.amb_action.setText("Ambiguous")
-        self.amb_action.setIcon(QIcon("icons/transparency.png"))
+        self.amb_action.setIcon(QIcon(os.path.join(get_icon_path(), "transparency.png")))
         self.amb_action.triggered.connect(self.viewer.set_amb_mode)
         self.amb_action.setShortcut("Ctrl+B")
 
@@ -560,7 +562,7 @@ class MainWindow(QMainWindow):
 )
 @click.option("--active_learning", "-a", is_flag=True, help="Active learning mode")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
-@click.option("--config_file", "-c", default="config.yaml", help="The config file path")
+@click.option("--config_file", "-c", default=None, help="The config file path")
 def main(
     video, annotation_path, suggestion_path, dev, active_learning, open_settings, config_file
 ):

@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QMessageBox
+import os
 
 
 def show_error(message):

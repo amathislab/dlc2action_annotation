@@ -309,13 +309,14 @@ def read_settings(settings_file):
     return settings
 
 def get_settings(config_file, show_settings):
+    default_config_path = os.path.join(get_code_path(), "default_config.yaml")
     if not os.path.exists(config_file):
-        shutil.copyfile("dlc2action_annotation/default_config.yaml", config_file)
+        shutil.copyfile(default_config_path, config_file)
         show_settings = True
     else:
         with open(config_file) as f:
             config = YAML().load(f)
-        with open("dlc2action_annotation/default_config.yaml") as f:
+        with open(default_config_path) as f:
             default_config = YAML().load(f)
         to_remove = []
         for key, value in default_config.items():
@@ -937,3 +938,12 @@ def detect_and_remap(
                 )
             p_bar.update(1)
     p_bar.close()
+
+
+def get_icon_path():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return os.path.join(dir_path, "icons")
+
+def get_code_path():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return dir_path

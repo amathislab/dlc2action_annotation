@@ -16,11 +16,11 @@ class Worker(QObject):
     finished = pyqtSignal()
 
     def __init__(self, project, episode, episode_settings=None, load_search=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.project = project
         self.episode = episode
         self.episode_settings = episode_settings
         self.load_search = load_search
-        super().__init__(*args, **kwargs)
 
     def run(self):
         """Long-running task."""
@@ -38,6 +38,7 @@ class EpisodeTraining(QWidget):
 
     def __init__(self, project, episode, episode_settings=None, load_search=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setWindowTitle("Project: " + project.name)
         self.tabs = QTabWidget()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)

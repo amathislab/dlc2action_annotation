@@ -55,8 +55,8 @@ display_3d: true #display the 3D data by default if provided
 display_repr: true #display the reprojections by default if provided
 
 # file paths
-detection_files: [null]      #pickled lists of per-frame detections in [y_min, x_min, y_max, x_max, id] format (one per video view)
-skeleton_files: [null]      #the DLC output files (one per video view)
+detection_files: [!!null ''] #pickled lists of per-frame detections in [y_min, x_min, y_max, x_max, id] format (one per video view)
+skeleton_files: [!!null ''] #the DLC output files (one per video view)
 3d_suffix:      #the suffix of the 3d pose file
 calibration_path: #the path to a numpy calibration file that can be used with the 3d pose file to display reprojections
 suffix: _DLC_format_predictions.pickle #if not null it will be used to create a default output file name

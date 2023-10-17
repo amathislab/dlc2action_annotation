@@ -140,3 +140,4 @@ dmypy.json
 #data
 last_action_choice.pickle
 /config.yaml
+temp.py
