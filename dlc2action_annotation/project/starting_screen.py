@@ -19,7 +19,7 @@ import os
 from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 from PyQt5.QtGui import QPixmap
 from pathlib import Path
-from dlc2action_annotation.project.episodes_list import EpisodesList
+from dlc2action_annotation.project.project_display import EpisodesList
 from dlc2action_annotation.project.project_settings import ProjectSettings, TypeChoice
 from dlc2action.project import Project
 from dlc2action_annotation.project.utils import show_error, show_warning
