@@ -1,6 +1,6 @@
 ## User guide 
 
-To start using the annotator you just need to go to the `classic_annotation` directory and 
+To start using the annotator you just need to go to the `dlc2action_annotation` directory and 
 run these commands in your terminal.
 ```bash
 conda activate AnnotationGUI
@@ -236,5 +236,8 @@ The program works best with shorter, smaller files. In case you want to cut your
 python split.py --file path/to/video --split-size S --downsample N --fps F --skeleton-file /path/to/DLC
 ```
 Here `S` encodes the size of each piece in seconds, `downsample` lets you only keep every `N`th frame (useful in case of large fps) and `F` is the input video framerate. The `skeleton-file` parameter is optional.
+
+### Clustering interface
+You can find detailed explanation on how to use the clustering interface on [this page](readme_media/cluster.md).
 
 Back to main [readme](../README.md)
