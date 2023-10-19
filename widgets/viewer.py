@@ -208,7 +208,6 @@ class Viewer(QWidget):
             self.settings["skeleton"],
             self.settings["3d_bodyparts"],
         )
-
         if os.path.exists("../last_action_choice.pickle"):
             msg = QMessageBox()
             msg.setText("Load the last label choice?")
@@ -233,7 +232,6 @@ class Viewer(QWidget):
                     success = True
             except:
                 pass
-
         if not success and (type(self.action_dict) is dict or settings["cat_choice"]):
             self.choose_cats()
         self.initialize_cats()
