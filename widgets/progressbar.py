@@ -4,8 +4,8 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 from PyQt5.Qt import Qt, pyqtSignal
-from PyQt5.QtGui import QPainter, QPen, QColor
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout
+from PyQt5.QtGui import QColor, QPainter, QPen
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 
 class ProgressBar(QWidget):

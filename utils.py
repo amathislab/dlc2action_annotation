@@ -3,25 +3,26 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
+import os
+import pickle
 import random
-from PyQt5.QtCore import QThread
-from PyQt5.Qt import pyqtSignal
-from PyQt5.QtWidgets import QWidget
-import numpy as np
+import shutil
+import string
 from collections import defaultdict
+from datetime import datetime
+from warnings import catch_warnings, filterwarnings
+
+import numpy as np
 import pandas as pd
 import yaml
-import pickle
-from datetime import datetime
-from tqdm import tqdm
-from warnings import catch_warnings, filterwarnings
-import os
-import shutil
+from PyQt5.Qt import pyqtSignal
+from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QWidget
 from ruamel.yaml import YAML
-from widgets.settings import SettingsWindow
-import string
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from tqdm import tqdm
 
+from widgets.settings import SettingsWindow
 
 try:
     import msgpack
@@ -33,8 +34,6 @@ try:
     import cv2
 except:
     pass
-
-# from joblib import Parallel, delayed
 
 
 class Segmentation:
@@ -162,12 +161,7 @@ def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
         arr = np.array(arr)
         return arr
     elif backend == "pyav":
-        arr = np.array(
-            [
-                stack(i)
-                for i in range(start, end, fs)
-            ]
-        )
+        arr = np.array([stack(i) for i in range(start, end, fs)])
         return arr
     elif backend == "pyav_fast":
         with catch_warnings():
@@ -202,7 +196,11 @@ class PointsData:
     def get_range(self, start, end, animal):
         if self.dict_type:
             # print(f'{self.points_df[start].keys()=}')
-            d = {x: {animal: self.points_df[x][animal]} for x in range(start, end) if animal in self.points_df[x]}
+            d = {
+                x: {animal: self.points_df[x][animal]}
+                for x in range(start, end)
+                if animal in self.points_df[x]
+            }
             d["animals"] = [animal]
             d["names"] = self.names
             return PointsData(d)
@@ -218,7 +216,11 @@ class PointsData:
                 if animal in self.points_df[x]:
                     frames.append(int(x))
         else:
-            frames = list(self.points_df.iloc[self.points_df.index.get_level_values(1) == animal].index.get_level_values(0))
+            frames = list(
+                self.points_df.iloc[
+                    self.points_df.index.get_level_values(1) == animal
+                ].index.get_level_values(0)
+            )
         if len(frames) > 0:
             start = min(frames)
             end = max(frames)
@@ -240,8 +242,9 @@ def read_hdf(filename, likelihood_cutoff=0):
         old_idx = temp.columns.to_frame()
         old_idx.insert(0, "individuals", "ind0")
         temp.columns = pd.MultiIndex.from_frame(old_idx)
-    temp.iloc[:, temp.columns.get_level_values(2) == "likelihood"] = temp.iloc[:, temp.columns.get_level_values(
-        2) == "likelihood"].fillna(0)
+    temp.iloc[:, temp.columns.get_level_values(2) == "likelihood"] = temp.iloc[
+        :, temp.columns.get_level_values(2) == "likelihood"
+    ].fillna(0)
     df = temp.stack(["individuals", "bodyparts"])
     df.loc[df["likelihood"] < likelihood_cutoff, ["x", "y"]] = 0
     df = df[["x", "y"]]
@@ -279,7 +282,8 @@ def read_tracklets(filename, min_frames=0, verbose=True):
         data_p = pickle.load(f)
     header = data_p["header"]
     names = header.unique("bodyparts")
-    keys = sorted([key for key in data_p.keys() if key != "header"])
+    # TODO: Need support for unique_bodyparts
+    keys = sorted([key for key in data_p.keys() if isinstance(key, int)])
     coords = defaultdict(lambda: {})
     index_dict = defaultdict(lambda: [])
     animals = []
@@ -307,6 +311,7 @@ def read_settings(settings_file):
     with open(settings_file) as f:
         settings = yaml.load(f, Loader=yaml.FullLoader)
     return settings
+
 
 def get_settings(config_file, show_settings):
     if not os.path.exists(config_file):
@@ -535,8 +540,10 @@ def get_2d_files(filenames, data, calibration_dir):
         res.append(data_2d)
     return res
 
+
 def autolabel(classifier, X, y):
     X_train = X[y != -100]
+
 
 def get_color(arr, name):
     alphabet = string.ascii_lowercase
@@ -544,6 +551,7 @@ def get_color(arr, name):
     random.seed(prompt)
     return random.choice(arr)
     # return arr[prompt % len(arr)]
+
 
 def oks(y_true, y_pred, visibility):
     # You might want to set these global constant
@@ -563,12 +571,13 @@ def oks(y_true, y_pred, visibility):
     denominator = np.sum(visibility.astype(bool).astype(int)) + 1e-7
     return numerator / denominator
 
+
 def reassign(
-        annotation_file_old,
-        annotation_file_new,
-        tracklets_old,
-        tracklets_new,
-        mapping_file=None,
+    annotation_file_old,
+    annotation_file_new,
+    tracklets_old,
+    tracklets_new,
+    mapping_file=None,
 ):
     coords_old, _ = read_tracklets(tracklets_old, verbose=False)
     coords_new, _ = read_tracklets(tracklets_new, verbose=False)
@@ -595,7 +604,7 @@ def reassign(
                     if ind_old not in coords_old[frame]:
                         continue
                     value_old = coords_old[frame][ind_old][common_bp_old]
-                    visibility_old = ((value_old != 0).sum(-1) != 0)
+                    visibility_old = (value_old != 0).sum(-1) != 0
                     for ind_new in coords_new[frame]:
                         value_new = coords_new[frame][ind_new][common_bp_new]
                         visibility = visibility_old * ((value_new != 0).sum(-1) != 0)
@@ -625,7 +634,10 @@ def reassign(
     with open(annotation_file_new, "wb") as f:
         pickle.dump(data, f)
 
-def write_detections(video_file, detections_file, target_file, video_w=None, video_h=None):
+
+def write_detections(
+    video_file, detections_file, target_file, video_w=None, video_h=None
+):
     with open(detections_file, "rb") as f:
         detections = pickle.load(f)
     new_detections = defaultdict(lambda: {})
@@ -635,15 +647,15 @@ def write_detections(video_file, detections_file, target_file, video_w=None, vid
     del detections
     video = cv2.VideoCapture(video_file)
     if video_w is None:
-        video_w  = int(video.get(3))  # float `width`
+        video_w = int(video.get(3))  # float `width`
     if video_h is None:
         video_h = int(video.get(4))  # float `height`
-    output = cv2.VideoWriter(target_file, cv2.VideoWriter_fourcc(*'MP4V'), 20, (video_w, video_h))
+    output = cv2.VideoWriter(
+        target_file, cv2.VideoWriter_fourcc(*"MP4V"), 20, (video_w, video_h)
+    )
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     with open("colors.txt") as f:
-        colors = [
-            list(map(lambda x: float(x), line.split())) for line in f.readlines()
-        ]
+        colors = [list(map(lambda x: float(x), line.split())) for line in f.readlines()]
     animals = {}
     for count in tqdm(range(frame_count)):
         ok, image = video.read()
@@ -659,11 +671,14 @@ def write_detections(video_file, detections_file, target_file, video_w=None, vid
             color = animals[ind]
             x1, y1, x2, y2 = map(int, value)
             image = cv2.rectangle(image, (x1, y1), (x2, y2), color, 1)
-            cv2.putText(image, ind, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.putText(
+                image, ind, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2
+            )
         output.write(image)
         count += 1
     video.release()
     output.release()
+
 
 def overlap(bbox1, bbox2):
     x = min(bbox1[2], bbox2[2]) - max(bbox1[0], bbox2[0])
@@ -671,6 +686,7 @@ def overlap(bbox1, bbox2):
     area1 = (bbox1[2] - bbox1[0]) * (bbox1[3] - bbox1[1])
     area2 = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1])
     return x * y / (area1 + area2 - x * y)
+
 
 def get_vis_score(coords, ind, frame, mapping):
     keys = [ind]
@@ -686,6 +702,7 @@ def get_vis_score(coords, ind, frame, mapping):
             value = ind_value
     return value
 
+
 def get_visible_n(coords, ind, frames, visibility_min_score, mapping):
     visible = 0
     keys = [ind]
@@ -697,11 +714,15 @@ def get_visible_n(coords, ind, frames, visibility_min_score, mapping):
         for ind in keys:
             if ind not in coords[frame]:
                 continue
-            if np.sum(coords[frame][ind][:, 0] != 0) >= coords[frame][ind].shape[0] * visibility_min_score:
+            if (
+                np.sum(coords[frame][ind][:, 0] != 0)
+                >= coords[frame][ind].shape[0] * visibility_min_score
+            ):
                 value = 1
                 break
         visible += value
     return visible
+
 
 def update_mapping(old, new, mapping):
     mapping[old] = new
@@ -710,25 +731,26 @@ def update_mapping(old, new, mapping):
             mapping[o] = new
     return mapping
 
+
 def extract_detections(
-        tracklet_file,
-        target_file,
-        margin=20,
-        smooth=True,
-        add_missing=True,
-        min_len=30,
-        overlap_thr=0.8,
-        strict_min_len=10,
-        lowess_frac=0.05,
-        visibility_min_frac=0,
-        visibility_min_score=0.25,
-        keep_invisible=False,
+    tracklet_file,
+    target_file,
+    margin=20,
+    smooth=True,
+    add_missing=True,
+    min_len=30,
+    overlap_thr=0.8,
+    strict_min_len=10,
+    lowess_frac=0.05,
+    visibility_min_frac=0,
+    visibility_min_score=0.25,
+    keep_invisible=False,
 ):
     coords, _ = read_tracklets(tracklet_file, verbose=False)
     detections = defaultdict(lambda: {})
     mapping = {}
     folder = os.path.dirname(target_file)
-    name = os.path.basename(target_file).split('.')[0]
+    name = os.path.basename(target_file).split(".")[0]
     mapping_file = os.path.join(folder, name + "_mapping.pickle")
     for frame in coords:
         if frame in ["names", "animals"]:
@@ -764,8 +786,14 @@ def extract_detections(
             for other_ind in other_inds:
                 if other_ind == ind or other_ind not in detections:
                     continue
-                overlaps = [overlap(detections[ind][frame], detections[other_ind][frame]) for frame in detections[ind] if frame in detections[other_ind]]
-                if len([x for x in overlaps if x < overlap_thr]) < min(3, len(overlaps) / 3):
+                overlaps = [
+                    overlap(detections[ind][frame], detections[other_ind][frame])
+                    for frame in detections[ind]
+                    if frame in detections[other_ind]
+                ]
+                if len([x for x in overlaps if x < overlap_thr]) < min(
+                    3, len(overlaps) / 3
+                ):
                     other_det = detections.pop(other_ind)
                     keys.append(ind)
                     for frame in other_det:
@@ -814,28 +842,36 @@ def extract_detections(
 
 
 def reassign_folder(
-        old_annotation_folder,
-        new_annotation_folder,
-        old_annotation_suffix,
-        new_annotation_suffix,
-        old_tracklet_suffix,
-        new_tracklet_suffix,
-        old_tracklet_folder=None,
-        new_tracklet_folder=None,
-        mapping_folder=None,
-        mapping_suffix=None,
+    old_annotation_folder,
+    new_annotation_folder,
+    old_annotation_suffix,
+    new_annotation_suffix,
+    old_tracklet_suffix,
+    new_tracklet_suffix,
+    old_tracklet_folder=None,
+    new_tracklet_folder=None,
+    mapping_folder=None,
+    mapping_suffix=None,
 ):
     if old_tracklet_folder is None:
         old_tracklet_folder = old_annotation_folder
     if new_tracklet_folder is None:
         new_tracklet_folder = new_annotation_folder
-    old_annotation_files = [x for x in os.listdir(old_annotation_folder) if x.endswith(old_annotation_suffix)]
-    old_tracklet_files = [x for x in os.listdir(old_tracklet_folder) if x.endswith(old_tracklet_suffix)]
-    new_tracklet_files = [x for x in os.listdir(new_tracklet_folder) if x.endswith(new_tracklet_suffix)]
+    old_annotation_files = [
+        x
+        for x in os.listdir(old_annotation_folder)
+        if x.endswith(old_annotation_suffix)
+    ]
+    old_tracklet_files = [
+        x for x in os.listdir(old_tracklet_folder) if x.endswith(old_tracklet_suffix)
+    ]
+    new_tracklet_files = [
+        x for x in os.listdir(new_tracklet_folder) if x.endswith(new_tracklet_suffix)
+    ]
     video_ids = []
     unmatched = []
     for file in old_annotation_files:
-        video_id = file[: - len(old_annotation_suffix)]
+        video_id = file[: -len(old_annotation_suffix)]
         if video_id + old_tracklet_suffix not in old_tracklet_files:
             unmatched.append(file)
         elif video_id + new_tracklet_suffix not in new_tracklet_files:
@@ -843,27 +879,36 @@ def reassign_folder(
         else:
             video_ids.append(video_id)
     if len(unmatched) > 0:
-        print('Unmatched files:')
+        print("Unmatched files:")
         for file in unmatched:
-            print(f'   {file}')
+            print(f"   {file}")
     for video_id in tqdm(video_ids):
         if mapping_folder is not None and mapping_suffix is not None:
             mapping_file = os.path.join(mapping_folder, video_id + mapping_suffix)
         else:
             mapping_file = None
         reassign(
-            annotation_file_old=os.path.join(old_annotation_folder, video_id + old_annotation_suffix),
-            annotation_file_new=os.path.join(new_annotation_folder, video_id + new_annotation_suffix),
-            tracklets_old=os.path.join(old_tracklet_folder, video_id + old_tracklet_suffix),
-            tracklets_new=os.path.join(new_tracklet_folder, video_id + new_tracklet_suffix),
+            annotation_file_old=os.path.join(
+                old_annotation_folder, video_id + old_annotation_suffix
+            ),
+            annotation_file_new=os.path.join(
+                new_annotation_folder, video_id + new_annotation_suffix
+            ),
+            tracklets_old=os.path.join(
+                old_tracklet_folder, video_id + old_tracklet_suffix
+            ),
+            tracklets_new=os.path.join(
+                new_tracklet_folder, video_id + new_tracklet_suffix
+            ),
             mapping_file=mapping_file,
         )
-    print('Reassignment complete')
+    print("Reassignment complete")
+
 
 def apply_mapping(
-        old_tracklet_file,
-        new_tracklet_file,
-        mapping_file,
+    old_tracklet_file,
+    new_tracklet_file,
+    mapping_file,
 ):
     with open(old_tracklet_file, "rb") as f:
         data_p = pickle.load(f)
@@ -873,12 +918,12 @@ def apply_mapping(
         if old_ind.startswith("ind"):
             old_tr = int(old_ind[3:])
         else:
-            old_tr = int(old_ind[len("invisible"):])
+            old_tr = int(old_ind[len("invisible") :])
         if new_ind is not None:
             if new_ind.startswith("ind"):
                 new_tr = int(new_ind[3:])
             else:
-                new_tr = int(new_ind[len("invisible"):])
+                new_tr = int(new_ind[len("invisible") :])
             for frame, value in data_p[old_tr].items():
                 if frame not in data_p[new_tr]:
                     data_p[new_tr][frame] = value
@@ -888,21 +933,21 @@ def apply_mapping(
 
 
 def detect_and_remap(
-        old_tracklet_folders,
-        detection_folder,
-        new_tracklet_folder=None,
-        tracklet_suffix=None,
-        margin=40,
-        smooth=True,
-        add_missing=True,
-        min_len=30,
-        overlap_thr=0.7,
-        strict_min_len=5,
-        lowess_frac=0.07,
-        visibility_min_frac=0,
-        visibility_min_score=0.25,
-        keep_invisible=False,
-        remap=False
+    old_tracklet_folders,
+    detection_folder,
+    new_tracklet_folder=None,
+    tracklet_suffix=None,
+    margin=40,
+    smooth=True,
+    add_missing=True,
+    min_len=30,
+    overlap_thr=0.7,
+    strict_min_len=5,
+    lowess_frac=0.07,
+    visibility_min_frac=0,
+    visibility_min_score=0.25,
+    keep_invisible=False,
+    remap=False,
 ):
     if tracklet_suffix is None:
         tracklet_suffix = [".pickle"]
@@ -914,7 +959,7 @@ def detect_and_remap(
     p_bar = tqdm(total=sum([len(v) for v in files.values()]))
     for folder, file_list in files.items():
         for file in file_list:
-            target_file = file.split('.')[0] + '_det.pickle'
+            target_file = file.split(".")[0] + "_det.pickle"
             mapping_file = extract_detections(
                 tracklet_file=os.path.join(folder, file),
                 target_file=os.path.join(detection_folder, target_file),
@@ -932,7 +977,9 @@ def detect_and_remap(
             if remap:
                 apply_mapping(
                     old_tracklet_file=os.path.join(folder, file),
-                    new_tracklet_file=os.path.join(new_tracklet_folder, file.split('.')[0] + "_remapped.pickle"),
+                    new_tracklet_file=os.path.join(
+                        new_tracklet_folder, file.split(".")[0] + "_remapped.pickle"
+                    ),
                     mapping_file=mapping_file,
                 )
             p_bar.update(1)

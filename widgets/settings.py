@@ -3,30 +3,31 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-from PyQt5.QtWidgets import (
-    QWidget,
-    QTabWidget,
-    QHBoxLayout,
-    QComboBox,
-    QLabel,
-    QLineEdit,
-    QVBoxLayout,
-    QFormLayout,
-    QDialog,
-    QDialogButtonBox,
-    QPushButton,
-    QFileDialog,
-    QListWidget,
-    QSpinBox,
-    QSlider,
-    QScrollArea,
-    QMessageBox,
-)
-from qtwidgets import Toggle
+import os
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
+from PyQt5.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSlider,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+from qtwidgets import Toggle
 from ruamel.yaml import YAML
-import os
 
 
 class MultipleInputWidget(QWidget):
