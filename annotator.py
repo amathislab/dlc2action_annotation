@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import (
 from utils import get_settings, read_settings, read_video
 from widgets.core.backup import BackupManager
 from widgets.dialog import Form
-from widgets.settings import SettingsWindow
+from widgets.settings import SettingsWindow, Set_New_Project
 from widgets.viewer import Viewer as Viewer
 
 
@@ -49,6 +49,7 @@ class MainWindow(QMainWindow):
         backup_dir: Optional[str] = None,
         backup_interval: int = 30,
     ):
+        
         super(MainWindow, self).__init__()
         self.toolbar = None
         self.menubar = None
@@ -87,50 +88,29 @@ class MainWindow(QMainWindow):
         createProject = msg.addButton("Create Project", QMessageBox.ActionRole)
         openProject = msg.addButton("Open Project", QMessageBox.ActionRole)
 
-        # Connect the button to a function
-        createProject.clicked.connect(lambda: print("Create Project"))
-        openProject.clicked.connect(lambda: print("Open Project"))
+        msg.exec_()
 
-        result = msg.exec_()
+        if msg.clickedButton() == createProject:
+                print("Create Project button clicked")
+                # Handle the create action here
+                # Open settings window
+                Set_New_Project(self.settings_file).exec_()
 
-        if result == QMessageBox.Yes:
-            print("Load button clicked")
-            # Handle the load action here
-            pass
 
-        elif result == QMessageBox.No:
-            print("Create button clicked")
-            # Handle the create action here
-            pass
+
+        elif msg.clickedButton() == openProject:
+                
+                print("Open Project button clicked")
+                # Handle the open action here
+                self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
+                self.lauch_project()
+
+
+
 
         # PROMT THE USER TO LOAD VIDEOS 
         # TODO : Should be done automatically when the user selects "open project"
 
-        if len(videos) == 0 and self.settings["video_files"] is not None:
-            videos = self.settings["video_files"]
-
-        if len(videos) == 0 and self.settings["video_upload_window"]:
-            self.load_video()
-        else:
-            if videos == ():
-                self.videos = [None for i in self.settings["skeleton_files"]]
-            else:
-                self.videos = videos
-                if type(self.videos) is not list:
-                    self.videos = list(self.videos)
-        if annotation_files is None:
-            annotation_files = [None for _ in self.videos]
-        self.annotation_files = annotation_files
-        if suggestion_files is None:
-            suggestion_files = [None for _ in self.videos]
-        self.suggestion_files = suggestion_files
-        self.run_video(self.multiview)
-        if hard_negatives is not None:
-            self.settings["hard_negative_classes"] = hard_negatives
-
-        self._createActions()
-        self._createToolBar()
-        self._createMenuBar()
 
     def closeEvent(self, a0) -> None:
         self.backup_manager.stop()
@@ -177,35 +157,160 @@ class MainWindow(QMainWindow):
             else:
                 multiview = False
                 # self.multiview = False
+    
+    def load_project(self, videos, annotation_files, suggestion_files, hard_negatives):
+
+        self.folder_path = QFileDialog.getExistingDirectory(self, "Open Folder")
+        
+        # Get the list of folders in the selected directory
+        folders = [folder for folder in os.listdir(self.folder_path) if os.path.isdir(os.path.join(self.folder_path, folder))]
+        
+        # Go through each folder
+        for folder_name in folders:
+            if folder_name == "Annotations":
+                print("Performing action for Folder1")
+                
+            elif folder_name == "Project Config":
+                print("Performing action for Folder2")
+
+            elif folder_name == "Tracking data":
+                print("Performing action for Folder3")
+
+                # Get the list of files in Tracking data folder
+                folder_path = os.path.join(self.folder_path, "Tracking data")
+                files = os.listdir(folder_path)
+
+                # Filter video files based on extensions
+                self.videos = [os.path.join(folder_path, file) for file in files if file.lower().endswith(('.mov', '.avi', '.mp4', '.mkv'))]
+
+                # Check the number of video files 
+                num_videos = len(videos)
+
+                # Perform actions based on the number of videos
+                if num_videos > 1:
+                    msg = QMessageBox()
+                    msg.setText(
+                        "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+                    )
+                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                    reply = msg.exec_()
+                    if reply == QMessageBox.Yes:
+                        # multiview = True
+                        self.multiview = True
+                    else:
+                        # multiview = False
+                        self.multiview = False
+                
+                if len(videos) == 0 and self.settings["video_files"] is not None:
+                    videos = self.settings["video_files"]
+
+                if len(videos) == 0 and self.settings["video_upload_window"]:
+                    # This is extra because videos already loaded 
+                    # self.load_video()
+                    pass
+                else:
+                    if videos == ():
+                        self.videos = [None for i in self.settings["skeleton_files"]]
+                    else:
+                        self.videos = videos
+                        if type(self.videos) is not list:
+                            self.videos = list(self.videos)
+
+                if annotation_files is None:
+                    annotation_files = [None for _ in self.videos]
+                self.annotation_files = annotation_files
+
+                if suggestion_files is None:
+                    suggestion_files = [None for _ in self.videos] 
+                self.suggestion_files = suggestion_files
+                        
+        
+                
+
+                # Blocked here
+                self.run_video(self.multiview, videos)
+
+                if hard_negatives is not None:
+                    self.settings["hard_negative_classes"] = hard_negatives
+
+            else:
+                # Default action for other folders
+                pass
+
+      
+
+        # if len(videos) == 0 and self.settings["video_files"] is not None:
+        #     videos = self.settings["video_files"]
+
+        #  ---- 
+        
+        # if len(videos) == 0 and self.settings["video_upload_window"]:
+        #     self.load_video()
+        # else:
+        #     if videos == ():
+        #         self.videos = [None for i in self.settings["skeleton_files"]]
+        #     else:
+        #         self.videos = videos
+        #         if type(self.videos) is not list:
+        #             self.videos = list(self.videos)
+        
+
+                   
+        # Load other project related data here
+    
+    def lauch_project(self):
+        self._createActions()
+        self._createToolBar()
+        self._createMenuBar()
+
+
+
+
+
+        
 
     # Bug is we say yes load multiview
     # Problem if the default is false
     # def run_video(self, multiview=False, current=0, settings_update=None):
-    def run_video(self, multiview, current=0, settings_update=None):
-
+    def run_video(self, multiview=False, current=0, settings_update=None):
+    
         if settings_update is None:
             settings_update = {}
+   
         videos = self.videos
         stacks, shapes, lens, filepaths, filenames = [], [], [], [], []
         self.settings = read_settings(self.settings_file)
+        
         self.settings.update(settings_update)
+  
+        # if multiview:
+        
+        for i, video in enumerate(videos):
+        
+            stack, shape, length = read_video(video, self.settings["backend"])
+            stacks.append(stack)
+            shapes.append(shape)
+            lens.append(length)
+        
+
+
+            if video is not None:
+            
+                filepath, filename = os.path.split(video)
+                filepaths.append(filepath)
+                filenames.append(filename)
+            
+
+            else:
+            
+                filepath, filename = os.path.split(
+                    self.settings["skeleton_files"][i]
+                )
+                filepaths.append(filepath)
+                filenames.append(filename)
+        
         if multiview:
-      
-            for i, video in enumerate(videos):
-                stack, shape, length = read_video(video, self.settings["backend"])
-                stacks.append(stack)
-                shapes.append(shape)
-                lens.append(length)
-                if video is not None:
-                    filepath, filename = os.path.split(video)
-                    filepaths.append(filepath)
-                    filenames.append(filename)
-                else:
-                    filepath, filename = os.path.split(
-                        self.settings["skeleton_files"][i]
-                    )
-                    filepaths.append(filepath)
-                    filenames.append(filename)
+
             self.run_viewer(
                 stacks,
                 shapes,
@@ -216,11 +321,15 @@ class MainWindow(QMainWindow):
                 self.suggestion_files,
                 current,
             )
-      
         else:
+            
             if len(self.videos) > 1:
+                
                 self.sequential = True
+
+     
             self.run_viewer_single(current)
+           
          
 
     def open_video(self):
@@ -263,6 +372,7 @@ class MainWindow(QMainWindow):
         suggestion,
         current=0,
     ):
+        
         al_points = self.get_al_points(filenames[0])
         if al_points is None:
             self.al_mode = False

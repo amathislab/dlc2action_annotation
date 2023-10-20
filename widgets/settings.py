@@ -168,6 +168,7 @@ class SettingsWindow(QDialog):
         self.config_path = config_path
         self.settings = self._open_yaml(config_path)
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        
         self.labels = {}
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
@@ -524,6 +525,280 @@ class SettingsWindow(QDialog):
             msg.exec_()
             return
         super().accept()
+
+    def _open_yaml(self, path: str):
+        """
+        Load a parameter dictionary from a .yaml file
+        """
+
+        with open(path) as f:
+            data = YAML().load(f)
+        if data is None:
+            data = {}
+        return data
+
+class Set_New_Project(QDialog):
+    def __init__(self, config_path):
+        super(Set_New_Project, self).__init__()
+        self.config_path = config_path
+        self.settings = self._open_yaml(config_path)
+
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+        self.labels = {}
+        self.buttonBox = QDialogButtonBox(QBtn)
+
+        # Connect the OK button's accepted signal to create_folder function
+        self.buttonBox.accepted.connect(self.create_folder)
+        
+        # Connect the Cancel button's rejected signal to close the dialog
+        self.buttonBox.rejected.connect(self.reject)
+
+        
+        # self.buttonBox.accepted.connect(self.accept)
+        
+    
+        self.tabs = QTabWidget()
+        self.tabs.tabBarClicked.connect(self.collect)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.tabs)
+        self.layout.addWidget(self.buttonBox)
+        self.setLayout(self.layout)
+        self.functions = [
+            self.collect_general,
+ 
+        ]
+        self.create_general_tab()
+        self.set_general_tab()
+
+
+    def update_data(self):
+        self.set_general_tab()
+   
+
+    def collect(self, event=None):
+        for func in self.functions:
+            func()
+        self.update_data()
+
+    def set_le(self, field, set_int=True):
+        le = QLineEdit()
+        if set_int:
+            le.setValidator(QIntValidator())
+        le.setText(str(self.settings[field]))
+        return le
+
+    def set_combo(self, field, options):
+        combo = QComboBox()
+        for o in options:
+            combo.addItem(o)
+        combo.setCurrentIndex(options.index(self.settings[field]))
+        return combo
+
+
+    def set_file(self, field, filter=None, dir=False):
+        layout = QHBoxLayout()
+        file = self.settings[field]
+        file = file if file is not None else "None"
+        button = QPushButton("Find")
+        label = QLabel(os.path.basename(file))
+        if dir:
+            button.clicked.connect(lambda: self.get_dir(label, field, filter))
+        else:
+            button.clicked.connect(lambda: self.get_file(label, field, filter))
+        layout.addWidget(label)
+        layout.addWidget(button)
+        return layout
+
+    def set_spinbox(self, field, minimum, maximum, singlestep=None):
+        box = QSpinBox()
+        box.setMaximum(maximum)
+        box.setMinimum(minimum)
+        if singlestep is not None:
+            box.setSingleStep(singlestep)
+        box.setValue(self.settings[field])
+        return box
+
+    def set_toggle(self, field):
+        toggle = Toggle()
+        toggle.setChecked(self.settings[field])
+        return toggle
+
+    def set_slider(self, field, minimum, maximum, percent=False):
+        value = self.settings[field]
+        if percent:
+            minimum *= 100
+            maximum *= 100
+            value *= 100
+        slider = QSlider(Qt.Horizontal)
+        slider.setMinimum(minimum)
+        slider.setMaximum(maximum)
+        slider.setValue(value)
+        return slider
+
+    def set_multiple_input(self, field, type="single"):
+        if self.settings[field] is None:
+            if type == "category":
+                x = {}
+            else:
+                x = []
+        else:
+            x = self.settings[field]
+        if type == "double":
+            widget = MultipleDoubleInputWidget(x)
+        elif type == "category":
+            widget = CategoryInputWidget(x)
+        else:
+            widget = MultipleInputWidget(x)
+        return widget
+
+    def get_file(self, label_widget, field, filter=None):
+        file = QFileDialog().getOpenFileName(self, filter=filter)[0]
+        label_widget.setText(os.path.basename(file))
+        self.settings[field] = file
+
+    def get_dir(self, label_widget, field, filter=None):
+        file = QFileDialog().getExistingDirectory(self)
+        label_widget.setText(os.path.basename(file))
+        self.settings[field] = file
+
+    def create_general_tab(self):
+        self.general_tab = QWidget()
+        self.tabs.addTab(self.general_tab, "General")
+        self.general_layout = QFormLayout()
+        self.general_tab.setLayout(self.general_layout)
+
+    def set_general_tab(self):
+        self.clearLayout(self.general_layout)
+        self.set_general_tab_data()
+        self.general_layout.addRow("Annotator name: ", self.annotator)
+        self.general_layout.addRow("Behaviors: ", self.behaviors)
+
+
+    def set_general_tab_data(self):
+        self.annotator = self.set_le("annotator", set_int=False)
+        self.behaviors = self.set_multiple_input("actions", type="category")
+
+    def create_fp_tab(self):
+        self.fp_tab = QWidget()
+        self.tabs.addTab(self.fp_tab, "File")
+        self.fp_layout = QFormLayout()
+        self.fp_tab.setLayout(self.fp_layout)
+
+    def clearLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget() is not None:
+                    child.widget().deleteLater()
+                elif child.layout() is not None:
+                    self.clearLayout(child.layout())
+
+    def set_fp_tab(self):
+        self.clearLayout(self.fp_layout)
+        self.set_fp_tab_data()
+
+
+    def set_fp_tab_data(self):
+        self.calibration_path = self.set_file("calibration_path", dir=True)
+        self.suffix_3d_le = self.set_le("3d_suffix", set_int=False)
+        self.display_3d = self.set_toggle("display_3d")
+        self.display_repr = self.set_toggle("display_repr")
+        self.suffix_le = self.set_le("suffix", set_int=False)
+        self.prefix_separator_le = self.set_le("prefix_separator", set_int=False)
+        self.prior_suffix_le = self.set_le("prior_suffix", set_int=False)
+        self.dlc_suffix = self.set_multiple_input("DLC_suffix")
+        self.segmentation_le = self.set_le("segmentation_suffix", set_int=False)
+
+    def collect_general(self):
+        self.settings["data_type"] = self.data_type_combo.currentText()
+        self.settings["n_ind"] = int(self.n_ind_le.text())
+        self.settings["max_loaded_frames"] = int(self.max_loaded_le.text())
+        self.settings["load_chunk"] = int(self.chunk_le.text())
+        self.settings["load_buffer"] = int(self.buffer_le.text())
+        self.settings["actions"] = (
+            self.behaviors.values() if len(self.behaviors.values()) > 0 else None
+        )
+        self.settings["min_length_frames"] = int(self.min_frames_le.text())
+
+    def collect_al(self):
+        self.settings["max_loaded_frames_al"] = int(self.max_loaded_al_le.text())
+        self.settings["load_chunk_al"] = int(self.load_chunk_al_le.text())
+        self.settings["load_buffer_al"] = int(self.load_buffer_al_le.text())
+        self.settings["al_window_num"] = int(self.al_window_num_le.text())
+        self.settings["al_buffer"] = int(self.al_buffer_le.text())
+        self.settings["hard_negative_classes"] = [
+            item.text() for item in self.hn_ms.selectedItems()
+        ]
+        self.settings["assessment_n"] = int(self.assessment_n_le.text())
+
+    def collect_display(self):
+        self.settings["backend"] = self.backend_combo.currentText()
+        self.settings["skeleton_size"] = self.skeleton_size_slider.value()
+        self.settings["console_width"] = self.console_width_slider.value()
+        self.settings["actionbar_width"] = self.actionbar_width_slider.value()
+        self.settings["default_frequency"] = self.default_freq_slider.value()
+        self.settings["canvas_size"] = [
+            int(self.canvas_size_le_w.text()),
+            int(self.canvas_size_le_h.text()),
+        ]
+        self.settings[
+            "detection_update_freq"
+        ] = self.detection_update_freq_slider.value()
+        self.settings["mask_opacity"] = self.mask_opacity_slider.value() / 100
+        self.settings["load_segmentation"] = self.load_segmentation_combo.currentText()
+        self.settings["likelihood_cutoff"] = self.likelihood_cutoff_slider.value() / 100
+        self.settings["3d_bodyparts"] = (
+            self.bp_3d.values() if len(self.bp_3d.values()) > 0 else None
+        )
+        self.settings["skeleton"] = (
+            self.skeleton.values() if len(self.skeleton.values()) > 0 else None
+        )
+
+    def collect_fp(self):
+        self.settings["3d_suffix"] = self.suffix_3d_le.text()
+        self.settings["suffix"] = self.suffix_le.text()
+        self.settings["display_3d"] = self.display_3d.isChecked()
+        self.settings["display_repr"] = self.display_repr.isChecked()
+        self.settings["prefix_separator"] = self.prefix_separator_le.text()
+        self.settings["prior_suffix"] = self.prior_suffix_le.text()
+        self.settings["DLC_suffix"] = self.dlc_suffix.values()
+        self.settings["annotator"] = self.annotator.text()
+        self.settings["segmentation_suffix"] = self.segmentation_le.text()
+
+    def create_folder(self) -> None:
+        #  Get the current working directory
+        current_directory = os.getcwd()
+        
+        # TODO: This should be the name set by the user
+        folder_name = "Project X"
+        
+        # Create the folder in the current directory
+        folder_path = os.path.join(current_directory, folder_name)
+        os.makedirs(folder_path)
+        
+        print(f"Folder '{folder_name}' created in '{current_directory}'")
+        
+        # Close the dialog after creating the folder
+        self.create_folder()
+            
+
+
+    # def accept(self) -> None:
+    #     self.collect()
+    #     for key, value in list(self.settings.items()):
+    #         if value == "None":
+    #             self.settings[key] = None
+    #     with open(self.config_path, "w") as f:
+    #         YAML().dump(self.settings, f)
+    #     if self.settings["suffix"] is None:
+    #         msg = QMessageBox()
+    #         msg.setText(
+    #             "The annotation suffix parameter cannot be None, please set it to a string value!"
+    #         )
+    #         msg.exec_()
+    #         return
+    #     super().accept()
 
     def _open_yaml(self, path: str):
         """
