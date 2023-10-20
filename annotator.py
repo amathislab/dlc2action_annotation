@@ -77,6 +77,34 @@ class MainWindow(QMainWindow):
         self.al_points_dict = al_points_dictionary
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
+        
+        # GIVE USER THE CHOICE TO LOAD OR CREATE A PROJECT 
+
+        msg = QMessageBox()
+        msg.setText("Welcome to DLC2action! ")
+
+        # Add a create and load buttons
+        createProject = msg.addButton("Create Project", QMessageBox.ActionRole)
+        openProject = msg.addButton("Open Project", QMessageBox.ActionRole)
+
+        # Connect the button to a function
+        createProject.clicked.connect(lambda: print("Create Project"))
+        openProject.clicked.connect(lambda: print("Open Project"))
+
+        result = msg.exec_()
+
+        if result == QMessageBox.Yes:
+            print("Load button clicked")
+            # Handle the load action here
+            pass
+
+        elif result == QMessageBox.No:
+            print("Create button clicked")
+            # Handle the create action here
+            pass
+
+        # PROMT THE USER TO LOAD VIDEOS 
+        # TODO : Should be done automatically when the user selects "open project"
 
         if len(videos) == 0 and self.settings["video_files"] is not None:
             videos = self.settings["video_files"]
@@ -129,6 +157,8 @@ class MainWindow(QMainWindow):
         self.run_viewer_single()
 
     def load_video(self):
+
+
         self.videos = QFileDialog.getOpenFileNames(
             self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
         )[0]
@@ -137,7 +167,7 @@ class MainWindow(QMainWindow):
         if len(self.videos) > 1:
             msg = QMessageBox()
             msg.setText(
-                "You have chosen more than one video file #3. Would you like to open them in multiple view mode?"
+                "You have chosen more than one video file. Would you like to open them in multiple view mode?"
             )
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             reply = msg.exec_()
@@ -596,6 +626,9 @@ class MainWindow(QMainWindow):
 @click.option("--config_file", "-c", default="config.yaml", help="The config file path")
 @click.option("--backup-dir", "-b", default=None, help="The directory where backups are saved")
 @click.option("--backup-interval", default=30, type=int, help="The interval between backups, in minutes")
+
+
+
 def main(video, multiview, dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
     app = QApplication(sys.argv)
 
