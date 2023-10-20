@@ -150,7 +150,7 @@ class CatLine(QWidget):
     def end(self):
         self.finished.emit()
 
-# Turn this into a module / reusable component? 
+
 class CatDialog(QDialog):
     def __init__(self, catDict, shortCut, invisible, key, *args, **kwargs):
         super(CatDialog, self).__init__(*args, **kwargs)
@@ -180,7 +180,6 @@ class CatDialog(QDialog):
         self.label.addWidget(self.text)
         self.layout.addLayout(self.label)
 
-# set labels here
         self.line_layout = QVBoxLayout()
         self.line_widget = QWidget()
         self.line_widget.setLayout(self.line_layout)
@@ -369,35 +368,19 @@ class LoadDialog(QDialog):
 
 
 class ChoiceDialog(QDialog):
-
-    def __init__(self, catDict, action_dict, filename, key):
+    def __init__(self, action_dict, filename):
         super(ChoiceDialog, self).__init__()
-
-
         self.actions = None
         self.display_cats = None
         self.action_dict = action_dict
         self.button = QPushButton("OK")
-        self.key = key
-        self.catDict = catDict
-
-        # Add set labels option here
-        self.create_lines(main_key=self.key)
-        self.max_key = max(list(self.catDict["base"].keys()))
-        self.layout.addWidget(self.line_scroll)
-
-        self.button_add_labels = QPushButton("Add label")
-        self.button_add_labels.clicked.connect(CatDialog.add_line)
-        
         self.button.clicked.connect(self.finish)
         self.cats_checkbox = QCheckBox("Nested annotation")
         self.cats_checkbox.setChecked(False)
         self.label = QLabel(f"Choose the actions you want to annotate in {filename}")
-        
         self.tree = QTreeWidget()
         self.tree.setHeaderHidden(True)
         self.tree.itemChanged.connect(self.on_change)
-
         for category in action_dict:
             parent = QTreeWidgetItem(self.tree)
             parent.setText(0, category)
@@ -411,24 +394,8 @@ class ChoiceDialog(QDialog):
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.tree)
         self.layout.addWidget(self.button)
-
-        self.layout.addWidget(self.button_add_labels)
-
         self.layout.addWidget(self.cats_checkbox)
         self.setLayout(self.layout)
-    
-    def create_lines(self, main_key="base"):
-        self.lines = []
-        for cat in self.catDict[main_key]:
-            if self.catDict[main_key][cat] not in self.invisible:
-                sc = ""
-                for key in self.shortCut[main_key]:
-                    if self.shortCut[main_key][key] == cat:
-                        sc = key
-                self.add_line(cat, self.catDict[main_key][cat], sc)
-                self.cat_list[cat] = self.lines[-1]
-        if len(self.catDict[main_key]) == 0:
-            self.add_line()
 
     def finish(self, event):
         self.actions = []
@@ -480,10 +447,6 @@ class ChoiceDialogExample(ChoiceDialog):
         super(ChoiceDialogExample, self).__init__(action_dict, "")
         self.label.setText(f"Choose the actions you want to sample from")
         self.cats_checkbox.setVisible(False)
-        
-
-
-
 
     def exec_(self):
         super(ChoiceDialog, self).exec_()

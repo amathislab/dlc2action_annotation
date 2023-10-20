@@ -142,16 +142,16 @@ class MainWindow(QMainWindow):
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             reply = msg.exec_()
             if reply == QMessageBox.Yes:
-                # multiview = True
-                self.multiview = True
+                multiview = True
+                # self.multiview = True
             else:
-                # multiview = False
-                self.multiview = False
+                multiview = False
+                # self.multiview = False
 
     # Bug is we say yes load multiview
     # Problem if the default is false
-    def run_video(self, multiview=False, current=0, settings_update=None):
-    # def run_video(self, multiview, current=0, settings_update=None):
+    # def run_video(self, multiview=False, current=0, settings_update=None):
+    def run_video(self, multiview, current=0, settings_update=None):
 
         if settings_update is None:
             settings_update = {}
