@@ -379,7 +379,7 @@ class Viewer(QWidget):
         return points_df_list, index_dict
 
     def choose_cats(self):
-        dlg = ChoiceDialog(self.action_dict, self.filenames[0],key=any)
+        dlg = ChoiceDialog(self.action_dict, self.filenames[0])
         actions, display_categories = dlg.exec_()
         if actions is not None:
             self.settings["actions"] = actions
