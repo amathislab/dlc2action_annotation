@@ -28,7 +28,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils import BoxLoader, Segmentation, get_2d_files, read_skeleton
+from dlc2action_annotation.utils import BoxLoader, Segmentation, get_2d_files, read_skeleton
 
 from .actionbar import Bar
 from .canvas import VideoCanvas

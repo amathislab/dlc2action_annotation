@@ -38,7 +38,7 @@ from sklearn import datasets, decomposition, manifold
 from vispy.scene import SceneCanvas
 
 import annotator
-from utils import get_color, get_settings, read_skeleton, read_stack, read_video
+from dlc2action_annotation.utils import get_color, get_settings, read_skeleton, read_stack, read_video
 from widgets.dialog import (
     EpisodeParamsSelector,
     EpisodeSelector,

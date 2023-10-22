@@ -13,7 +13,7 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtWidgets import QWidget
 
-from utils import get_color
+from dlc2action_annotation.utils import get_color
 
 
 class ActionRect:

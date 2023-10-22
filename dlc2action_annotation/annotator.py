@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (
     QStatusBar,
 )
 
-from utils import get_settings, read_settings, read_video
+from dlc2action_annotation.utils import get_settings, read_settings, read_video
 from widgets.core.backup import BackupManager
 from widgets.dialog import Form
 from widgets.settings import SettingsWindow
