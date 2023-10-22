@@ -32,7 +32,7 @@ dependencies = [
 
 [project.scripts]
 annotator = "dlc2action_annotation.annotator:main"
-dlc2action = "dlc2action_annotation.project.project_creation:main"
+dlc2action = "dlc2action_annotation.project.starting_screen:main"
 
 
 [tool.setuptools.packages]

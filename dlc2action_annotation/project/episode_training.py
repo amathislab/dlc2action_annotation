@@ -10,6 +10,7 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from time import sleep
 from collections import defaultdict
 import numpy as np
+from dlc2action_annotation.utils import get_library_path
 
 
 class Worker(QObject):
@@ -83,7 +84,8 @@ class EpisodeTraining(QWidget):
         legend = self.lossGraph.addLegend()
         legend.setLabelTextSize("15pt")
 
-        with open("colors.txt") as f:
+        colors_path = os.path.join(get_library_path(), "colors.txt")
+        with open(colors_path) as f:
             self.colors = [[int(x) for x in line.strip().split()] for line in f.readlines()]
         self.color_index = 0
     

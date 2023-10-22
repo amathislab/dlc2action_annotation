@@ -189,8 +189,10 @@ class EpisodesList(QWidget):
             guess_type = mimetypes.guess_type(file)[0]
             if guess_type is None or not guess_type.startswith('video'):
                 continue
+            print(f'{file=}')
             name = file.split(".")[0]
             potential_data_files = [name + suffix for suffix in data_suffix]
+            print(f'{potential_data_files=}')
             if any([os.path.exists(potential_data_file) for potential_data_file in potential_data_files]):
                 videos.append(file)
         return videos
@@ -199,7 +201,7 @@ class EpisodesList(QWidget):
         if not self.can_annotate:
             show_warning(
                 "Different annotation types",
-                "Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training."
+                details="Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training."
             )
         row = self.table.selectionModel().selectedRows()[0].row()
         episode = self.table.item(row, 0).text()
@@ -242,7 +244,7 @@ class EpisodesList(QWidget):
     def annotate_more_videos(self):
         if not self.can_annotate:
             show_warning(
-                "Different annotation types"
+                "Different annotation types",
                 "Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training."
             )
         videos = self._get_eligible_videos()

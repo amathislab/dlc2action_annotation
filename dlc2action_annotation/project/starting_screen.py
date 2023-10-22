@@ -23,7 +23,7 @@ from dlc2action_annotation.project.project_display import EpisodesList
 from dlc2action_annotation.project.project_settings import ProjectSettings, TypeChoice
 from dlc2action.project import Project
 from dlc2action_annotation.project.utils import show_error, show_warning
-from dlc2action_annotation.utils import get_icon_path
+from dlc2action_annotation.utils import get_library_path
 
 
 class ProjectCreation(QWidget):
@@ -82,7 +82,8 @@ class ProjectCreation(QWidget):
         layout.addWidget(label)
         layout.addWidget(self.name_le)
         name.setLayout(layout)
-        name.setVisible(False)
+        if not self.combo.currentText() == "New Project":
+            name.setVisible(False)
         return name
     
     def make_data_path_finder(self):
@@ -97,7 +98,8 @@ class ProjectCreation(QWidget):
         layout.addWidget(self.data_label)
         layout.addWidget(button)
         widget.setLayout(layout)
-        widget.setVisible(False)
+        if not self.combo.currentText() == "New Project":
+            widget.setVisible(False)
         return widget
     
     def make_annotation_path_finder(self):
@@ -141,7 +143,7 @@ class ProjectCreation(QWidget):
     
     def make_logo(self):
         pic = QLabel()
-        icon_path = get_icon_path()
+        icon_path = os.path.join(get_library_path(), "icons")
         logo_path = os.path.join(icon_path, "horizontal_logo.png")
         pixmap = QPixmap(logo_path)
         
@@ -162,6 +164,12 @@ class ProjectCreation(QWidget):
             return
         if name in os.listdir(self.projects_path):
             show_error("Project already exists")
+            return
+        if not os.path.exists(self.data_label.text()):
+            show_error("Please select a data path")
+            return
+        if not os.path.exists(self.annotation_label.text()):
+            show_error("Please select an annotation path")
             return
         self.type_choice = TypeChoice()
         self.type_choice.show()
