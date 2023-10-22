@@ -26,7 +26,8 @@ from dlc2action_annotation.project.utils import show_error, show_warning
 from dlc2action_annotation.utils import get_library_path
 
 
-class ProjectCreation(QWidget):
+class StartingScreen(QWidget):
+    """Widget for choosing / creating a project."""
     def __init__(self):
         super().__init__()
         self.projects_path = os.path.join(str(Path.home()), "DLC2Action")
@@ -212,7 +213,7 @@ class ProjectCreation(QWidget):
 def main():
     app = QApplication(sys.argv)
 
-    window = ProjectCreation()
+    window = StartingScreen()
     window.show()
 
     app.exec_()

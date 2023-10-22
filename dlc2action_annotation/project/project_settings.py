@@ -30,12 +30,14 @@ from pathlib import Path
 
 
 class NewCheckbox(QCheckBox):
+    """Checkbox that returns False if unchecked, True if checked, and "???" if half-checked."""
     def isChecked(self):
         is_checked = super().checkState()
         value_dict = {0: False, 2: True, 1: "???"}
         return value_dict[is_checked]
     
 class NewLineEdit(QLineEdit):
+    """Line edit that returns None if empty, the text otherwise."""
     def text(self):
         text = super().text()
         if text == "None":
@@ -44,6 +46,7 @@ class NewLineEdit(QLineEdit):
 
 
 class TypeChoice(QWidget):
+    """Widget for choosing the data and annotation types for a new project."""
     accepted = pyqtSignal(tuple)
 
     def __init__(self):
@@ -120,6 +123,7 @@ class TypeChoice(QWidget):
     
 
 class ProjectSettings(QWidget):
+    """Widget for editing `dlc2action` project settings."""
     accepted = pyqtSignal(dict)
     rejected = pyqtSignal()
 

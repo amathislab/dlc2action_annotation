@@ -14,6 +14,7 @@ from dlc2action_annotation.utils import get_library_path
 
 
 class Worker(QObject):
+    """Worker thread for episode training."""
     finished = pyqtSignal()
 
     def __init__(self, project, episode, episode_settings=None, load_search=None, *args, **kwargs):
@@ -35,6 +36,7 @@ class Worker(QObject):
 
 
 class EpisodeTraining(QWidget):
+    """Widget for displaying metrics during training."""
     finished = pyqtSignal()
 
     def __init__(self, project, episode, episode_settings=None, load_search=None, *args, **kwargs):
@@ -116,26 +118,10 @@ class EpisodeTraining(QWidget):
         )
 
     def finish(self):
-        print('THREAD FINISHED')
         self.finished.emit()
         self.close()
 
     def get_metric_log(self, mode: str):
-        """Get the metric log.
-
-        Parameters
-        ----------
-        mode : {'train', 'val'}
-            the mode to get the log from
-        metric_name : str
-            the metric to get the log for (has to be one of the metric computed for this episode during training)
-
-        Returns
-        -------
-        log : np.ndarray
-            the log of metric values (empty if the metric was not computed during training)
-        
-        """
         metric_dict = defaultdict(list)
         log_file = os.path.join(self.project.project_path, "results", "logs", f"{self.episode}.txt")
         if not os.path.exists(log_file):

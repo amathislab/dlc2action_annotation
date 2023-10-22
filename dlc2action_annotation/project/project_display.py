@@ -28,6 +28,11 @@ import mimetypes
 
 
 class VideoChoice(QWidget):
+    """Small window for choosing videos to annotate.
+
+    Only videos that have corresponding data files are shown.
+    
+    """
     accepted = pyqtSignal(list)
 
     def __init__(self, options):
@@ -65,6 +70,7 @@ class VideoChoice(QWidget):
 
 
 class EpisodesList(QWidget):
+    """Widget for displaying episodes and their metrics."""
     def __init__(self, project):
         super().__init__()
         self.project = project
