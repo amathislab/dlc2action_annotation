@@ -17,9 +17,12 @@ from dlc2action_annotation.utils import get_library_path
 
 class Worker(QObject):
     """Worker thread for episode training."""
+
     finished = pyqtSignal()
 
-    def __init__(self, project, episode, episode_settings=None, load_search=None, *args, **kwargs):
+    def __init__(
+        self, project, episode, episode_settings=None, load_search=None, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.project = project
         self.episode = episode
@@ -39,9 +42,12 @@ class Worker(QObject):
 
 class EpisodeTraining(QWidget):
     """Widget for displaying metrics during training."""
+
     finished = pyqtSignal()
 
-    def __init__(self, project, episode, episode_settings=None, load_search=None, *args, **kwargs):
+    def __init__(
+        self, project, episode, episode_settings=None, load_search=None, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.setWindowTitle("Project: " + project.name)
         self.tabs = QTabWidget()
@@ -58,41 +64,49 @@ class EpisodeTraining(QWidget):
 
         self.valGraph = pg.PlotWidget()
         self.tabs.addTab(self.valGraph, "Validation metrics")
-        self.valGraph.setBackground('w')
-        self.valGraph.setXRange(0, self.episode_settings["training"]["num_epochs"], padding=0)
+        self.valGraph.setBackground("w")
+        self.valGraph.setXRange(
+            0, self.episode_settings["training"]["num_epochs"], padding=0
+        )
         self.valGraph.setYRange(0, 1, padding=0)
-        self.valGraph.setLabel('bottom', 'Epoch', color='black', size="15pt")
-        self.valGraph.setTitle(f"episode {episode}", color='black', size="15pt")
+        self.valGraph.setLabel("bottom", "Epoch", color="black", size="15pt")
+        self.valGraph.setTitle(f"episode {episode}", color="black", size="15pt")
         self.val_data_lines = {}
         legend = self.valGraph.addLegend()
         legend.setLabelTextSize("15pt")
 
         self.trainGraph = pg.PlotWidget()
         self.tabs.addTab(self.trainGraph, "Training metrics")
-        self.trainGraph.setBackground('w')
-        self.trainGraph.setXRange(0, self.episode_settings["training"]["num_epochs"], padding=0)
+        self.trainGraph.setBackground("w")
+        self.trainGraph.setXRange(
+            0, self.episode_settings["training"]["num_epochs"], padding=0
+        )
         self.trainGraph.setYRange(0, 1, padding=0)
-        self.trainGraph.setLabel('bottom', 'Epoch', color='black', size="15pt")
-        self.trainGraph.setTitle(f"episode {episode}", color='black', size="15pt")
+        self.trainGraph.setLabel("bottom", "Epoch", color="black", size="15pt")
+        self.trainGraph.setTitle(f"episode {episode}", color="black", size="15pt")
         self.train_data_lines = {}
         legend = self.trainGraph.addLegend()
         legend.setLabelTextSize("15pt")
 
         self.lossGraph = pg.PlotWidget()
         self.tabs.addTab(self.lossGraph, "Loss")
-        self.lossGraph.setBackground('w')
-        self.lossGraph.setXRange(0, self.episode_settings["training"]["num_epochs"], padding=0)
-        self.lossGraph.setLabel('bottom', 'Epoch', color='black', size="15pt")
-        self.lossGraph.setTitle(f"episode {episode}", color='black', size="15pt")
+        self.lossGraph.setBackground("w")
+        self.lossGraph.setXRange(
+            0, self.episode_settings["training"]["num_epochs"], padding=0
+        )
+        self.lossGraph.setLabel("bottom", "Epoch", color="black", size="15pt")
+        self.lossGraph.setTitle(f"episode {episode}", color="black", size="15pt")
         self.loss_data_lines = {}
         legend = self.lossGraph.addLegend()
         legend.setLabelTextSize("15pt")
 
         colors_path = os.path.join(get_library_path(), "colors.txt")
         with open(colors_path) as f:
-            self.colors = [[int(x) for x in line.strip().split()] for line in f.readlines()]
+            self.colors = [
+                [int(x) for x in line.strip().split()] for line in f.readlines()
+            ]
         self.color_index = 0
-    
+
         self.timer = QtCore.QTimer()
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.update_plot_data)
@@ -103,7 +117,9 @@ class EpisodeTraining(QWidget):
     def run_episode(self):
         self.thread = QThread()
         # Step 3: Create a worker object
-        self.worker = Worker(self.project, self.episode, self.episode_settings, self.load_search)
+        self.worker = Worker(
+            self.project, self.episode, self.episode_settings, self.load_search
+        )
         # Step 4: Move worker to the thread
         self.worker.moveToThread(self.thread)
         # Step 5: Connect signals and slots
@@ -115,9 +131,7 @@ class EpisodeTraining(QWidget):
         self.thread.start()
 
         # Final resets
-        self.thread.finished.connect(
-            self.finish
-        )
+        self.thread.finished.connect(self.finish)
 
     def finish(self):
         self.finished.emit()
@@ -125,7 +139,9 @@ class EpisodeTraining(QWidget):
 
     def get_metric_log(self, mode: str):
         metric_dict = defaultdict(list)
-        log_file = os.path.join(self.project.project_path, "results", "logs", f"{self.episode}.txt")
+        log_file = os.path.join(
+            self.project.project_path, "results", "logs", f"{self.episode}.txt"
+        )
         if not os.path.exists(log_file):
             return {}
         with open(log_file) as f:
@@ -142,7 +158,6 @@ class EpisodeTraining(QWidget):
                     metric_dict[name].append(float(value))
         return metric_dict
 
-
     def update_plot_data(self):
         val_data = self.get_metric_log("val")
         if len(val_data) == 0:
@@ -151,11 +166,23 @@ class EpisodeTraining(QWidget):
             if key == "loss":
                 continue
             if key not in self.val_data_lines:
-                self.val_data_lines[key] = self.valGraph.plot(values, pen=pg.mkPen(color=self.colors[self.color_index], width=3), xRange=[0, 100], name=key)
-                self.train_data_lines[key] = self.trainGraph.plot(values, pen=pg.mkPen(color=self.colors[self.color_index], width=3), xRange=[0, 100], name=key)
+                self.val_data_lines[key] = self.valGraph.plot(
+                    values,
+                    pen=pg.mkPen(color=self.colors[self.color_index], width=3),
+                    xRange=[0, 100],
+                    name=key,
+                )
+                self.train_data_lines[key] = self.trainGraph.plot(
+                    values,
+                    pen=pg.mkPen(color=self.colors[self.color_index], width=3),
+                    xRange=[0, 100],
+                    name=key,
+                )
                 self.color_index += 1
             values = val_data[key]
-            self.val_data_lines[key].setData(range(len(values)), values)  # Update the data.
+            self.val_data_lines[key].setData(
+                range(len(values)), values
+            )  # Update the data.
 
         train_data = self.get_metric_log("train")
         for key, values in train_data.items():
@@ -165,11 +192,24 @@ class EpisodeTraining(QWidget):
             self.train_data_lines[key].setData(range(len(values)), values)
 
         if self.loss_data_lines == {}:
-            self.loss_data_lines["val"] = self.lossGraph.plot([], pen=pg.mkPen(color="orange", width=3), name="validation", xRange=[0, 100])
-            self.loss_data_lines["train"] = self.lossGraph.plot([], pen=pg.mkPen(color="blue", width=3), name="training", xRange=[0, 100])
-        self.loss_data_lines["val"].setData(range(len(val_data["loss"])), val_data["loss"])
-        self.loss_data_lines["train"].setData(range(len(train_data["loss"])), train_data["loss"])
-
+            self.loss_data_lines["val"] = self.lossGraph.plot(
+                [],
+                pen=pg.mkPen(color="orange", width=3),
+                name="validation",
+                xRange=[0, 100],
+            )
+            self.loss_data_lines["train"] = self.lossGraph.plot(
+                [],
+                pen=pg.mkPen(color="blue", width=3),
+                name="training",
+                xRange=[0, 100],
+            )
+        self.loss_data_lines["val"].setData(
+            range(len(val_data["loss"])), val_data["loss"]
+        )
+        self.loss_data_lines["train"].setData(
+            range(len(train_data["loss"])), train_data["loss"]
+        )
 
 
 def main():
@@ -180,6 +220,7 @@ def main():
     window.show()
 
     app.exec_()
+
 
 if __name__ == "__main__":
     main()

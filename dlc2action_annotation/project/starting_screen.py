@@ -5,13 +5,22 @@ from pathlib import Path
 from dlc2action.project import Project
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import (QApplication, QComboBox, QFileDialog, QHBoxLayout,
-                             QLabel, QLineEdit, QMessageBox, QPushButton,
-                             QSizePolicy, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from dlc2action_annotation.project.project_display import EpisodesList
-from dlc2action_annotation.project.project_settings import (ProjectSettings,
-                                                            TypeChoice)
+from dlc2action_annotation.project.project_settings import ProjectSettings, TypeChoice
 from dlc2action_annotation.project.utils import show_error, show_warning
 from dlc2action_annotation.utils import get_library_path
 from dlc2action_annotation.widgets.viewer import Viewer as Viewer
@@ -19,12 +28,17 @@ from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 
 class StartingScreen(QWidget):
     """Widget for choosing / creating a project."""
+
     def __init__(self):
         super().__init__()
         self.projects_path = os.path.join(str(Path.home()), "DLC2Action")
         self.project_names = []
         if os.path.exists(self.projects_path):
-            self.project_names = [x for x in os.listdir(self.projects_path) if os.path.isdir(os.path.join(self.projects_path, x))]
+            self.project_names = [
+                x
+                for x in os.listdir(self.projects_path)
+                if os.path.isdir(os.path.join(self.projects_path, x))
+            ]
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignHCenter)
         self.combo = self.make_combo()
@@ -53,11 +67,11 @@ class StartingScreen(QWidget):
         layout.addWidget(label)
         layout.addWidget(button)
         return layout
-    
+
     def get_dir(self, label_widget):
         file = QFileDialog().getExistingDirectory(self)
         label_widget.setText(file)
-    
+
     def make_combo(self):
         combo = QComboBox()
         for o in self.project_names:
@@ -65,7 +79,7 @@ class StartingScreen(QWidget):
         combo.addItem("New Project")
         combo.currentTextChanged.connect(self.activate_name)
         return combo
-    
+
     def make_name(self):
         name = QWidget()
         label = QLabel("Project Name:")
@@ -77,7 +91,7 @@ class StartingScreen(QWidget):
         if not self.combo.currentText() == "New Project":
             name.setVisible(False)
         return name
-    
+
     def make_data_path_finder(self):
         widget = QWidget()
         layout = QHBoxLayout()
@@ -93,7 +107,7 @@ class StartingScreen(QWidget):
         if not self.combo.currentText() == "New Project":
             widget.setVisible(False)
         return widget
-    
+
     def make_annotation_path_finder(self):
         widget = QWidget()
         layout = QHBoxLayout()
@@ -108,7 +122,7 @@ class StartingScreen(QWidget):
         widget.setLayout(layout)
         widget.setVisible(False)
         return widget
-    
+
     def activate_name(self, text):
         if text == "New Project":
             self.name.setVisible(True)
@@ -118,37 +132,43 @@ class StartingScreen(QWidget):
             self.name.setVisible(False)
             self.data_path_finder.setVisible(False)
             self.annotation_path_finder.setVisible(False)
-    
+
     def change_path(self):
         self.project_names = []
         if os.path.exists(self.projects_path):
-            self.project_names = [x for x in os.listdir(self.projects_path) if os.path.isdir(os.path.join(self.projects_path, x))]
+            self.project_names = [
+                x
+                for x in os.listdir(self.projects_path)
+                if os.path.isdir(os.path.join(self.projects_path, x))
+            ]
         self.combo.clear()
         for o in self.project_names:
             self.combo.addItem(o)
         self.combo.addItem("New Project")
-    
+
     def make_button(self):
         button = QPushButton("Start")
         button.clicked.connect(self.start_project)
         return button
-    
+
     def make_logo(self):
         pic = QLabel()
         icon_path = os.path.join(get_library_path(), "icons")
         logo_path = os.path.join(icon_path, "horizontal_logo.png")
         pixmap = QPixmap(logo_path)
-        
+
         # Calculate the width to fit the QLabel's size while keeping proportions
         desired_width = pic.width()
-        scaled_pixmap = pixmap.scaledToWidth(desired_width, mode=Qt.SmoothTransformation)
-        
+        scaled_pixmap = pixmap.scaledToWidth(
+            desired_width, mode=Qt.SmoothTransformation
+        )
+
         pic.setPixmap(scaled_pixmap)
         pic.setScaledContents(True)
         pic.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        
+
         return pic
-    
+
     def make_new_project(self):
         name = self.name_le.text()
         if name == "":
@@ -165,17 +185,19 @@ class StartingScreen(QWidget):
             return
         self.type_choice = TypeChoice()
         self.type_choice.show()
-        self.type_choice.accepted.connect(lambda x: self.set_parameters(name, x[0], x[1]))
+        self.type_choice.accepted.connect(
+            lambda x: self.set_parameters(name, x[0], x[1])
+        )
         self.close()
 
     def set_parameters(self, name, data_type, annotation_type):
         project = Project(
-            name, 
-            projects_path=self.projects_path, 
-            data_type=data_type, 
+            name,
+            projects_path=self.projects_path,
+            data_type=data_type,
             annotation_type=annotation_type,
             data_path=self.data_label.text(),
-            annotation_path=self.annotation_label.text()
+            annotation_path=self.annotation_label.text(),
         )
         self.settings = ProjectSettings(project._read_parameters(catch_blanks=False))
         self.settings.show()
@@ -208,6 +230,7 @@ def main():
     window.show()
 
     app.exec_()
+
 
 if __name__ == "__main__":
     main()

@@ -39,7 +39,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
         skeleton=None,
         bodyparts_3d=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(VideoViewBox, self).__init__(*args, **kwargs)
         if skeleton is None:

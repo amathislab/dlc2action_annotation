@@ -7,13 +7,31 @@ from collections import defaultdict
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont, QPixmap
-from PyQt5.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog,
-                             QDialogButtonBox, QDoubleSpinBox, QFileDialog,
-                             QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-                             QListWidget, QMessageBox, QPushButton,
-                             QRadioButton, QScrollArea, QSlider, QSpinBox,
-                             QTreeWidget, QTreeWidgetItem,
-                             QTreeWidgetItemIterator, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMessageBox,
+    QPushButton,
+    QRadioButton,
+    QScrollArea,
+    QSlider,
+    QSpinBox,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QTreeWidgetItemIterator,
+    QVBoxLayout,
+    QWidget,
+)
 
 from dlc2action_annotation.utils import get_color
 

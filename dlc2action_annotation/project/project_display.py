@@ -4,11 +4,23 @@ import sys
 
 from dlc2action.project import Project
 from PyQt5.QtCore import QEvent, QSize, Qt, pyqtSignal
-from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QCheckBox,
-                             QDialogButtonBox, QFormLayout, QHBoxLayout,
-                             QLabel, QLineEdit, QMenu, QPushButton,
-                             QScrollArea, QTableWidget, QTableWidgetItem,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QCheckBox,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QPushButton,
+    QScrollArea,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from dlc2action_annotation.annotator import MainWindow as Annotator
 from dlc2action_annotation.project.episode_training import EpisodeTraining
@@ -21,8 +33,9 @@ class VideoChoice(QWidget):
     """Small window for choosing videos to annotate.
 
     Only videos that have corresponding data files are shown.
-    
+
     """
+
     accepted = pyqtSignal(list)
 
     def __init__(self, options):
@@ -52,20 +65,27 @@ class VideoChoice(QWidget):
         layout.addWidget(self.buttonBox)
 
     def accept(self):
-        self.accepted.emit([self.options[i] for i, checkbox in enumerate(self.checkboxes) if checkbox.isChecked()])
+        self.accepted.emit(
+            [
+                self.options[i]
+                for i, checkbox in enumerate(self.checkboxes)
+                if checkbox.isChecked()
+            ]
+        )
         self.close()
-    
+
     def reject(self):
         self.close()
 
 
 class EpisodesList(QWidget):
     """Widget for displaying episodes and their metrics."""
+
     def __init__(self, project):
         super().__init__()
         self.project = project
         annotation_type = self.project._read_parameters()["general"]["annotation_type"]
-        self.can_annotate = (annotation_type == "dlc")
+        self.can_annotate = annotation_type == "dlc"
         self.setWindowTitle("Project: " + self.project.name)
         self.scroll_area = QScrollArea()
         self.layout = QVBoxLayout(self)
@@ -86,7 +106,7 @@ class EpisodesList(QWidget):
         new_episode_button.clicked.connect(self.make_new_episode)
         new_search_button.clicked.connect(self.make_new_search)
         return buttons
-    
+
     def set_name_field(self):
         name_widget = QWidget()
         name_layout = QHBoxLayout()
@@ -109,23 +129,30 @@ class EpisodesList(QWidget):
         name_layout.addStretch(1)
         name_layout.addWidget(self.update_settings_button)
         return name_widget
-    
+
     def make_new_episode(self):
         name = self.episode_le.text()
         if name == "":
             show_error("Please enter a name")
         title = f"Project: {self.project.name}, Episode: {name}"
-        self.settings_window = ProjectSettings(self.project._read_parameters(), enabled=True, title=title, project=self.project)
+        self.settings_window = ProjectSettings(
+            self.project._read_parameters(),
+            enabled=True,
+            title=title,
+            project=self.project,
+        )
         self.settings_window.show()
         self.settings_window.accepted.connect(lambda x: self.create_episode(name, x))
-    
+
     def create_episode(self, name, settings):
         model_name = settings["general"]["model_name"]
         if model_name in self.project.list_searches().index:
             load_search = model_name
         else:
             load_search = None
-        self.training_window = EpisodeTraining(self.project, name, episode_settings=settings, load_search=load_search)
+        self.training_window = EpisodeTraining(
+            self.project, name, episode_settings=settings, load_search=load_search
+        )
         self.training_window.finished.connect(self.update_table)
         self.training_window.show()
 
@@ -134,7 +161,7 @@ class EpisodesList(QWidget):
         self.scroll_area.setWidget(table)
         self.table = table
         self.update()
-    
+
     def set_table(self):
         df = self.project.list_episodes()
         metrics = [x[1] for x in df.columns if x[0] == "results"]
@@ -144,7 +171,13 @@ class EpisodesList(QWidget):
         for i, episode in enumerate(episodes):
             table.setItem(i, 0, QTableWidgetItem(episode))
             for j, metric in enumerate(metrics):
-                table.setItem(i, j + 1, QTableWidgetItem(str(df.loc[episode, ("results", metric)].round(3))))    
+                table.setItem(
+                    i,
+                    j + 1,
+                    QTableWidgetItem(
+                        str(df.loc[episode, ("results", metric)].round(3))
+                    ),
+                )
                 # table.item(i, j).setFlags(Qt.ItemIsEnabled)
         table.setContextMenuPolicy(Qt.CustomContextMenu)
         table.customContextMenuRequested.connect(self.show_menu)
@@ -154,7 +187,7 @@ class EpisodesList(QWidget):
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.viewport().installEventFilter(self)
         return table
-    
+
     def row_selected(self):
         self.annotation_button.setEnabled(True)
 
@@ -176,18 +209,25 @@ class EpisodesList(QWidget):
             data_path = [data_path]
         potential_files = []
         for path in data_path:
-            potential_files.extend([os.path.join(path, file) for file in os.listdir(path)])
+            potential_files.extend(
+                [os.path.join(path, file) for file in os.listdir(path)]
+            )
         data_suffix = settings["data"]["data_suffix"]
         if isinstance(data_suffix, str):
             data_suffix = [data_suffix]
         videos = []
         for file in potential_files:
             guess_type = mimetypes.guess_type(file)[0]
-            if guess_type is None or not guess_type.startswith('video'):
+            if guess_type is None or not guess_type.startswith("video"):
                 continue
             name = file.split(".")[0]
             potential_data_files = [name + suffix for suffix in data_suffix]
-            if any([os.path.exists(potential_data_file) for potential_data_file in potential_data_files]):
+            if any(
+                [
+                    os.path.exists(potential_data_file)
+                    for potential_data_file in potential_data_files
+                ]
+            ):
                 videos.append(file)
         return videos
 
@@ -195,7 +235,7 @@ class EpisodesList(QWidget):
         if not self.can_annotate:
             show_warning(
                 "Different annotation types",
-                details="Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training."
+                details="Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training.",
             )
         row = self.table.selectionModel().selectedRows()[0].row()
         episode = self.table.item(row, 0).text()
@@ -204,7 +244,9 @@ class EpisodesList(QWidget):
             show_error("No videos found")
             return
         self.video_choice = VideoChoice(videos)
-        self.video_choice.accepted.connect(lambda x: self.annotate_with_suggestion(episode, x))
+        self.video_choice.accepted.connect(
+            lambda x: self.annotate_with_suggestion(episode, x)
+        )
         self.video_choice.show()
 
     def annotate_with_suggestion(self, episode, videos):
@@ -214,19 +256,19 @@ class EpisodesList(QWidget):
             data_suffix = [data_suffix[0]]
         data_files = []
         for video in videos:
-            name = video.split('.')[0]
+            name = video.split(".")[0]
             for suffix in data_suffix:
                 if os.path.exists(name + suffix):
                     data_files.append(name + suffix)
                     break
         self.project.remove_saved_features()
         self.project.run_suggestion(
-            episode, 
-            suggestion_episodes=[episode], 
-            suggestion_classes=["Grooming", "Supported", "Unsupported"], 
-            force=True, 
+            episode,
+            suggestion_episodes=[episode],
+            suggestion_classes=["Grooming", "Supported", "Unsupported"],
+            force=True,
             file_paths=data_files,
-            parameters_update={"general": {"only_load_annotated": False}}
+            parameters_update={"general": {"only_load_annotated": False}},
         )
         self.annotate_videos(videos, suggestion=episode)
 
@@ -234,12 +276,12 @@ class EpisodesList(QWidget):
         self.settings = ProjectSettings(self.project._read_parameters())
         self.settings.show()
         self.settings.accepted.connect(lambda x: self.project.update_parameters(x))
-    
+
     def annotate_more_videos(self):
         if not self.can_annotate:
             show_warning(
                 "Different annotation types",
-                "Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training."
+                "Since the annotation type of this project is not DLC, the annotation output cannot be used directly for training.",
             )
         videos = self._get_eligible_videos()
         if len(videos) == 0:
@@ -251,7 +293,12 @@ class EpisodesList(QWidget):
 
     def annotate_videos(self, videos, suggestion=None):
         if suggestion is not None:
-            suggestion_files = [self.project._suggestion_path(os.path.basename(name).split('.')[0], suggestion) for name in videos]
+            suggestion_files = [
+                self.project._suggestion_path(
+                    os.path.basename(name).split(".")[0], suggestion
+                )
+                for name in videos
+            ]
         else:
             suggestion_files = None
         annotation_path = self.project._read_parameters()["data"]["annotation_path"]
@@ -260,7 +307,13 @@ class EpisodesList(QWidget):
             annotation_path = annotation_path[0]
         if not isinstance(annotation_suffix, str):
             annotation_suffix = annotation_suffix[0]
-        annotation_files = [os.path.join(annotation_path, os.path.basename(name).split('.')[0] + annotation_suffix) for name in videos]
+        annotation_files = [
+            os.path.join(
+                annotation_path,
+                os.path.basename(name).split(".")[0] + annotation_suffix,
+            )
+            for name in videos
+        ]
         window = Annotator(
             videos=videos,
             multiview=False,
@@ -275,19 +328,23 @@ class EpisodesList(QWidget):
 
     def sizeHint(self):
         return QSize(900, 700)
-    
+
     def eventFilter(self, source, event):
-        if(event.type() == QEvent.MouseButtonPress and
-            event.buttons() == Qt.RightButton and
-            source is self.table.viewport()):
+        if (
+            event.type() == QEvent.MouseButtonPress
+            and event.buttons() == Qt.RightButton
+            and source is self.table.viewport()
+        ):
             item = self.table.itemAt(event.pos())
             if item is not None:
                 self.menu = QMenu(self)
-                self.show_action = self.menu.addAction("Show parameters")         #(QAction('test'))
+                self.show_action = self.menu.addAction(
+                    "Show parameters"
+                )  # (QAction('test'))
                 self.show_action.triggered.connect(self.show_parameters)
                 row = item.row()
                 self.clicked_episode = self.table.item(row, 0).text()
-                #menu.exec_(event.globalPos())
+                # menu.exec_(event.globalPos())
         return super().eventFilter(source, event)
 
 
@@ -299,6 +356,7 @@ def main():
     window.show()
 
     app.exec_()
+
 
 if __name__ == "__main__":
     main()

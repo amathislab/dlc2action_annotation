@@ -15,10 +15,10 @@ from dlc2action_annotation.widgets.viewer import Viewer
 
 
 class RepeatingTimer(threading.Timer):
-    """ Timer that repeats its function calls every N seconds """
+    """Timer that repeats its function calls every N seconds"""
 
     def run(self):
-        """ Runs the timer """
+        """Runs the timer"""
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
 
@@ -52,7 +52,7 @@ class BackupManager:
         self.create_backup()  # create initial backup
 
     def create_backup(self) -> None:
-        """ Backs up the viewer data """
+        """Backs up the viewer data"""
         now = datetime.now()
         day_str = now.strftime("%Y-%m-%d")
         output_folder = self.backup_path / day_str
@@ -76,10 +76,10 @@ class BackupManager:
             self.timer = threading.Timer(60 * self.interval, self.create_backup)
 
     def start(self) -> None:
-        """ Starts the module, backing up data periodically """
+        """Starts the module, backing up data periodically"""
         self.timer.start()
 
     def stop(self) -> None:
-        """ Cancels the periodic backups """
+        """Cancels the periodic backups"""
         self.timer.cancel()
         self.timer = RepeatingTimer(60 * self.interval, self.create_backup)

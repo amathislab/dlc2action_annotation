@@ -12,11 +12,22 @@ from typing import Optional
 import click
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QFileDialog,
-                             QMainWindow, QMessageBox, QStatusBar)
+from PyQt5.QtWidgets import (
+    QAction,
+    QActionGroup,
+    QApplication,
+    QFileDialog,
+    QMainWindow,
+    QMessageBox,
+    QStatusBar,
+)
 
-from dlc2action_annotation.utils import (get_library_path, get_settings,
-                                         read_settings, read_video)
+from dlc2action_annotation.utils import (
+    get_library_path,
+    get_settings,
+    read_settings,
+    read_video,
+)
 from dlc2action_annotation.widgets.core.backup import BackupManager
 from dlc2action_annotation.widgets.dialog import Form
 from dlc2action_annotation.widgets.settings import SettingsWindow
@@ -252,7 +263,9 @@ class MainWindow(QMainWindow):
 
         if self.backup_dir is None:
             default_video_path = Path(self.videos[0])
-            backup_path = default_video_path.with_name(default_video_path.stem + "_backups")
+            backup_path = default_video_path.with_name(
+                default_video_path.stem + "_backups"
+            )
         else:
             backup_path = Path(self.backup_dir)
         self.backup_manager = BackupManager(
@@ -578,9 +591,25 @@ class MainWindow(QMainWindow):
 @click.option("--active_learning", "-a", is_flag=True, help="Active learning mode")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
 @click.option("--config_file", "-c", default=None, help="The config file path")
-@click.option("--backup-dir", "-b", default=None, help="The directory where backups are saved")
-@click.option("--backup-interval", default=30, type=int, help="The interval between backups, in minutes")
-def main(video, multiview, dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
+@click.option(
+    "--backup-dir", "-b", default=None, help="The directory where backups are saved"
+)
+@click.option(
+    "--backup-interval",
+    default=30,
+    type=int,
+    help="The interval between backups, in minutes",
+)
+def main(
+    video,
+    multiview,
+    dev,
+    active_learning,
+    open_settings,
+    config_file,
+    backup_dir,
+    backup_interval,
+):
     app = QApplication(sys.argv)
 
     window = MainWindow(

@@ -131,7 +131,6 @@ def parse_options():
         options.skeleton_file = None
 
     if options.filename and options.split_size and options.ds and options.fps:
-
         return (
             options.filename,
             options.split_size,

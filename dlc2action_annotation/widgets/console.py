@@ -4,8 +4,16 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 from PyQt5.Qt import Qt
-from PyQt5.QtWidgets import (QCheckBox, QFormLayout, QHBoxLayout, QLabel,
-                             QPushButton, QSlider, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .lists import AnimalList, CatList, SegmentationList
 

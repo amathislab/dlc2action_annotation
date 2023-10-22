@@ -117,6 +117,7 @@ def read_video(path, backend="pyav"):
         return lazy_imread, shape, len(stream)
     elif backend == "pyav_fast":
         from pims import Video
+
         stream = Video(path)
         shape = stream[0].shape
         length = len(stream)
