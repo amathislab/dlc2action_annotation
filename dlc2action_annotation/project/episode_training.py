@@ -49,7 +49,7 @@ class EpisodeTraining(QWidget):
         self, project, episode, episode_settings=None, load_search=None, *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self.setWindowTitle("Project: " + project.name)
+        self.setWindowTitle(f"DLC2Action - Project: {project.name}")
         self.tabs = QTabWidget()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)

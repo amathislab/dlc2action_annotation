@@ -85,9 +85,11 @@ class EpisodesList(QWidget):
         self.project = project
         annotation_type = self.project._read_parameters()["general"]["annotation_type"]
         self.can_annotate = annotation_type == "dlc"
-        self.setWindowTitle("Project: " + self.project.name)
+        self.setWindowTitle("DLC2Action - Project: " + self.project.name)
+        instructions_label = QLabel("Select an episode to generate annotations. Right-click to show parameters.")
         self.scroll_area = QScrollArea()
         self.layout = QVBoxLayout(self)
+        self.layout.addWidget(instructions_label)
         self.name_field = self.set_name_field()
         self.layout.addWidget(self.scroll_area)
         self.scroll_area.setWidgetResizable(True)
@@ -133,7 +135,7 @@ class EpisodesList(QWidget):
         name = self.episode_le.text()
         if name == "":
             show_error("Please enter a name")
-        title = f"Project: {self.project.name}, Episode: {name}"
+        title = f"DLC2Action - Project: {self.project.name}, Episode: {name}"
         self.settings_window = ProjectSettings(
             self.project._read_parameters(),
             enabled=True,
