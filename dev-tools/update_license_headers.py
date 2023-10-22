@@ -6,11 +6,12 @@ configuration, see the instructions in NOTICE.yml.
 Thanks @stes - https://github.com/DeepLabCut/DeepLabCut/blob/master/tools/update_license_headers.py
 """
 
-import tempfile
-import glob
-import yaml
 import fnmatch
+import glob
 import subprocess
+import tempfile
+
+import yaml
 
 
 def load_config(filename):

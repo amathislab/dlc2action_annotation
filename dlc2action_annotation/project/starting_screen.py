@@ -1,29 +1,20 @@
-import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QComboBox,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QSizePolicy,
-    QFileDialog,
-    QLineEdit,
-    QMessageBox,
-)
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtCore import QSize
-from PyQt5.QtCore import Qt
 import os
-from dlc2action_annotation.widgets.viewer import Viewer as Viewer
-from PyQt5.QtGui import QPixmap
+import sys
 from pathlib import Path
-from dlc2action_annotation.project.project_display import EpisodesList
-from dlc2action_annotation.project.project_settings import ProjectSettings, TypeChoice
+
 from dlc2action.project import Project
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QApplication, QComboBox, QFileDialog, QHBoxLayout,
+                             QLabel, QLineEdit, QMessageBox, QPushButton,
+                             QSizePolicy, QVBoxLayout, QWidget)
+
+from dlc2action_annotation.project.project_display import EpisodesList
+from dlc2action_annotation.project.project_settings import (ProjectSettings,
+                                                            TypeChoice)
 from dlc2action_annotation.project.utils import show_error, show_warning
 from dlc2action_annotation.utils import get_library_path
+from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 
 
 class StartingScreen(QWidget):

@@ -12,17 +12,11 @@ from typing import Optional
 import click
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (
-    QAction,
-    QActionGroup,
-    QApplication,
-    QFileDialog,
-    QMainWindow,
-    QMessageBox,
-    QStatusBar,
-)
+from PyQt5.QtWidgets import (QAction, QActionGroup, QApplication, QFileDialog,
+                             QMainWindow, QMessageBox, QStatusBar)
 
-from dlc2action_annotation.utils import get_settings, read_settings, read_video, get_library_path
+from dlc2action_annotation.utils import (get_library_path, get_settings,
+                                         read_settings, read_video)
 from dlc2action_annotation.widgets.core.backup import BackupManager
 from dlc2action_annotation.widgets.dialog import Form
 from dlc2action_annotation.widgets.settings import SettingsWindow

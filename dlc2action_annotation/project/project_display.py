@@ -1,30 +1,20 @@
-import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QScrollArea,
-    QTableWidget,
-    QTableWidgetItem,
-    QHBoxLayout,
-    QPushButton,
-    QLineEdit,
-    QAbstractItemView,
-    QFormLayout,
-    QCheckBox,
-    QDialogButtonBox,
-    QMenu,
-    QLabel,
-)
-from dlc2action_annotation.widgets.viewer import Viewer as Viewer
-from dlc2action.project import Project
-from PyQt5.QtCore import Qt, QSize, pyqtSignal, QEvent
-from dlc2action_annotation.project.project_settings import ProjectSettings
-from dlc2action_annotation.project.episode_training import EpisodeTraining
-from dlc2action_annotation.project.utils import show_error, show_warning
-from dlc2action_annotation.annotator import MainWindow as Annotator
-import os
 import mimetypes
+import os
+import sys
+
+from dlc2action.project import Project
+from PyQt5.QtCore import QEvent, QSize, Qt, pyqtSignal
+from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QCheckBox,
+                             QDialogButtonBox, QFormLayout, QHBoxLayout,
+                             QLabel, QLineEdit, QMenu, QPushButton,
+                             QScrollArea, QTableWidget, QTableWidgetItem,
+                             QVBoxLayout, QWidget)
+
+from dlc2action_annotation.annotator import MainWindow as Annotator
+from dlc2action_annotation.project.episode_training import EpisodeTraining
+from dlc2action_annotation.project.project_settings import ProjectSettings
+from dlc2action_annotation.project.utils import show_error, show_warning
+from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 
 
 class VideoChoice(QWidget):

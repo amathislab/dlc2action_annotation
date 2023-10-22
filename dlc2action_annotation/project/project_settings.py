@@ -1,32 +1,22 @@
-import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QComboBox,
-    QVBoxLayout,
-    QHBoxLayout,
-    QFormLayout,
-    QPushButton,
-    QDialogButtonBox,
-    QLabel,
-    QScrollArea,
-    QTabWidget,
-    QCheckBox,
-    QLineEdit,
-    QSlider,
-    QFileDialog,
-    QMessageBox,
-)
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QIntValidator, QDoubleValidator
-from dlc2action_annotation.widgets.viewer import Viewer as Viewer
-from dlc2action_annotation.widgets.settings import MultipleInputWidget, MultipleDoubleInputWidget, CategoryInputWidget
-from dlc2action.project import Project
-from dlc2action.options import input_stores, annotation_stores
-from dlc2action_annotation.project.utils import show_error, show_warning
 import os
+import sys
 from pathlib import Path
 
+from dlc2action.options import annotation_stores, input_stores
+from dlc2action.project import Project
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QDoubleValidator, QIntValidator
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox,
+                             QDialogButtonBox, QFileDialog, QFormLayout,
+                             QHBoxLayout, QLabel, QLineEdit, QMessageBox,
+                             QPushButton, QScrollArea, QSlider, QTabWidget,
+                             QVBoxLayout, QWidget)
+
+from dlc2action_annotation.project.utils import show_error, show_warning
+from dlc2action_annotation.widgets.settings import (CategoryInputWidget,
+                                                    MultipleDoubleInputWidget,
+                                                    MultipleInputWidget)
+from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 
 
 class NewCheckbox(QCheckBox):

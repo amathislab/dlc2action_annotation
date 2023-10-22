@@ -7,25 +7,11 @@ import os
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import (
-    QComboBox,
-    QDialog,
-    QDialogButtonBox,
-    QFileDialog,
-    QFormLayout,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QListWidget,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-    QSlider,
-    QSpinBox,
-    QTabWidget,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QFileDialog,
+                             QFormLayout, QHBoxLayout, QLabel, QLineEdit,
+                             QListWidget, QMessageBox, QPushButton,
+                             QScrollArea, QSlider, QSpinBox, QTabWidget,
+                             QVBoxLayout, QWidget)
 from qtwidgets import Toggle
 from ruamel.yaml import YAML
 

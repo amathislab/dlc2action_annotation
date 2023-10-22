@@ -11,6 +11,7 @@ from collections import defaultdict
 from itertools import groupby
 from typing import Iterable
 
+import annotator
 import click
 import numpy as np
 import pyqtgraph as pg
@@ -18,33 +19,18 @@ import torch
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtCore import QPoint, QPointF, QRectF, QSize, QTimer
 from PyQt5.QtGui import QBrush, QColor, QPen
-from PyQt5.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QComboBox,
-    QFileDialog,
-    QFormLayout,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QRadioButton,
-    QStackedLayout,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog,
+                             QFormLayout, QHBoxLayout, QLabel, QLineEdit,
+                             QMessageBox, QPushButton, QRadioButton,
+                             QStackedLayout, QVBoxLayout, QWidget)
 from sklearn import datasets, decomposition, manifold
 from vispy.scene import SceneCanvas
-
-import annotator
-from dlc2action_annotation.utils import get_color, get_settings, read_skeleton, read_stack, read_video
-from widgets.dialog import (
-    EpisodeParamsSelector,
-    EpisodeSelector,
-    SuggestionParamsSelector,
-)
+from widgets.dialog import (EpisodeParamsSelector, EpisodeSelector,
+                            SuggestionParamsSelector)
 from widgets.viewbox import VideoViewBox
+
+from dlc2action_annotation.utils import (get_color, get_settings,
+                                         read_skeleton, read_stack, read_video)
 
 
 class Annotation:

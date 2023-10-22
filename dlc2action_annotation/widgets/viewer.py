@@ -19,28 +19,18 @@ from PIL import Image
 from PyQt5.Qt import pyqtSignal
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QFontMetrics
-from PyQt5.QtWidgets import (
-    QFileDialog,
-    QHBoxLayout,
-    QInputDialog,
-    QMessageBox,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QInputDialog,
+                             QMessageBox, QVBoxLayout, QWidget)
 
-from dlc2action_annotation.utils import BoxLoader, Segmentation, get_2d_files, read_skeleton, get_library_path
+from dlc2action_annotation.utils import (BoxLoader, Segmentation, get_2d_files,
+                                         get_library_path, read_skeleton)
 
 from .actionbar import Bar
 from .canvas import VideoCanvas
 from .console import Console
 from .core.annotations import save_annotations
-from .dialog import (
-    AssessmentDialog,
-    CatDialog,
-    ChoiceDialog,
-    ChoiceDialogExample,
-    LoadDialog,
-)
+from .dialog import (AssessmentDialog, CatDialog, ChoiceDialog,
+                     ChoiceDialogExample, LoadDialog)
 from .progressbar import ProgressBar
 from .sampler import Sampler
 from .viewbox import VideoViewBox

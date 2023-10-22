@@ -1,15 +1,17 @@
-from PyQt5 import QtWidgets, QtCore
-import pyqtgraph as pg
-import sys  # We need sys so that we can pass argv to QApplication
 import os
-from random import randint
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QTabWidget
-from PyQt5.QtGui import QFont
-from dlc2action.project import Project
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
-from time import sleep
+import sys  # We need sys so that we can pass argv to QApplication
 from collections import defaultdict
+from random import randint
+from time import sleep
+
 import numpy as np
+import pyqtgraph as pg
+from dlc2action.project import Project
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication, QTabWidget, QVBoxLayout, QWidget
+
 from dlc2action_annotation.utils import get_library_path
 
 

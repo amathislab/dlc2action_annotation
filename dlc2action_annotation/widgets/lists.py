@@ -3,12 +3,13 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
+import os
+
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QKeySequence, QPixmap
 from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem
 
 from dlc2action_annotation.utils import get_library_path
-import os
 
 
 class List(QListWidget):

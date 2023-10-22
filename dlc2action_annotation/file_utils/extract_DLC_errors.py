@@ -3,15 +3,16 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-from PIL import Image
-import numpy as np
 import pickle
-import dask.array as da
-from dask import delayed
-from pims import PyAVReaderIndexed
-import click
 from collections import defaultdict
+
+import click
+import dask.array as da
+import numpy as np
+from dask import delayed
 from matplotlib import pyplot as plt
+from PIL import Image
+from pims import PyAVReaderIndexed
 
 
 def load_labels(labels_file):
