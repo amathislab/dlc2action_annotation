@@ -342,7 +342,7 @@ def get_settings(config_file, show_settings):
 
 
 class WorkerThread(QThread):
-    job_done = pyqtSignal(tuple)
+    job_done = pyqtSignal(list)
 
     def __init__(
         self,
@@ -417,7 +417,7 @@ class WorkerThread(QThread):
                 self.loaded[0] += shift
 
         if self.threadactive:
-            self.job_done.emit((self.videos, self.loaded))
+            self.job_done.emit([self.videos, self.loaded])
 
     def run(self):
         self.do_work()

@@ -139,4 +139,4 @@ dmypy.json
 
 #data
 last_action_choice.pickle
-/dlc2action/config.yaml
+dlc2action_annotation/config.yaml

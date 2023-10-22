@@ -35,7 +35,6 @@ class VideoChoice(QWidget):
     Only videos that have corresponding data files are shown.
 
     """
-
     accepted = pyqtSignal(list)
 
     def __init__(self, options):
@@ -253,7 +252,7 @@ class EpisodesList(QWidget):
         settings = self.project._read_parameters()
         data_suffix = settings["data"]["data_suffix"]
         if isinstance(data_suffix, str):
-            data_suffix = [data_suffix[0]]
+            data_suffix = [data_suffix]
         data_files = []
         for video in videos:
             name = video.split(".")[0]
@@ -307,6 +306,8 @@ class EpisodesList(QWidget):
             annotation_path = annotation_path[0]
         if not isinstance(annotation_suffix, str):
             annotation_suffix = annotation_suffix[0]
+        if self.project.annotation_type != "dlc":
+            annotation_suffix = annotation_suffix.split(".")[0] + ".pickle"
         annotation_files = [
             os.path.join(
                 annotation_path,
@@ -319,7 +320,6 @@ class EpisodesList(QWidget):
             multiview=False,
             dev=False,
             active_learning=False,
-            config_file="config.yaml",
             suggestion_files=suggestion_files,
             annotation_files=annotation_files,
         )

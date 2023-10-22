@@ -15,7 +15,6 @@ def show_warning(message, details=None):
     msg = QMessageBox()
     msg.setText(message)
     msg.setIcon(QMessageBox.Warning)
-    print(f"{details=}")
     if details is not None:
         msg.setInformativeText(details)
     msg.setWindowTitle("Warning")

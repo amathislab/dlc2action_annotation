@@ -169,13 +169,13 @@ class EpisodeTraining(QWidget):
                 self.val_data_lines[key] = self.valGraph.plot(
                     values,
                     pen=pg.mkPen(color=self.colors[self.color_index], width=3),
-                    xRange=[0, 100],
+                    # xRange=[0, 100],
                     name=key,
                 )
                 self.train_data_lines[key] = self.trainGraph.plot(
                     values,
                     pen=pg.mkPen(color=self.colors[self.color_index], width=3),
-                    xRange=[0, 100],
+                    # xRange=[0, 100],
                     name=key,
                 )
                 self.color_index += 1
@@ -196,13 +196,13 @@ class EpisodeTraining(QWidget):
                 [],
                 pen=pg.mkPen(color="orange", width=3),
                 name="validation",
-                xRange=[0, 100],
+                # xRange=[0, 100],
             )
             self.loss_data_lines["train"] = self.lossGraph.plot(
                 [],
                 pen=pg.mkPen(color="blue", width=3),
                 name="training",
-                xRange=[0, 100],
+                # xRange=[0, 100],
             )
         self.loss_data_lines["val"].setData(
             range(len(val_data["loss"])), val_data["loss"]
