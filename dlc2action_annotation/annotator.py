@@ -344,7 +344,7 @@ class MainWindow(QMainWindow):
 
     def _createActions(self):
         # File actions
-        icons_path = os.path.join(get_library_path(), "icons")
+        icons_path = os.path.join(get_library_path(), "img")
         self.play_action = QAction(self)
         self.play_action.setText("Play / Stop")
         self.play_action.setIcon(QIcon(os.path.join(icons_path, "pause-button.png")))
