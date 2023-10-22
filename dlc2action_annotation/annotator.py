@@ -22,11 +22,11 @@ from PyQt5.QtWidgets import (
     QStatusBar,
 )
 
-from dlc2action_annotation.utils import get_settings, read_settings, read_video
-from widgets.core.backup import BackupManager
-from widgets.dialog import Form
-from widgets.settings import SettingsWindow
-from widgets.viewer import Viewer as Viewer
+from dlc2action_annotation.utils import get_settings, read_settings, read_video, get_library_path
+from dlc2action_annotation.widgets.core.backup import BackupManager
+from dlc2action_annotation.widgets.dialog import Form
+from dlc2action_annotation.widgets.settings import SettingsWindow
+from dlc2action_annotation.widgets.viewer import Viewer as Viewer
 
 
 class MainWindow(QMainWindow):
@@ -335,39 +335,40 @@ class MainWindow(QMainWindow):
 
     def _createActions(self):
         # File actions
+        icons_path = os.path.join(get_library_path(), "icons")
         self.play_action = QAction(self)
         self.play_action.setText("Play / Stop")
-        self.play_action.setIcon(QIcon("icons/pause-button.png"))
+        self.play_action.setIcon(QIcon(os.path.join(icons_path, "pause-button.png")))
         self.play_action.triggered.connect(lambda: self.viewer.on_play())
         self.move_action = QAction(self, checkable=True)
         self.move_action.setChecked(True)
         self.move_action.setText("Move")
         self.move_action.setShortcut("Ctrl+M")
-        self.move_action.setIcon(QIcon("icons/hand.png"))
+        self.move_action.setIcon(QIcon(os.path.join(icons_path, "hand.png")))
         self.move_action.triggered.connect(self.viewer.set_move_mode)
         self.remove_action = QAction(self, checkable=True)
         self.remove_action.setText("Remove")
-        self.remove_action.setIcon(QIcon("icons/trash.png"))
+        self.remove_action.setIcon(QIcon(os.path.join(icons_path, "trash.png")))
         self.remove_action.triggered.connect(self.viewer.set_remove_mode)
         self.remove_action.setShortcut("Ctrl+R")
         self.new_action = QAction(self, checkable=True)
         self.new_action.setText("New")
         self.new_action.triggered.connect(self.viewer.set_new_mode)
         self.new_action.setShortcut("Ctrl+N")
-        self.new_action.setIcon(QIcon("icons/plus.png"))
+        self.new_action.setIcon(QIcon(os.path.join(icons_path, "plus.png")))
         self.cut_action = QAction(self, checkable=True)
         self.cut_action.setText("Cut")
-        self.cut_action.setIcon(QIcon("icons/scissors.png"))
+        self.cut_action.setIcon(QIcon(os.path.join(icons_path, "scissors.png")))
         self.cut_action.triggered.connect(self.viewer.set_cut_mode)
         self.cut_action.setShortcut("Ctrl+C")
         self.ass_action = QAction(self, checkable=True)
         self.ass_action.setText("Assign")
-        self.ass_action.setIcon(QIcon("icons/pantone.png"))
+        self.ass_action.setIcon(QIcon(os.path.join(icons_path, "pantone.png")))
         self.ass_action.triggered.connect(self.viewer.set_ass_mode)
         self.ass_action.setShortcut("Ctrl+A")
         self.amb_action = QAction(self, checkable=True)
         self.amb_action.setText("Ambiguous")
-        self.amb_action.setIcon(QIcon("icons/transparency.png"))
+        self.amb_action.setIcon(QIcon(os.path.join(icons_path, "transparency.png")))
         self.amb_action.triggered.connect(self.viewer.set_amb_mode)
         self.amb_action.setShortcut("Ctrl+B")
 

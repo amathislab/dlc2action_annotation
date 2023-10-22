@@ -10,8 +10,8 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
-from widgets.core.annotations import save_annotations
-from widgets.viewer import Viewer
+from dlc2action_annotation.widgets.core.annotations import save_annotations
+from dlc2action_annotation.widgets.viewer import Viewer
 
 
 class RepeatingTimer(threading.Timer):

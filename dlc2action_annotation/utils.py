@@ -22,7 +22,7 @@ from ruamel.yaml import YAML
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from tqdm import tqdm
 
-from widgets.settings import SettingsWindow
+from dlc2action_annotation.widgets.settings import SettingsWindow
 
 try:
     import msgpack
@@ -34,6 +34,10 @@ try:
     import cv2
 except:
     pass
+
+
+def get_library_path():
+    return os.path.dirname(__file__)
 
 
 class Segmentation:
@@ -113,7 +117,6 @@ def read_video(path, backend="pyav"):
         return lazy_imread, shape, len(stream)
     elif backend == "pyav_fast":
         from pims import Video
-
         stream = Video(path)
         shape = stream[0].shape
         length = len(stream)
@@ -314,13 +317,14 @@ def read_settings(settings_file):
 
 
 def get_settings(config_file, show_settings):
+    default_config_path = os.path.join(get_library_path(), "default_config.yaml")
     if not os.path.exists(config_file):
-        shutil.copyfile("default_config.yaml", config_file)
+        shutil.copyfile(default_config_path, config_file)
         show_settings = True
     else:
         with open(config_file) as f:
             config = YAML().load(f)
-        with open("default_config.yaml") as f:
+        with open(default_config_path) as f:
             default_config = YAML().load(f)
         to_remove = []
         for key, value in default_config.items():

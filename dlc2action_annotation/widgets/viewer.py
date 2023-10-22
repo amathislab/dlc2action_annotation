@@ -28,7 +28,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from dlc2action_annotation.utils import BoxLoader, Segmentation, get_2d_files, read_skeleton
+from dlc2action_annotation.utils import BoxLoader, Segmentation, get_2d_files, read_skeleton, get_library_path
 
 from .actionbar import Bar
 from .canvas import VideoCanvas
@@ -91,7 +91,8 @@ class Viewer(QWidget):
         self.displayed_animals = []
         self.sequential = sequential
         self.animals = None
-        with open("colors.txt") as f:
+        colors_path = os.path.join(get_library_path(), "colors.txt")
+        with open(colors_path) as f:
             self.animal_colors = [
                 list(map(lambda x: float(x) / 255, line.split()))
                 for line in f.readlines()

@@ -6,6 +6,7 @@
 import math
 from collections import defaultdict
 from copy import copy
+import os
 
 import numpy as np
 from PyQt5.Qt import Qt, pyqtSignal
@@ -13,7 +14,7 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QColor, QPainter, QPen
 from PyQt5.QtWidgets import QWidget
 
-from dlc2action_annotation.utils import get_color
+from dlc2action_annotation.utils import get_color, get_library_path
 
 
 class ActionRect:
@@ -79,7 +80,8 @@ class Bar(QWidget):
         self.len = segment_len
         self.setMouseTracking(True)
         self.get_labels()
-        with open("colors.txt") as f:
+        colors_path = os.path.join(get_library_path(), "colors.txt")
+        with open(colors_path) as f:
             self.colors = [
                 list(map(lambda x: float(x), line.split())) for line in f.readlines()
             ]
