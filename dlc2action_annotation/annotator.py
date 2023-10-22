@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
         dev=False,
         active_learning=False,
         show_settings=False,
-        config_file="config.yaml",
+        config_file=None,
         al_points_dictionary=None,
         clustering_parameters=None,
         skeleton_files=None,
@@ -50,6 +50,8 @@ class MainWindow(QMainWindow):
         backup_interval: int = 30,
     ):
         super(MainWindow, self).__init__()
+        if config_file is None:
+            config_file = os.path.join(get_library_path(), "config.yaml")
         self.toolbar = None
         self.menubar = None
         self.viewer: Optional[Viewer] = None
