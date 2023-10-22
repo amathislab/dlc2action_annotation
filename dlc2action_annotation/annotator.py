@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QAction,
@@ -611,6 +611,7 @@ def main(
     backup_interval,
 ):
     app = QApplication(sys.argv)
+    app.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
     window = MainWindow(
         videos=video,
