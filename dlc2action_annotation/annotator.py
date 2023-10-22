@@ -583,7 +583,7 @@ class MainWindow(QMainWindow):
 )
 @click.option("--active_learning", "-a", is_flag=True, help="Active learning mode")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
-@click.option("--config_file", "-c", default="config.yaml", help="The config file path")
+@click.option("--config_file", "-c", default=None, help="The config file path")
 @click.option("--backup-dir", "-b", default=None, help="The directory where backups are saved")
 @click.option("--backup-interval", default=30, type=int, help="The interval between backups, in minutes")
 def main(video, multiview, dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
