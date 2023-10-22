@@ -28,6 +28,7 @@ dependencies = [
     "statsmodels",
     "pyqt5",
     "qtpy",
+    "av",
 ]
 
 [project.scripts]

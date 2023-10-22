@@ -189,10 +189,8 @@ class EpisodesList(QWidget):
             guess_type = mimetypes.guess_type(file)[0]
             if guess_type is None or not guess_type.startswith('video'):
                 continue
-            print(f'{file=}')
             name = file.split(".")[0]
             potential_data_files = [name + suffix for suffix in data_suffix]
-            print(f'{potential_data_files=}')
             if any([os.path.exists(potential_data_file) for potential_data_file in potential_data_files]):
                 videos.append(file)
         return videos
@@ -269,7 +267,6 @@ class EpisodesList(QWidget):
         annotation_files = [os.path.join(annotation_path, os.path.basename(name).split('.')[0] + annotation_suffix) for name in videos]
         window = Annotator(
             videos=videos,
-            output_file=None,
             multiview=False,
             dev=False,
             active_learning=False,
