@@ -119,7 +119,8 @@ class StartingScreen(QWidget):
         layout.addWidget(self.annotation_label)
         layout.addWidget(button)
         widget.setLayout(layout)
-        widget.setVisible(False)
+        if not self.combo.currentText() == "New Project":
+            widget.setVisible(False)
         return widget
 
     def activate_name(self, text):
