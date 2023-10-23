@@ -11,6 +11,7 @@ from collections import defaultdict
 from itertools import groupby
 from typing import Iterable
 
+import annotator
 import click
 import numpy as np
 import pyqtgraph as pg
@@ -36,15 +37,20 @@ from PyQt5.QtWidgets import (
 )
 from sklearn import datasets, decomposition, manifold
 from vispy.scene import SceneCanvas
-
-import annotator
-from utils import get_color, get_settings, read_skeleton, read_stack, read_video
 from widgets.dialog import (
     EpisodeParamsSelector,
     EpisodeSelector,
     SuggestionParamsSelector,
 )
 from widgets.viewbox import VideoViewBox
+
+from dlc2action_annotation.utils import (
+    get_color,
+    get_settings,
+    read_skeleton,
+    read_stack,
+    read_video,
+)
 
 
 class Annotation:

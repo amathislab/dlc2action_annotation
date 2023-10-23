@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils import get_color
+from dlc2action_annotation.utils import get_color
 
 
 class LineEdit(QLineEdit):

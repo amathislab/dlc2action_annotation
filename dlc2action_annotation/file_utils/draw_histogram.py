@@ -5,8 +5,9 @@
 #
 import os
 import pickle
-import click
 from collections import defaultdict
+
+import click
 from matplotlib import pyplot as plt
 
 

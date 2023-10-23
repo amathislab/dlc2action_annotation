@@ -3,10 +3,11 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-import re
 import math
-import pandas as pd
+import re
 from optparse import OptionParser
+
+import pandas as pd
 
 """This script can be used to split and downsample larger videos into smaller files that 
 are loaded faster"""
@@ -14,8 +15,8 @@ are loaded faster"""
 length_regexp = "Duration: (\d{2}):(\d{2}):(\d{2})\.\d+,"
 re_length = re.compile(length_regexp)
 
-from subprocess import check_call, PIPE, Popen
 import shlex
+from subprocess import PIPE, Popen, check_call
 
 
 def main():
@@ -130,7 +131,6 @@ def parse_options():
         options.skeleton_file = None
 
     if options.filename and options.split_size and options.ds and options.fps:
-
         return (
             options.filename,
             options.split_size,

@@ -3,12 +3,13 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
-import pickle
-import pandas as pd
-import numpy as np
 import os
-from tqdm import tqdm
+import pickle
+
 import click
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 
 class FileTransformer:

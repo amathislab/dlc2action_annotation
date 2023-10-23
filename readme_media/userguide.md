@@ -3,8 +3,8 @@
 To start using the annotator you just need to go to the `dlc2action_annotation` directory and 
 run these commands in your terminal.
 ```bash
-conda activate AnnotationGUI
-python annotator.py
+conda activate dlc2a_gui
+annotator
 ```
 The app will prompt you to open the video you are going to annotate. 
 It can be multiple videos and in that case you will be asked whether you want to open them sequentially or in multiview mode.
@@ -12,7 +12,7 @@ It can be multiple videos and in that case you will be asked whether you want to
 Alternatively, you can set the video and/or the output paths in the 
 terminal. In that case the file dialogs will not open. 
 ```bash
-python annotator.py --video path/to/video1.mp4 --video path/to/video2.mkv --multiview
+annotator --video path/to/video1.mp4 --video path/to/video2.mkv --multiview
 ```
 You can modify the GUI configuration through the settings window. It will open by default the first time you run the interface and you can always go 
 back by adding an `-s` / `--open_settings` option when you run the app or pressing 'Settings' in the menu bar when it's already open.
@@ -22,7 +22,7 @@ located next to your first video: `path/to/video1_backups`. You can change the d
 where backups are saved for your project, and the interval at which they are saved. 
 Running
 ```bash
-python annotator.py --backup-dir /path/to/backups --backup-interval 120
+annotator --backup-dir /path/to/backups --backup-interval 120
 ```
 will save backups every 2 hours (120 minutes) in the `/path/to/backups` folder.
 
@@ -244,7 +244,7 @@ The ambiguity of an interval will be 1 if you marked it as ambiguous (transparen
 The program works best with shorter, smaller files. In case you want to cut your larger video and skeleton files into several pieces, you can use the 
 `split.py` script. Just open the classic_annotation folder in your terminal and run the following:
 ```bash
-python split.py --file path/to/video --split-size S --downsample N --fps F --skeleton-file /path/to/DLC
+python dlc2action_annotation/file_utils/split.py --file path/to/video --split-size S --downsample N --fps F --skeleton-file /path/to/DLC
 ```
 Here `S` encodes the size of each piece in seconds, `downsample` lets you only keep every `N`th frame (useful in case of large fps) and `F` is the input video framerate. The `skeleton-file` parameter is optional.
 

@@ -10,7 +10,7 @@ import numpy as np
 import vispy
 from vispy.scene import SceneCanvas
 
-from utils import SignalEmitter
+from dlc2action_annotation.utils import SignalEmitter
 
 from .visuals import AnimalMarkers, BoxVisual, Markers3d
 
@@ -39,7 +39,7 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
         skeleton=None,
         bodyparts_3d=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(VideoViewBox, self).__init__(*args, **kwargs)
         if skeleton is None:

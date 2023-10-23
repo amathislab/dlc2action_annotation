@@ -3,9 +3,13 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
+import os
+
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QKeySequence, QPixmap
 from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem
+
+from dlc2action_annotation.utils import get_library_path
 
 
 class List(QListWidget):
@@ -106,7 +110,8 @@ class SegmentationList(List):
 
     def __init__(self, cats, *args, **kwargs):
         super(SegmentationList, self).__init__(*args, **kwargs)
-        with open("colors.txt") as f:
+        colors_path = os.path.join(get_library_path(), "colors.txt")
+        with open(colors_path) as f:
             colors = [
                 list(map(lambda x: float(x), line.split())) for line in f.readlines()
             ][::-1]
