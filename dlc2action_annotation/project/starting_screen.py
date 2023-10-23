@@ -38,6 +38,8 @@ class StartingScreen(QWidget):
                 for x in os.listdir(self.projects_path)
                 if os.path.isdir(os.path.join(self.projects_path, x))
             ]
+        else:
+            os.makedirs(self.projects_path, exist_ok=True)
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignHCenter)
         self.combo = self.make_combo()
@@ -169,7 +171,7 @@ class StartingScreen(QWidget):
 
         return pic
 
-    def make_new_project(self):
+    def     make_new_project(self):
         name = self.name_le.text()
         if name == "":
             show_error("Please enter a name for the project")
