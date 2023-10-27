@@ -95,6 +95,31 @@ class MainWindow(QMainWindow):
                 # Handle the create action here
                 # Open settings window
                 Set_New_Project(self.settings_file).exec_()
+                
+                # Ask users to select videos from folder
+                if len(videos) == 0 and self.settings["video_files"] is not None:
+                    videos = self.settings["video_files"]
+
+                if len(videos) == 0 and self.settings["video_upload_window"]:
+                    self.load_video()
+                else:
+                    if videos == ():
+                        self.videos = [None for i in self.settings["skeleton_files"]]
+                    else:
+                        self.videos = videos
+                        if type(self.videos) is not list:
+                            self.videos = list(self.videos)
+                if annotation_files is None:
+                    annotation_files = [None for _ in self.videos]
+                self.annotation_files = annotation_files
+                if suggestion_files is None:
+                    suggestion_files = [None for _ in self.videos]
+                self.suggestion_files = suggestion_files
+                self.run_video(self.multiview)
+                if hard_negatives is not None:
+                    self.settings["hard_negative_classes"] = hard_negatives
+                
+                self.launch_project()
 
 
 
@@ -103,7 +128,7 @@ class MainWindow(QMainWindow):
                 print("Open Project button clicked")
                 # Handle the open action here
                 self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
-                self.lauch_project()
+                self.launch_project()
 
 
 
@@ -152,11 +177,11 @@ class MainWindow(QMainWindow):
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             reply = msg.exec_()
             if reply == QMessageBox.Yes:
-                multiview = True
-                # self.multiview = True
+       
+                self.multiview = True
             else:
-                multiview = False
-                # self.multiview = False
+           
+                self.multiview = False
     
     def load_project(self, videos, annotation_files, suggestion_files, hard_negatives):
 
@@ -184,7 +209,7 @@ class MainWindow(QMainWindow):
                 self.videos = [os.path.join(folder_path, file) for file in files if file.lower().endswith(('.mov', '.avi', '.mp4', '.mkv'))]
 
                 # Check the number of video files 
-                num_videos = len(videos)
+                num_videos = len(self.videos)
 
                 # Perform actions based on the number of videos
                 if num_videos > 1:
@@ -195,10 +220,10 @@ class MainWindow(QMainWindow):
                     msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                     reply = msg.exec_()
                     if reply == QMessageBox.Yes:
-                        # multiview = True
+                   
                         self.multiview = True
                     else:
-                        # multiview = False
+            
                         self.multiview = False
                 
                 if len(videos) == 0 and self.settings["video_files"] is not None:
@@ -258,7 +283,7 @@ class MainWindow(QMainWindow):
                    
         # Load other project related data here
     
-    def lauch_project(self):
+    def launch_project(self):
         self._createActions()
         self._createToolBar()
         self._createMenuBar()
@@ -280,36 +305,27 @@ class MainWindow(QMainWindow):
         videos = self.videos
         stacks, shapes, lens, filepaths, filenames = [], [], [], [], []
         self.settings = read_settings(self.settings_file)
-        
         self.settings.update(settings_update)
   
-        # if multiview:
-        
-        for i, video in enumerate(videos):
-        
-            stack, shape, length = read_video(video, self.settings["backend"])
-            stacks.append(stack)
-            shapes.append(shape)
-            lens.append(length)
-        
-
-
-            if video is not None:
-            
-                filepath, filename = os.path.split(video)
-                filepaths.append(filepath)
-                filenames.append(filename)
-            
-
-            else:
-            
-                filepath, filename = os.path.split(
-                    self.settings["skeleton_files"][i]
-                )
-                filepaths.append(filepath)
-                filenames.append(filename)
-        
         if multiview:
+            for i, video in enumerate(videos):
+                stack, shape, length = read_video(video, self.settings["backend"])
+                stacks.append(stack)
+                shapes.append(shape)
+                lens.append(length)
+
+                if video is not None:
+                
+                    filepath, filename = os.path.split(video)
+                    filepaths.append(filepath)
+                    filenames.append(filename)
+                
+                else:
+                    filepath, filename = os.path.split(
+                        self.settings["skeleton_files"][i]
+                    )
+                    filepaths.append(filepath)
+                    filenames.append(filename)
 
             self.run_viewer(
                 stacks,
@@ -319,16 +335,17 @@ class MainWindow(QMainWindow):
                 filepaths,
                 self.annotation_files[self.cur_video],
                 self.suggestion_files,
-                current,
+                current = 0,
             )
+        
         else:
             
             if len(self.videos) > 1:
                 
                 self.sequential = True
 
-     
-            self.run_viewer_single(current)
+            #self.run_viewer_single(current)
+            self.run_viewer_single(current = 0)
            
          
 
@@ -348,7 +365,7 @@ class MainWindow(QMainWindow):
             filepath, filename = os.path.split(self.videos[n])
         return stacks, shapes, lens, filename, filepath
 
-    def run_viewer_single(self, current=0):
+    def run_viewer_single(self, current = 0 ):
         stacks, shapes, lens, filename, filepath = self.read_video_stack(self.cur_video)
         self.run_viewer(
             stacks,
@@ -370,7 +387,7 @@ class MainWindow(QMainWindow):
         filepaths,
         annotation,
         suggestion,
-        current=0,
+        current,
     ):
         
         al_points = self.get_al_points(filenames[0])

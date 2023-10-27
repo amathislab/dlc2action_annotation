@@ -214,36 +214,18 @@ class Viewer(QWidget):
             self.settings["3d_bodyparts"],
         )
 
-#Remove the option to load last labels
-        # if os.path.exists("../last_action_choice.pickle"):
-        #     msg = QMessageBox()
-        #     msg.setText("Load the last label choice?")
-        #     msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        #     self.load_action_choice = msg.exec_() == QMessageBox.Yes
-        # else:
-        #     self.load_action_choice = False
-
         # success = False
-        # if self.load_action_choice:
-        #     try:
-        #         with open("../last_action_choice.pickle", "rb") as f:
-        #             (
-        #                 self.settings["actions"],
-        #                 display_categories,
-        #                 self.loaded_shortcuts,
-        #             ) = pickle.load(f)
-        #             self.loaded_shortcuts = defaultdict(
-        #                 lambda: {}, self.loaded_shortcuts
-        #             )
-        #             self.set_display_categories(display_categories)
-        #             success = True
-        #     except:
-        #         pass
-        
-        success = False
 
-        if not success and (type(self.action_dict) is dict or settings["cat_choice"]):
-            self.choose_cats()
+        # if type(self.action_dict) is dict or settings["cat_choice"]:
+            # Load or create a project window
+
+        
+   
+
+
+
+
+            # self.choose_cats()
         self.initialize_cats()
 
         self.correct_animal = self.current_animal_name() in self.displayed_animals
@@ -517,6 +499,7 @@ class Viewer(QWidget):
             self.canvas.hide_boxes()
         else:
             self.canvas.set_box_update(value)
+
 
     def initialize_cats(self):
         self.shortCut = defaultdict(lambda: {})
@@ -809,7 +792,8 @@ class Viewer(QWidget):
             "skeleton_files": self.settings["skeleton_files"],
         }
         return metadata, cat_labels, self.animals, times
-
+    
+  
     def save(self, event=None, verbose=True, new_file=False, ask=False):
         if ask:
             msg = QMessageBox()

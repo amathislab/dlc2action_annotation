@@ -335,6 +335,7 @@ class SettingsWindow(QDialog):
     def set_general_tab(self):
         self.clearLayout(self.general_layout)
         self.set_general_tab_data()
+      
         self.general_layout.addRow("Annotator name: ", self.annotator)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
         self.general_layout.addRow("Data type: ", self.data_type_combo)
@@ -347,6 +348,7 @@ class SettingsWindow(QDialog):
         )
 
     def set_general_tab_data(self):
+
         self.annotator = self.set_le("annotator", set_int=False)
         self.behaviors = self.set_multiple_input("actions", type="category")
         self.data_type_combo = self.set_combo("data_type", ["dlc", "calms21"])
@@ -542,19 +544,13 @@ class Set_New_Project(QDialog):
         super(Set_New_Project, self).__init__()
         self.config_path = config_path
         self.settings = self._open_yaml(config_path)
-
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-
         self.labels = {}
         self.buttonBox = QDialogButtonBox(QBtn)
-
         # Connect the OK button's accepted signal to create_folder function
         self.buttonBox.accepted.connect(self.create_folder)
-        
         # Connect the Cancel button's rejected signal to close the dialog
         self.buttonBox.rejected.connect(self.reject)
-
-        
         # self.buttonBox.accepted.connect(self.accept)
         
     
@@ -580,8 +576,15 @@ class Set_New_Project(QDialog):
         for func in self.functions:
             func()
         self.update_data()
+        
+
 
     def set_le(self, field, set_int=True):
+        """
+            This function creates a QLineEdit widget, sets it to accept only integers 
+            if specified, populates it with a value from the self.settings dictionary 
+            based on the provided field, and then returns the configured QLineEdit widget.
+        """
         le = QLineEdit()
         if set_int:
             le.setValidator(QIntValidator())
@@ -672,11 +675,19 @@ class Set_New_Project(QDialog):
         self.clearLayout(self.general_layout)
         self.set_general_tab_data()
         self.general_layout.addRow("Annotator name: ", self.annotator)
+        self.general_layout.addRow("Project Title: ", self.title)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
 
 
+    
     def set_general_tab_data(self):
+
         self.annotator = self.set_le("annotator", set_int=False)
+        
+        #Change it from annotator to title but the program crashes
+        
+        self.title = self.set_le("annotator", set_int=False)
+        
         self.behaviors = self.set_multiple_input("actions", type="category")
 
     def create_fp_tab(self):
@@ -763,25 +774,54 @@ class Set_New_Project(QDialog):
         self.settings["prefix_separator"] = self.prefix_separator_le.text()
         self.settings["prior_suffix"] = self.prior_suffix_le.text()
         self.settings["DLC_suffix"] = self.dlc_suffix.values()
+    
         self.settings["annotator"] = self.annotator.text()
+        
+        #Change annotator to title
+        self.settings["annotator"] = self.title.text()
         self.settings["segmentation_suffix"] = self.segmentation_le.text()
 
     def create_folder(self) -> None:
         #  Get the current working directory
         current_directory = os.getcwd()
         
-        # TODO: This should be the name set by the user
-        folder_name = "Project X"
+    
+        folder_name = self.title.text()
+        
+        print(self.annotator.text())
+        
         
         # Create the folder in the current directory
         folder_path = os.path.join(current_directory, folder_name)
-        os.makedirs(folder_path)
+        
+        subfolder_names = ["Annotations", "Project Config", "Tracking data"]
+         
+        # os.makedirs(folder_path)
         
         print(f"Folder '{folder_name}' created in '{current_directory}'")
         
-        # Close the dialog after creating the folder
-        self.create_folder()
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_path)
             
+            
+            # Close the dialog after creating the folder
+           
+            for subfolder_name in subfolder_names:
+                subfolder_path = os.path.join(folder_path, subfolder_name)
+                os.makedirs(subfolder_path)
+            
+            self.close()
+        
+        else:
+        
+            print("Folder already exist")
+            pass
+        
+        
+        
+        
+        
+    
 
 
     # def accept(self) -> None:
