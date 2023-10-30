@@ -17,7 +17,22 @@ Further detailed in [Installation and updating](readme_media/installation.md).
 
 Welcome to the Annotation Workflow Tutorial section, your comprehensive guide to mastering the annotation process. Below is a breakdown of the standard workflow, designed to ensure a seamless experience:
 
-**1) Setting up your environment :**
+
+To add a list of chapters in a README file, you can use markdown syntax. Markdown is a lightweight markup language that allows you to format text, create lists, and add links in a simple and readable way. Here's how you can create a list of chapters using markdown:
+
+## Table of Contents
+
+- [Setting up your environment](#Setting-up-your-environment)
+- [Creating a project](#Creating-a-project)
+- [Loading videos](#Loading-videos)
+- [Handling videos](#Handling-videos)
+- [Annotating videos](#Annotating-videos)
+- [Add or modify labels](#Add-or-modify-labelss)
+- [Saving your work](#Saving-your-work)
+- [Opening a project](#Opening-a-project)
+- [Change settings](#Change-settings)
+
+## 1) Setting up your environment :
 
 You can start using the interface by running the following commands in a terminal
 ```bash
@@ -26,41 +41,41 @@ python annotator.py
 ```
 Annotation Workflow Tutorial
 
-**2) Creating a project :**
+## 2) Creating a project :
 Once the application is launched, locate the option to create a new project. 
 - Provide a title for your project
 - Set the annotator's name
 - Set your labels for the project and/or select exiting labels
 - Set the keybord shortcuts for your annotations to improve your workflow speed
 
-**3) Loading videos :**
+## 3) Loading videos :
 Once the project is created a window will open to prompt you to select your videos.
 - You can select one or multiple videos
 - If you select multiple videos you'll have the option to display them sequentially or conjointly
 - Select 'Yes' for multiview to display all videos conjointly (depending on the size of your videos this will take a few minutes)
 
-**4) Handling videos :**
+## 4) Handling videos :
 Actions you can perform: 
 - Play/stop (shortcut: space bar)
 - Set video speed
 - Select frames
 - Move video frames
 
-**5) Annotating videos :**
+## 5) Annotating videos :
 
 Dive into detailed tutorials on the annotation process. Explore techniques for tagging and marking within videos.
 
-**6) Add or modify labels :**
+## 6) Add or modify labels :
 
 
-**7) Saving your work :**
+## 7) Saving your work :
 
 Explore methods to save your annotated data securely. Learn about saving options, including formats such as CSV or JSON. Ensure your progress is preserved for future reference and analysis.
 
-**8) Opening a project :**
+## 8) Opening a project :
 Once the application is launched, locate the option to open a project. 
 
-**9) Change the setting of your project :**
+## 9) Change settings :
 
 You can find detail documentation on how to use the annotation tool in the
 [Main user guide](readme_media/userguide.md)
