@@ -1,0 +1,71 @@
+# general
+video_files:    #if not null, those files will be loaded by default (a list of string file paths)
+data_type: dlc   #either dlc (DeepLabCut) or calms21 (Caltech Mouse Social Interactions)
+n_ind: 1 #this will be set as the number of individuals if no detection or annotation files are available
+actions:
+  locomotion:
+  - running
+  - walking
+  - jumping
+  other:
+  - eating
+  - freezing
+  e:
+  - e
+  hh:
+  - hh
+min_length_frames: 0 #tracklets shorter than this number or frames will be omitted
+
+# loading
+max_loaded_frames: 2000 #the maximum number of frames kept in RAM
+load_chunk: 200 #the number of frames loaded per loading operation
+load_buffer: 100 #when you move further than this number of frames from the beginning of the loaded part, earlier frames will be deleted from RAM
+backend: pyav_fast        #backend for loading the videos (either 'cv2', 'pyav', 'pyav_fast' or 'decord', depends on which library you have installed; 'pyav' is currently recommended)
+
+# active learning
+max_loaded_frames_al: 300 #the maximum number of frames kept in RAM in active learning mode
+load_chunk_al: 150 #the number of frames loaded per loading operation in active learning mode
+load_buffer_al: 100 #when you move further than this number of frames from the beginning of the loaded part, earlier frames will be deleted from RAM in active learning mode
+al_window_num: 10 #the number of active learning windows kept in RAM
+al_points_file:      #the path to a pickled dictionary
+al_buffer: 20 #the number of frames that will be loaded before the start of an active learning interval
+start_al: true #start in active learning mode
+hard_negative_classes: []   #a least of labels to add hard negatives for
+assessment_n: 10 #the number of samples to pick to assess suggestions
+
+# display
+skeleton_size: 4 #size of skeleton markers for displaying DLC data
+console_width: 200 #minimum size of the console
+actionbar_width: 100 #size of the action bar
+default_frequency: 40 #video update interval: the bigger it is the slower the video is played by default
+max_frequency: 100 #maximum video update interval
+canvas_size:             #canvas size (not necessary if a video is loaded)
+- 1280
+- 480
+font_size: 8 #font size for bounding boxes
+detection_update_freq: 1 #interval for bounding box / skeleton marker update (a smaller number means smoother movement, but may slow down the video)
+video_upload_window: true #open a file loader dialog to load a video if it is not given
+upload_window: false #open an file loader dialog to load skeleton or detection files if they are not given
+load_segmentation: ask   #when to open segmentation if it's available ('always', 'never' or 'ask')
+cat_choice: false #show a window to choose actions from a long action list (always true if actions is a dictionary)
+mask_opacity: 0.3 #the default segmentation mask opacity
+segmentation_suffix: .msgpack #the suffix of the segmentation file
+skeleton:      #a list of bodypart name tuples to connect in a skeleton
+likelihood_cutoff: 0.6 #bodyparts with a lower likelihood will not be displayed
+3d_bodyparts:      #a list of bodypart names corresponding to the 3d pose file (used to draw the skeleton)
+display_3d: true #display the 3D data by default if provided
+display_repr: true #display the reprojections by default if provided
+
+# file paths
+detection_files: [null] #pickled lists of per-frame detections in [y_min, x_min, y_max, x_max, id] format (one per video view)
+skeleton_files: [null] #the DLC output files (one per video view)
+3d_suffix:      #the suffix of the 3d pose file
+calibration_path: #the path to a numpy calibration file that can be used with the 3d pose file to display reprojections
+suffix: _annotation.pickle     #if not null it will be used to create a default output file name
+prefix_separator:      #if not null, everything before the first occurence of the separator will be stripped from the default output file name
+prior_suffix:      #a suffix or a list of suffixes that will be used to load and display pre-existing annotations; in that case the new and the old annotations will be kept in separate files
+DLC_suffix:
+- DLC_resnet50.h5
+annotator: unknown     #will be saved as metadata in the annotation file
+
+# other

@@ -4,6 +4,8 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import os
+import yaml
+import numpy as np
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
@@ -66,7 +68,6 @@ class MultipleInputWidget(QWidget):
     def values(self):
         return [line.text() for line in self.lines if line.text() != ""]
 
-
 class MultipleDoubleInputWidget(QWidget):
     def __init__(self, values):
         super(MultipleDoubleInputWidget, self).__init__()
@@ -110,7 +111,6 @@ class MultipleDoubleInputWidget(QWidget):
             for line in self.lines
             if line[0].text() != "" and line[1].text() != ""
         ]
-
 
 class CategoryInputWidget(QWidget):
     def __init__(self, values):
@@ -160,7 +160,6 @@ class CategoryInputWidget(QWidget):
             for line in self.lines
             if line[0].text() != "" and line[1].text() != ""
         }
-
 
 class SettingsWindow(QDialog):
     def __init__(self, config_path):
@@ -539,21 +538,26 @@ class SettingsWindow(QDialog):
             data = {}
         return data
 
+# TODO: Delete unused functions 
 class Set_New_Project(QDialog):
     def __init__(self, config_path):
         super(Set_New_Project, self).__init__()
+        # TODO: Modify this to be consistent with the creation of a new config file
         self.config_path = config_path
         self.settings = self._open_yaml(config_path)
+        # --------------------------------------------
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.labels = {}
+        self.folder_name = None  # Initialize folder_name as None
         self.buttonBox = QDialogButtonBox(QBtn)
+        
         # Connect the OK button's accepted signal to create_folder function
         self.buttonBox.accepted.connect(self.create_folder)
+        
         # Connect the Cancel button's rejected signal to close the dialog
         self.buttonBox.rejected.connect(self.reject)
         self.buttonBox.accepted.connect(self.accept)
-        
-    
+        # --------------------------------------------
         self.tabs = QTabWidget()
         self.tabs.tabBarClicked.connect(self.collect)
         self.layout = QVBoxLayout()
@@ -570,15 +574,12 @@ class Set_New_Project(QDialog):
 
     def update_data(self):
         self.set_general_tab()
-   
 
     def collect(self, event=None):
         for func in self.functions:
             func()
         self.update_data()
         
-
-
     def set_le(self, field, set_int=True):
         """
             This function creates a QLineEdit widget, sets it to accept only integers 
@@ -597,7 +598,6 @@ class Set_New_Project(QDialog):
             combo.addItem(o)
         combo.setCurrentIndex(options.index(self.settings[field]))
         return combo
-
 
     def set_file(self, field, filter=None, dir=False):
         layout = QHBoxLayout()
@@ -626,18 +626,6 @@ class Set_New_Project(QDialog):
         toggle = Toggle()
         toggle.setChecked(self.settings[field])
         return toggle
-
-    def set_slider(self, field, minimum, maximum, percent=False):
-        value = self.settings[field]
-        if percent:
-            minimum *= 100
-            maximum *= 100
-            value *= 100
-        slider = QSlider(Qt.Horizontal)
-        slider.setMinimum(minimum)
-        slider.setMaximum(maximum)
-        slider.setValue(value)
-        return slider
 
     def set_multiple_input(self, field, type="single"):
         if self.settings[field] is None:
@@ -678,15 +666,11 @@ class Set_New_Project(QDialog):
         self.general_layout.addRow("Project Title: ", self.title)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
         self.general_layout.addRow("Data type: ", self.data_type_combo)
-
-
-    
+  
     def set_general_tab_data(self):
 
         self.annotator = self.set_le("annotator", set_int=False)
-        
-        #Change it from annotator to title but the program crashes
-        
+        #Change it from annotator to title but the program crashes   
         self.title = self.set_le("annotator", set_int=False)       
         self.behaviors = self.set_multiple_input("actions", type="category")
         self.data_type_combo = self.set_combo("data_type", ["dlc", "calms21"])
@@ -706,22 +690,6 @@ class Set_New_Project(QDialog):
                 elif child.layout() is not None:
                     self.clearLayout(child.layout())
 
-    def set_fp_tab(self):
-        self.clearLayout(self.fp_layout)
-        self.set_fp_tab_data()
-
-
-    def set_fp_tab_data(self):
-        self.calibration_path = self.set_file("calibration_path", dir=True)
-        self.suffix_3d_le = self.set_le("3d_suffix", set_int=False)
-        self.display_3d = self.set_toggle("display_3d")
-        self.display_repr = self.set_toggle("display_repr")
-        self.suffix_le = self.set_le("suffix", set_int=False)
-        self.prefix_separator_le = self.set_le("prefix_separator", set_int=False)
-        self.prior_suffix_le = self.set_le("prior_suffix", set_int=False)
-        self.dlc_suffix = self.set_multiple_input("DLC_suffix")
-        self.segmentation_le = self.set_le("segmentation_suffix", set_int=False)
-
     def collect_general(self):
         self.settings["data_type"] = self.data_type_combo.currentText()
         
@@ -734,89 +702,114 @@ class Set_New_Project(QDialog):
         )
         # self.settings["min_length_frames"] = int(self.min_frames_le.text())
 
-    def collect_al(self):
-        self.settings["max_loaded_frames_al"] = int(self.max_loaded_al_le.text())
-        self.settings["load_chunk_al"] = int(self.load_chunk_al_le.text())
-        self.settings["load_buffer_al"] = int(self.load_buffer_al_le.text())
-        self.settings["al_window_num"] = int(self.al_window_num_le.text())
-        self.settings["al_buffer"] = int(self.al_buffer_le.text())
-        self.settings["hard_negative_classes"] = [
-            item.text() for item in self.hn_ms.selectedItems()
-        ]
-        self.settings["assessment_n"] = int(self.assessment_n_le.text())
+    # def collect_al(self):
+    #     self.settings["max_loaded_frames_al"] = int(self.max_loaded_al_le.text())
+    #     self.settings["load_chunk_al"] = int(self.load_chunk_al_le.text())
+    #     self.settings["load_buffer_al"] = int(self.load_buffer_al_le.text())
+    #     self.settings["al_window_num"] = int(self.al_window_num_le.text())
+    #     self.settings["al_buffer"] = int(self.al_buffer_le.text())
+    #     self.settings["hard_negative_classes"] = [
+    #         item.text() for item in self.hn_ms.selectedItems()
+    #     ]
+    #     self.settings["assessment_n"] = int(self.assessment_n_le.text())
 
-    def collect_display(self):
-        self.settings["backend"] = self.backend_combo.currentText()
-        self.settings["skeleton_size"] = self.skeleton_size_slider.value()
-        self.settings["console_width"] = self.console_width_slider.value()
-        self.settings["actionbar_width"] = self.actionbar_width_slider.value()
-        self.settings["default_frequency"] = self.default_freq_slider.value()
-        self.settings["canvas_size"] = [
-            int(self.canvas_size_le_w.text()),
-            int(self.canvas_size_le_h.text()),
-        ]
-        self.settings[
-            "detection_update_freq"
-        ] = self.detection_update_freq_slider.value()
-        self.settings["mask_opacity"] = self.mask_opacity_slider.value() / 100
-        self.settings["load_segmentation"] = self.load_segmentation_combo.currentText()
-        self.settings["likelihood_cutoff"] = self.likelihood_cutoff_slider.value() / 100
-        self.settings["3d_bodyparts"] = (
-            self.bp_3d.values() if len(self.bp_3d.values()) > 0 else None
-        )
-        self.settings["skeleton"] = (
-            self.skeleton.values() if len(self.skeleton.values()) > 0 else None
-        )
-
+    # def collect_display(self):
+    #     self.settings["backend"] = self.backend_combo.currentText()
+    #     self.settings["skeleton_size"] = self.skeleton_size_slider.value()
+    #     self.settings["console_width"] = self.console_width_slider.value()
+    #     self.settings["actionbar_width"] = self.actionbar_width_slider.value()
+    #     self.settings["default_frequency"] = self.default_freq_slider.value()
+    #     self.settings["canvas_size"] = [
+    #         int(self.canvas_size_le_w.text()),
+    #         int(self.canvas_size_le_h.text()),
+    #     ]
+    #     self.settings[
+    #         "detection_update_freq"
+    #     ] = self.detection_update_freq_slider.value()
+    #     self.settings["mask_opacity"] = self.mask_opacity_slider.value() / 100
+    #     self.settings["load_segmentation"] = self.load_segmentation_combo.currentText()
+    #     self.settings["likelihood_cutoff"] = self.likelihood_cutoff_slider.value() / 100
+    #     self.settings["3d_bodyparts"] = (
+    #         self.bp_3d.values() if len(self.bp_3d.values()) > 0 else None
+    #     )
+    #     self.settings["skeleton"] = (
+    #         self.skeleton.values() if len(self.skeleton.values()) > 0 else None
+    #     )
+    
+    
     def collect_fp(self):
-        self.settings["3d_suffix"] = self.suffix_3d_le.text()
-        self.settings["suffix"] = self.suffix_le.text()
-        self.settings["display_3d"] = self.display_3d.isChecked()
-        self.settings["display_repr"] = self.display_repr.isChecked()
-        self.settings["prefix_separator"] = self.prefix_separator_le.text()
-        self.settings["prior_suffix"] = self.prior_suffix_le.text()
-        self.settings["DLC_suffix"] = self.dlc_suffix.values()
+        # self.settings["3d_suffix"] = self.suffix_3d_le.text()
+        # self.settings["suffix"] = self.suffix_le.text()
+        # self.settings["display_3d"] = self.display_3d.isChecked()
+        # self.settings["display_repr"] = self.display_repr.isChecked()
+        # self.settings["prefix_separator"] = self.prefix_separator_le.text()
+        # self.settings["prior_suffix"] = self.prior_suffix_le.text()
+        # self.settings["DLC_suffix"] = self.dlc_suffix.values()
     
         self.settings["annotator"] = self.annotator.text()
         
         #Change annotator to title
         self.settings["annotator"] = self.title.text()
-        self.settings["segmentation_suffix"] = self.segmentation_le.text()
+        # self.settings["segmentation_suffix"] = self.segmentation_le.text()
 
     def create_folder(self) -> None:
+        
         current_directory = os.getcwd()
-        
-    
         folder_name = self.title.text()
-        
-        print(self.annotator.text())
-        
+        self.folder_name = self.title.text()
         
         # Create the folder in the current directory
         folder_path = os.path.join(current_directory, folder_name)
         
         subfolder_names = ["Annotations", "Project Config", "Tracking data"]
-         
-        # os.makedirs(folder_path)
-        
         print(f"Folder '{folder_name}' created in '{current_directory}'")
         
         if not os.path.exists(folder_name):
-            os.makedirs(folder_path)
-            
-            
+            os.makedirs(folder_path)   
             # Close the dialog after creating the folder
-           
             for subfolder_name in subfolder_names:
                 subfolder_path = os.path.join(folder_path, subfolder_name)
-                os.makedirs(subfolder_path)
+                os.makedirs(subfolder_path)  
+                
+            # Create settings.yaml with default values
+            settings_file_path = os.path.join(folder_path, "Project Config", "settings.yaml")
+            default_settings = {
+                "setting1": "default_value1",
+                "setting2": "default_value2",
+                # Add more default settings as needed
+            }
+            with open(settings_file_path, "w") as settings_file:
+                yaml.dump(default_settings, settings_file)  
+            
+            # Read data from default_config.yaml
+            default_config_path = os.path.join(current_directory, "default_config.yaml")
+            with open(default_config_path, "r") as default_config_file:
+                default_config_data = yaml.safe_load(default_config_file)
+
+            # Create config.yaml with default values from default_config.yaml
+            config_file_path = os.path.join(folder_path, "Project Config", "config.yaml")
+            with open(config_file_path, "w") as config_file:
+                yaml.dump(default_config_data, config_file)
+
+            # Get user-defined labels 
+            user_labels = self.behaviors.values()
+
+            # Save user-defined labels to annotations.npy in Annotations folder
+            annotations_folder_path = os.path.join(folder_path, "Annotations")
+            annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
+            np.save(annotations_file_path, user_labels)
+
+            # Change the working directory to the newly created folder
+            # os.chdir(folder_path)
             
             self.close()
-        
+            
         else:
-        
             print("Folder already exist")
             pass
+    
+    def getFolderName(self):
+            return self.folder_name
     
     def accept(self) -> None:
         self.collect()

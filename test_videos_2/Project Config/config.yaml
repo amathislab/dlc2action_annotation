@@ -1,0 +1,58 @@
+3d_bodyparts: null
+3d_suffix: null
+DLC_suffix:
+- DLC_resnet50.h5
+actionbar_width: 100
+actions:
+  locomotion:
+  - running
+  - walking
+  - jumping
+  other:
+  - eating
+  - freezing
+al_buffer: 20
+al_points_file: null
+al_window_num: 10
+annotator: unknown
+assessment_n: 10
+backend: pyav_fast
+calibration_path: null
+canvas_size:
+- 1280
+- 480
+cat_choice: false
+console_width: 200
+data_type: dlc
+default_frequency: 40
+detection_files:
+- null
+detection_update_freq: 1
+display_3d: true
+display_repr: true
+font_size: 8
+hard_negative_classes: []
+likelihood_cutoff: 0.6
+load_buffer: 100
+load_buffer_al: 100
+load_chunk: 200
+load_chunk_al: 150
+load_segmentation: ask
+mask_opacity: 0.3
+max_frequency: 100
+max_loaded_frames: 2000
+max_loaded_frames_al: 300
+min_length_frames: 0
+n_ind: 1
+prefix_separator: null
+prior_suffix: null
+segmentation_suffix: .msgpack
+skeleton: null
+skeleton_files:
+- null
+skeleton_size: 4
+start_al: true
+suffix: _annotation.pickle
+upload_window: false
+video_files: null
+video_upload_window: true

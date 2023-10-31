@@ -6,6 +6,7 @@
 import os
 import pickle
 import sys
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -92,14 +93,18 @@ class MainWindow(QMainWindow):
 
         if msg.clickedButton() == createProject:
                 print("Create Project button clicked")
-                Set_New_Project(self.settings_file).exec_()
-                
+                newProject = Set_New_Project(self.settings_file)
+                newProject.exec_() 
+                folder_name = newProject.getFolderName()
+                print("folder name", folder_name)
                 # Ask users to select videos from folder
                 if len(videos) == 0 and self.settings["video_files"] is not None:
                     videos = self.settings["video_files"]
 
                 if len(videos) == 0 and self.settings["video_upload_window"]:
-                    self.load_video()
+                    self.load_video(folder_name)
+                    # print("Selected videos copied to 'Tracking data' folder.")
+                    
                 else:
                     if videos == ():
                         self.videos = [None for i in self.settings["skeleton_files"]]
@@ -107,6 +112,7 @@ class MainWindow(QMainWindow):
                         self.videos = videos
                         if type(self.videos) is not list:
                             self.videos = list(self.videos)
+                            
                 if annotation_files is None:
                     annotation_files = [None for _ in self.videos]
                 self.annotation_files = annotation_files
@@ -157,7 +163,7 @@ class MainWindow(QMainWindow):
             self.cur_video = len(self.videos) + self.cur_video
         self.run_viewer_single()
 
-    def load_video(self):
+    def load_video(self, folder):
 
 
         self.videos = QFileDialog.getOpenFileNames(
@@ -178,7 +184,31 @@ class MainWindow(QMainWindow):
             else:
            
                 self.multiview = False
+        
+        # After videos are selected, copy them to the 'Tracking data' folder
+        self.copy_videos_to_tracking_data(self.videos, folder)
     
+    # TODO: How can we change how the files are organised so that we can be in the project folder create 
+    # but still access application files 
+    def copy_videos_to_tracking_data(self, selected_videos, folder_name):
+        
+        current_directory = os.getcwd()
+      
+        # This will break if folder names would be changed
+        tracking_data_folder_path = os.path.join(current_directory, folder_name, "Tracking data")
+
+        # Create Tracking data folder if it doesn't exist
+        if not os.path.exists(tracking_data_folder_path):
+            os.makedirs(tracking_data_folder_path)
+
+        # Copy selected videos to Tracking data folder
+        for video_path in selected_videos:
+            video_filename = os.path.basename(video_path)
+            destination_path = os.path.join(tracking_data_folder_path, video_filename)
+            shutil.copy2(video_path, destination_path)
+
+        # print("Selected videos copied to 'Tracking data' folder.")
+        
     def load_project(self, videos, annotation_files, suggestion_files, hard_negatives):
 
         self.folder_path = QFileDialog.getExistingDirectory(self, "Open Folder")
@@ -283,11 +313,7 @@ class MainWindow(QMainWindow):
 
 
 
-        
 
-    # Bug is we say yes load multiview
-    # Problem if the default is false
-    # def run_video(self, multiview=False, current=0, settings_update=None):
     def run_video(self, multiview=False, current=0, settings_update=None):
     
         if settings_update is None:
@@ -604,6 +630,7 @@ class MainWindow(QMainWindow):
         trackletAction = QAction("&Start tracklet navigation", self)
         trackletAction.setStatusTip("Go through tracklets one by one")
         trackletAction.triggered.connect(self.set_tracklet_al)
+    
         exampleAction = QAction("&Export example clips", self)
         exampleAction.setStatusTip("Export example clips of the behaviors")
         exampleAction.triggered.connect(self.viewer.export_examples)
