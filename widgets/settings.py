@@ -551,7 +551,7 @@ class Set_New_Project(QDialog):
         self.buttonBox.accepted.connect(self.create_folder)
         # Connect the Cancel button's rejected signal to close the dialog
         self.buttonBox.rejected.connect(self.reject)
-        # self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.accepted.connect(self.accept)
         
     
         self.tabs = QTabWidget()
@@ -677,6 +677,7 @@ class Set_New_Project(QDialog):
         self.general_layout.addRow("Annotator name: ", self.annotator)
         self.general_layout.addRow("Project Title: ", self.title)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
+        self.general_layout.addRow("Data type: ", self.data_type_combo)
 
 
     
@@ -686,9 +687,9 @@ class Set_New_Project(QDialog):
         
         #Change it from annotator to title but the program crashes
         
-        self.title = self.set_le("annotator", set_int=False)
-        
+        self.title = self.set_le("annotator", set_int=False)       
         self.behaviors = self.set_multiple_input("actions", type="category")
+        self.data_type_combo = self.set_combo("data_type", ["dlc", "calms21"])
 
     def create_fp_tab(self):
         self.fp_tab = QWidget()
@@ -723,14 +724,15 @@ class Set_New_Project(QDialog):
 
     def collect_general(self):
         self.settings["data_type"] = self.data_type_combo.currentText()
-        self.settings["n_ind"] = int(self.n_ind_le.text())
-        self.settings["max_loaded_frames"] = int(self.max_loaded_le.text())
-        self.settings["load_chunk"] = int(self.chunk_le.text())
-        self.settings["load_buffer"] = int(self.buffer_le.text())
+        
+        # self.settings["n_ind"] = int(self.n_ind_le.text())
+        # self.settings["max_loaded_frames"] = int(self.max_loaded_le.text())
+        # self.settings["load_chunk"] = int(self.chunk_le.text())
+        # self.settings["load_buffer"] = int(self.buffer_le.text())
         self.settings["actions"] = (
             self.behaviors.values() if len(self.behaviors.values()) > 0 else None
         )
-        self.settings["min_length_frames"] = int(self.min_frames_le.text())
+        # self.settings["min_length_frames"] = int(self.min_frames_le.text())
 
     def collect_al(self):
         self.settings["max_loaded_frames_al"] = int(self.max_loaded_al_le.text())
@@ -782,7 +784,6 @@ class Set_New_Project(QDialog):
         self.settings["segmentation_suffix"] = self.segmentation_le.text()
 
     def create_folder(self) -> None:
-        #  Get the current working directory
         current_directory = os.getcwd()
         
     
@@ -816,29 +817,22 @@ class Set_New_Project(QDialog):
         
             print("Folder already exist")
             pass
-        
-        
-        
-        
-        
     
-
-
-    # def accept(self) -> None:
-    #     self.collect()
-    #     for key, value in list(self.settings.items()):
-    #         if value == "None":
-    #             self.settings[key] = None
-    #     with open(self.config_path, "w") as f:
-    #         YAML().dump(self.settings, f)
-    #     if self.settings["suffix"] is None:
-    #         msg = QMessageBox()
-    #         msg.setText(
-    #             "The annotation suffix parameter cannot be None, please set it to a string value!"
-    #         )
-    #         msg.exec_()
-    #         return
-    #     super().accept()
+    def accept(self) -> None:
+        self.collect()
+        for key, value in list(self.settings.items()):
+            if value == "None":
+                self.settings[key] = None
+        with open(self.config_path, "w") as f:
+            YAML().dump(self.settings, f)
+        if self.settings["suffix"] is None:
+            msg = QMessageBox()
+            msg.setText(
+                "The annotation suffix parameter cannot be None, please set it to a string value!"
+            )
+            msg.exec_()
+            return
+        super().accept()
 
     def _open_yaml(self, path: str):
         """

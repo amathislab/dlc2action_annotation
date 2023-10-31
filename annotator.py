@@ -92,8 +92,6 @@ class MainWindow(QMainWindow):
 
         if msg.clickedButton() == createProject:
                 print("Create Project button clicked")
-                # Handle the create action here
-                # Open settings window
                 Set_New_Project(self.settings_file).exec_()
                 
                 # Ask users to select videos from folder
@@ -120,8 +118,6 @@ class MainWindow(QMainWindow):
                     self.settings["hard_negative_classes"] = hard_negatives
                 
                 self.launch_project()
-
-
 
         elif msg.clickedButton() == openProject:
                 
@@ -248,11 +244,6 @@ class MainWindow(QMainWindow):
                 if suggestion_files is None:
                     suggestion_files = [None for _ in self.videos] 
                 self.suggestion_files = suggestion_files
-                        
-        
-                
-
-                # Blocked here
                 self.run_video(self.multiview, videos)
 
                 if hard_negatives is not None:
