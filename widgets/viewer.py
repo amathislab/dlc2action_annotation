@@ -607,18 +607,23 @@ class Viewer(QWidget):
         except:
             pass
 
+    # FUNCTION TO HANDLE "CHANGE LABELS" ------------------
     def get_cats(self):
-        if self.display_categories:
+        # When you change labels you want to have all your labels listed
+        # if self.display_categories:
+        #     dialog = CatDialog(
+        #         self.catDict, self.shortCut, self.invisible_actions, "categories", self
+        #     )
+        #     self.catDict, self.shortCut, self.invisible_actions, _ = dialog.exec_()
+            # keys = [key for key in self.catDict if key not in ["base", "categories"]]
+        
+        # else:
+        #     keys = ["base"]
+        # for key in keys:
+        
+        # Changed KEY to "BASE"
             dialog = CatDialog(
-                self.catDict, self.shortCut, self.invisible_actions, "categories", self
-            )
-            self.catDict, self.shortCut, self.invisible_actions, _ = dialog.exec_()
-            keys = [key for key in self.catDict if key not in ["base", "categories"]]
-        else:
-            keys = ["base"]
-        for key in keys:
-            dialog = CatDialog(
-                self.catDict, self.shortCut, self.invisible_actions, key, self
+                self.catDict, self.shortCut, self.invisible_actions, "base", self
             )
             (
                 self.catDict,
@@ -626,39 +631,39 @@ class Viewer(QWidget):
                 self.invisible_actions,
                 actions,
             ) = dialog.exec_()
-            if key != "base":
-                self.settings["actions"][key] = actions
-            else:
-                for action in actions:
-                    success = False
-                    for category, label_dict in self.catDict.items():
-                        label_list = [v for _, v in label_dict.items()]
-                        if action in label_list and category != "base":
-                            success = True
-                            if category == "categories":
-                                if action not in self.settings["actions"]:
-                                    self.settings["actions"][action] = []
-                            else:
-                                if category not in self.settings["actions"]:
-                                    self.settings["actions"][category] = []
-                                if action not in self.settings["actions"][category]:
-                                    self.settings["actions"][category].append(action)
-                            break
-                    if not success:
-                        if "other" not in self.settings["actions"]:
-                            self.settings["actions"]["other"] = []
-                        if action not in self.settings["actions"]["other"]:
-                            self.settings["actions"]["other"].append(action)
+        #     if key != "base":
+        #         self.settings["actions"][key] = actions
+        #     else:
+        #         for action in actions:
+        #             success = False
+        #             for category, label_dict in self.catDict.items():
+        #                 label_list = [v for _, v in label_dict.items()]
+        #                 if action in label_list and category != "base":
+        #                     success = True
+        #                     if category == "categories":
+        #                         if action not in self.settings["actions"]:
+        #                             self.settings["actions"][action] = []
+        #                     else:
+        #                         if category not in self.settings["actions"]:
+        #                             self.settings["actions"][category] = []
+        #                         if action not in self.settings["actions"][category]:
+        #                             self.settings["actions"][category].append(action)
+        #                     break
+        #             if not success:
+        #                 if "other" not in self.settings["actions"]:
+        #                     self.settings["actions"]["other"] = []
+        #                 if action not in self.settings["actions"]["other"]:
+        #                     self.settings["actions"]["other"].append(action)
 
-        self.ncat = len(self.catDict["base"])
-        self.get_ncat()
-        try:
-            self.console.catlist.update_list()
-            self.update_animals()
-            self.console.seglist.update_list()
-            self.update()
-        except:
-            pass
+        # self.ncat = len(self.catDict["base"])
+        # self.get_ncat()
+        # try:
+        #     self.console.catlist.update_list()
+        #     self.update_animals()
+        #     self.console.seglist.update_list()
+        #     self.update()
+        # except:
+        #     pass
 
     def current(self):
         return self.canvas.current
@@ -837,8 +842,10 @@ class Viewer(QWidget):
                 human_readable=True,
                 overwrite=True,
             )
-            if verbose:
-                self.show_warning("Saved successfully!")
+            
+            # if verbose:
+            #     self.show_warning("Saved successfully!")
+            
         except IOError as err:
             warnings.warn(f"Failed to save annotation data: {err}")
 
@@ -1181,20 +1188,27 @@ class Viewer(QWidget):
         self.on_next()
 
     def next_video_f(self):
-        if self.show_question(message="Save the current annotation?", default="yes"):
-            success = self.save()
-        else:
-            success = True
-        if success:
-            self.next_video.emit()
+        
+        # if self.show_question(message="Save the current annotation?", default="yes"):
+        #     success = self.save()
+        # else:
+        #     success = True
+        # if success:
+        
+        # Instead of asking users if they want to save the current annotation
+        # we save it automatically
+        
+        self.save()
+        self.next_video.emit()
 
     def prev_video_f(self):
-        if self.show_question(message="Save the current annotation?", default="yes"):
-            success = self.save()
-        else:
-            success = True
-        if success:
-            self.prev_video.emit()
+        # if self.show_question(message="Save the current annotation?", default="yes"):
+        #     success = self.save()
+        # else:
+        #     success = True
+        # if success:
+        self.save()
+        self.prev_video.emit()
 
     def next_al_point(self):
         cur_al_point = self.cur_al_point + 1
@@ -1342,45 +1356,47 @@ class Viewer(QWidget):
     def active_shortcuts(self):
         return self.shortCut[self.active_list].keys()
 
-    def set_correct_mode(self, event):
-        self.correct_mode = True
-        for vb in self.canvas.viewboxes:
-            vb.correct_mode = True
-        self.message = 'Click and drag a keypoint to correct a DLC error. Press "Save correction" when you are done'
-        self.status.emit(self.message)
-        self.console.correct_button.setVisible(True)
+    # SAVE CORRECTION WORKFLOW ------------
+    
+    # def set_correct_mode(self, event):
+    #     self.correct_mode = True
+    #     for vb in self.canvas.viewboxes:
+    #         vb.correct_mode = True
+    #     self.message = 'Click and drag a keypoint to correct a DLC error. Press "Save correction" when you are done'
+    #     self.status.emit(self.message)
+    #     self.console.correct_button.setVisible(True)
 
-    def save_correction(self, event):
-        self.correct_mode = False
-        for i, vb in enumerate(self.canvas.viewboxes):
-            if isinstance(vb, VideoViewBox):
-                vb.correct_mode = False
-                corrections = vb.get_keypoints(self.current())
-                if corrections is not None:
-                    fp = self.filepaths[i]
-                    fn = (
-                        os.path.basename(self.filenames[i]).split(".")[0]
-                        + "_corrections.pickle"
-                    )
-                    file = os.path.join(fp, fn)
-                    if os.path.exists(file):
-                        with open(file, "rb") as f:
-                            data = pickle.load(f)
-                            data.update(corrections)
-                            corrections = data
-                    # TODO: DUMPING CORRECTIONS
-                    with open(file, "wb") as f:
-                        pickle.dump(corrections, f)
-                    im = Image.fromarray(vb.get_image(self.current()))
-                    fn = (
-                        os.path.basename(self.filenames[i]).split(".")[0]
-                        + f"_frame{self.current():07}.jpeg"
-                    )
-                    file = os.path.join(fp, fn)
-                    im.save(file)
-        self.message = self.mode_message
-        self.status.emit(self.message)
-        self.console.correct_button.setVisible(False)
+    # def save_correction(self, event):
+    #     self.correct_mode = False
+    #     for i, vb in enumerate(self.canvas.viewboxes):
+    #         if isinstance(vb, VideoViewBox):
+    #             vb.correct_mode = False
+    #             corrections = vb.get_keypoints(self.current())
+    #             if corrections is not None:
+    #                 fp = self.filepaths[i]
+    #                 fn = (
+    #                     os.path.basename(self.filenames[i]).split(".")[0]
+    #                     + "_corrections.pickle"
+    #                 )
+    #                 file = os.path.join(fp, fn)
+    #                 if os.path.exists(file):
+    #                     with open(file, "rb") as f:
+    #                         data = pickle.load(f)
+    #                         data.update(corrections)
+    #                         corrections = data
+    #                 # TODO: DUMPING CORRECTIONS
+    #                 with open(file, "wb") as f:
+    #                     pickle.dump(corrections, f)
+    #                 im = Image.fromarray(vb.get_image(self.current()))
+    #                 fn = (
+    #                     os.path.basename(self.filenames[i]).split(".")[0]
+    #                     + f"_frame{self.current():07}.jpeg"
+    #                 )
+    #                 file = os.path.join(fp, fn)
+    #                 im.save(file)
+    #     self.message = self.mode_message
+    #     self.status.emit(self.message)
+    #     self.console.correct_button.setVisible(False)
 
     def on_bar_clicked(self, cur):
         self.set_current(cur, center=True)

@@ -38,7 +38,9 @@ class Console(QWidget):
 
         self.catlist = CatList(key=self.window.active_list, window=self.window)
         self.catlist.itemClicked.connect(self.window.item_clicked)
+        
         self.catlist.itemDoubleClicked.connect(self.window.doubleclick)
+        
         self.animallist = AnimalList(
             window=self.window,
             current=self.window.current_animal_name(),
@@ -125,9 +127,12 @@ class Console(QWidget):
             self.prev_button.setVisible(False)
 
         self.back_button = QPushButton("Back to categories")
+        
         self.back_button.clicked.connect(
             lambda: self.window.set_active_list("categories")
         )
+        
+        # TODO: CHANGE THIS TO TOGGLE
         if self.window.active_list == "base":
             self.back_button.setVisible(False)
         elif self.window.active_list == "categories":
