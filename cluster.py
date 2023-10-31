@@ -1048,6 +1048,7 @@ class MainWindow(QWidget):
         self.new_window = annotator.MainWindow(
             videos=videos,
             multiview=False,
+            current_folder=None,
             active_learning=True,
             al_points_dictionary=al_dict,
             clustering_parameters=self.parameters,

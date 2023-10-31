@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
     def __init__(
         self,
         videos,
+        current_folder = None,
         multiview=True,
         dev=False,
         active_learning=False,
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
         hard_negatives=None,
         backup_dir: Optional[str] = None,
         backup_interval: int = 30,
+        
     ):
         
         super(MainWindow, self).__init__()
@@ -67,6 +69,7 @@ class MainWindow(QMainWindow):
         self.sequential = False
         self.dev = dev
         self.multiview = multiview
+        self.current_folder = current_folder
         self.al_mode = self.settings["start_al"]
         if skeleton_files is not None:
             self.settings["skeleton_files"] = skeleton_files
@@ -119,7 +122,9 @@ class MainWindow(QMainWindow):
                 if suggestion_files is None:
                     suggestion_files = [None for _ in self.videos]
                 self.suggestion_files = suggestion_files
+                
                 self.run_video(self.multiview)
+                
                 if hard_negatives is not None:
                     self.settings["hard_negative_classes"] = hard_negatives
                 
@@ -129,7 +134,7 @@ class MainWindow(QMainWindow):
                 
                 print("Open Project button clicked")
                 # Handle the open action here
-                self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
+                self.current_folder = self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
                 self.launch_project()
 
 
@@ -163,12 +168,13 @@ class MainWindow(QMainWindow):
             self.cur_video = len(self.videos) + self.cur_video
         self.run_viewer_single()
 
-    def load_video(self, folder):
+    def load_video(self, folder = None):
 
 
         self.videos = QFileDialog.getOpenFileNames(
             self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
         )[0]
+        
         if type(self.videos) is not list:
             self.videos = [self.videos]
         if len(self.videos) > 1:
@@ -186,7 +192,8 @@ class MainWindow(QMainWindow):
                 self.multiview = False
         
         # After videos are selected, copy them to the 'Tracking data' folder
-        self.copy_videos_to_tracking_data(self.videos, folder)
+
+            self.copy_videos_to_tracking_data(self.videos, folder)
     
     # TODO: How can we change how the files are organised so that we can be in the project folder create 
     # but still access application files 
@@ -213,10 +220,11 @@ class MainWindow(QMainWindow):
 
         self.folder_path = QFileDialog.getExistingDirectory(self, "Open Folder")
         
+
         # Get the list of folders in the selected directory
         folders = [folder for folder in os.listdir(self.folder_path) if os.path.isdir(os.path.join(self.folder_path, folder))]
         
-        # Go through each folder
+        # TODO: Load files for the project 
         for folder_name in folders:
             if folder_name == "Annotations":
                 print("Performing action for Folder1")
@@ -282,37 +290,18 @@ class MainWindow(QMainWindow):
             else:
                 # Default action for other folders
                 pass
-
-      
-
-        # if len(videos) == 0 and self.settings["video_files"] is not None:
-        #     videos = self.settings["video_files"]
-
-        #  ---- 
+            
+        # Get the name of the selected folder
+        # TODO: Not the best way to do this but need folder name for load_videos
+        if self.folder_path:
+            folder_name = os.path.basename(self.folder_path)
+            print("Selected folder name:", folder_name)
+            return folder_name
         
-        # if len(videos) == 0 and self.settings["video_upload_window"]:
-        #     self.load_video()
-        # else:
-        #     if videos == ():
-        #         self.videos = [None for i in self.settings["skeleton_files"]]
-        #     else:
-        #         self.videos = videos
-        #         if type(self.videos) is not list:
-        #             self.videos = list(self.videos)
-        
-
-                   
-        # Load other project related data here
-    
     def launch_project(self):
         self._createActions()
         self._createToolBar()
         self._createMenuBar()
-
-
-
-
-
 
     def run_video(self, multiview=False, current=0, settings_update=None):
     
@@ -367,8 +356,11 @@ class MainWindow(QMainWindow):
          
 
     def open_video(self):
-        self.viewer.save()
-        self.load_video()
+        #What does this do: self.viewer.save()
+        # self.viewer.save()
+        self.load_video(self.current_folder)
+        print("Loading new video")
+        # TODO: Bug here when you open a view it doesn't prompt you to open in multiple view 
         self.run_video()
 
     def read_video_stack(self, n):
@@ -631,9 +623,11 @@ class MainWindow(QMainWindow):
         trackletAction.setStatusTip("Go through tracklets one by one")
         trackletAction.triggered.connect(self.set_tracklet_al)
     
-        exampleAction = QAction("&Export example clips", self)
-        exampleAction.setStatusTip("Export example clips of the behaviors")
-        exampleAction.triggered.connect(self.viewer.export_examples)
+        # TODO: This functionalities makes the program crash
+        # exampleAction = QAction("&Export example clips", self)
+        # exampleAction.setStatusTip("Export example clips of the behaviors")
+        # exampleAction.triggered.connect(self.viewer.export_examples)
+        
         rainbowAction = QAction("&Body part colors", self)
         rainbowAction.setStatusTip("Switch between individual and body part coloring")
         rainbowAction.triggered.connect(self.viewer.switch_rainbow)
@@ -660,11 +654,15 @@ class MainWindow(QMainWindow):
         self.menubar = self.menuBar()
         self.menubar.setNativeMenuBar(False)
         file = self.menubar.addMenu("File")
+        
+        # TODO: Does this save the project? 
         file.addAction(saveAction)
         file.addAction(saveasAction)
+        
         file.addAction(openVideoAction)
+        
         # file.addAction(correctAction)
-        file.addAction(exampleAction)
+        # file.addAction(exampleAction)
         loadMenu = file.addMenu("Load")
         loadMenu.addAction(loadDLCAction)
         loadMenu.addAction(loadLabelAction)
@@ -773,13 +771,13 @@ class MainWindow(QMainWindow):
 @click.option("--backup-interval", default=30, type=int, help="The interval between backups, in minutes")
 
 
-
-def main(video, multiview, dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
+def main(video, multiview,  dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
     app = QApplication(sys.argv)
 
     window = MainWindow(
         videos=video,
         multiview=multiview,
+     
         dev=dev,
         active_learning=active_learning,
         show_settings=open_settings,
