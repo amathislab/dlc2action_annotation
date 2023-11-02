@@ -233,71 +233,71 @@ class MainWindow(QMainWindow):
             folders = [folder for folder in os.listdir(self.folder_path) if os.path.isdir(os.path.join(self.folder_path, folder))]
         
         # TODO: Load files for the project 
-            for folder_name in folders:
-                if folder_name == "Annotations":
-                    print("Performing action for Folder1")
-                    
-                elif folder_name == "Project Config":
-                    print("Performing action for Folder2")
-
-                elif folder_name == "Tracking data":
-                    print("Performing action for Folder3")
-
-                    # Get the list of files in Tracking data folder
-                    folder_path = os.path.join(self.folder_path, "Tracking data")
-                    files = os.listdir(folder_path)
-
-                    # Filter video files based on extensions
-                    self.videos = [os.path.join(folder_path, file) for file in files if file.lower().endswith(('.mov', '.avi', '.mp4', '.mkv'))]
-
-                    # Check the number of video files 
-                    num_videos = len(self.videos)
-
-                    # Perform actions based on the number of videos
-                    if num_videos > 1:
-                        msg = QMessageBox()
-                        msg.setText(
-                            "You have chosen more than one video file. Would you like to open them in multiple view mode?"
-                        )
-                        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-                        reply = msg.exec_()
-                        if reply == QMessageBox.Yes:
-                    
-                            self.multiview = True
-                        else:
+        for folder_name in folders:
+            if folder_name == "Annotations":
+                print("Performing action for Folder1")
                 
-                            self.multiview = False
-                    
-                    if len(videos) == 0 and self.settings["video_files"] is not None:
-                        videos = self.settings["video_files"]
+            elif folder_name == "Project Config":
+                print("Performing action for Folder2")
 
-                    if len(videos) == 0 and self.settings["video_upload_window"]:
-                        # This is extra because videos already loaded 
-                        # self.load_video()
-                        pass
+            elif folder_name == "Tracking data":
+                print("Performing action for Folder3")
+
+                # Get the list of files in Tracking data folder
+                folder_path = os.path.join(self.folder_path, "Tracking data")
+                files = os.listdir(folder_path)
+
+                # Filter video files based on extensions
+                self.videos = [os.path.join(folder_path, file) for file in files if file.lower().endswith(('.mov', '.avi', '.mp4', '.mkv'))]
+
+                # Check the number of video files 
+                num_videos = len(self.videos)
+
+                # Perform actions based on the number of videos
+                if num_videos > 1:
+                    msg = QMessageBox()
+                    msg.setText(
+                        "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+                    )
+                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                    reply = msg.exec_()
+                    if reply == QMessageBox.Yes:
+                
+                        self.multiview = True
                     else:
-                        if videos == ():
-                            self.videos = [None for i in self.settings["skeleton_files"]]
-                        else:
-                            self.videos = videos
-                            if type(self.videos) is not list:
-                                self.videos = list(self.videos)
 
-                    if annotation_files is None:
-                        annotation_files = [None for _ in self.videos]
-                    self.annotation_files = annotation_files
+                        self.multiview = False
+        
+                if len(videos) == 0 and self.settings["video_files"] is not None:
+                    videos = self.settings["video_files"]
 
-                    if suggestion_files is None:
-                        suggestion_files = [None for _ in self.videos] 
-                    self.suggestion_files = suggestion_files
-                    self.run_video(self.multiview, videos)
-
-                    if hard_negatives is not None:
-                        self.settings["hard_negative_classes"] = hard_negatives
-
-                else:
-                    # Default action for other folders
+                if len(videos) == 0 and self.settings["video_upload_window"]:
+                    # This is extra because videos already loaded 
+                    # self.load_video()
                     pass
+                else:
+                    if videos == ():
+                        self.videos = [None for i in self.settings["skeleton_files"]]
+                    else:
+                        self.videos = videos
+                        if type(self.videos) is not list:
+                            self.videos = list(self.videos)
+
+        if annotation_files is None:
+            annotation_files = [None for _ in self.videos]
+        self.annotation_files = annotation_files
+
+        if suggestion_files is None:
+            suggestion_files = [None for _ in self.videos] 
+        self.suggestion_files = suggestion_files
+        self.run_video(self.multiview, videos)
+
+        if hard_negatives is not None:
+            self.settings["hard_negative_classes"] = hard_negatives
+
+        else:
+            # Default action for other folders
+            pass
             
         # Get the name of the selected folder
         # TODO: Not the best way to do this but need folder name for load_videos
