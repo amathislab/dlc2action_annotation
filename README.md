@@ -59,21 +59,48 @@ Actions you can perform:
 - Play/stop (shortcut: space bar)
 - Set video speed
 - Select frames
-- Move video frames
+- Move video frames using the hand icon
+- Drag and zoom
+- Clicking anywhere on the bar will take you to the corresponding frame
+- If multiple animals are displayed and their keypoints have been uploaded, the animal that is being annotated is the one with the colored keypoint markers
+
 
 ## 5) Annotating videos :
 
 Dive into detailed tutorials on the annotation process. Explore techniques for tagging and marking within videos.
+- To annotate or handle your annotations you have to first select the action you want to perform then click on the annotation
+- To create a new annotation, hit the + icon then drag the label below the video 
+- Modify any action a by clicking and dragging the edges of your annotation in the **Move** mode.  
+- Select the trash bin icon / press `Cmd + R` to delete an annotation
+- Select the scissors icon / press `Cmd + C` to split an annotation in two
+- Select the transparency icon / press `Cmd + B` to mark actions as ambiguous. In that case the actions will be transparent on the action bar
+- Select the label icon / press `Cmd + A` to change the annotation's label to another in the label's menu.
 
-## 6) Add or modify labels :
 
+## 6) Add, edit or delet labels :
+- Use the keyboard shortcut cmd+L or go to "labels" then "Change labels"
+- For nested annotation, you can choose a category by double-clicking it and go back to the categories list by pressing `Esc` or the 'Go back to categories' button. 
 
 ## 7) Saving your work :
 
-Explore methods to save your annotated data securely. Learn about saving options, including formats such as CSV or JSON. Ensure your progress is preserved for future reference and analysis.
+The program should run smoothly, but please don't forget to save your results regularly by selecting the 'Save' action in the 'File' menu or pressing `Cmd + S`, just in case.
+
+Backups for your annotated data are automatically created every **30 minutes** in a folder located next to your first video: `path/to/video1_backups`. You can change the directory
+where backups are saved for your project, and the interval at which they are saved. 
+Running
+```bash
+python annotator.py --backup-dir /path/to/backups --backup-interval 120
+```
+will save backups every 2 hours (120 minutes) in the `/path/to/backups` folder.
+
+The results of your work will be saved at `path/to/video1_annotation.pickle`. The `_annotation.pickle` 
+suffix is the default, you can change it in the settings window (at Files / Annotation suffix). If you 
+open a video that already has a corresponding annotation file in the same folder, that file will be loaded 
+automatically. A human-readable version of the annotations will also be saved in CSV format (with the same suffix, and `.csv` extension).
 
 ## 8) Opening a project :
 Once the application is launched, locate the option to open a project. 
+- Select your project folder then click open
 
 ## 9) Change settings :
 
