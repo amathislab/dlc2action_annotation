@@ -48,6 +48,8 @@ Once the application is launched, locate the option to create a new project.
 - Set your labels for the project and/or select exiting labels
 - Set the keybord shortcuts for your annotations to improve your workflow speed
 
+Watch tutorial [here](https://www.youtube.com/watch?v=iTTREcVEL4U).
+
 ## 3) Loading videos :
 Once the project is created a window will open to prompt you to select your videos.
 - You can select one or multiple videos
@@ -76,10 +78,13 @@ Dive into detailed tutorials on the annotation process. Explore techniques for t
 - Select the transparency icon / press `Cmd + B` to mark actions as ambiguous. In that case the actions will be transparent on the action bar
 - Select the label icon / press `Cmd + A` to change the annotation's label to another in the label's menu.
 
+Watch tutorial [here](https://www.youtube.com/watch?v=QiTD5HngoVk).
 
 ## 6) Add, edit or delet labels :
 - Use the keyboard shortcut cmd+L or go to "labels" then "Change labels"
 - For nested annotation, you can choose a category by double-clicking it and go back to the categories list by pressing `Esc` or the 'Go back to categories' button. 
+
+Watch tutorial [here](https://www.youtube.com/watch?v=yRKC_ppjWbw).
 
 ## 7) Saving your work :
 
@@ -101,6 +106,8 @@ automatically. A human-readable version of the annotations will also be saved in
 ## 8) Opening a project :
 Once the application is launched, locate the option to open a project. 
 - Select your project folder then click open
+
+Watch tutorial [here](https://www.youtube.com/watch?v=etsFBnmiadc).
 
 ## 9) Change settings :
 
