@@ -8,7 +8,8 @@ Install git and [Anaconda](https://docs.anaconda.com/anaconda/install/) and run 
 ```bash
 git clone https://github.com/amathislab/dlc2action_annotation
 cd dlc2action_annotation
-conda env create -f AnnotationGUI.yaml
+conda env create -f dlc2action_gui.yaml
+conda activate dlc2action_gui
 ``` 
 
 Further detailed in [Installation and updating](readme_media/installation.md).
@@ -33,7 +34,7 @@ Welcome to the Annotation Workflow Tutorial section, your comprehensive guide to
 
 You can start using the interface by running the following commands in a terminal
 ```bash
-conda activate AnnotationGUI
+conda activate dlc2action_gui
 python annotator.py
 ```
 
