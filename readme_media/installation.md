@@ -7,7 +7,8 @@ This was tested on Ubuntu 20.04 (AM), Windows 10 and MacOS 10.15.7 (LK).
 ```bash
 git clone https://github.com/amathislab/dlc2action_annotation
 cd dlc2action_annotation
-conda env create -f AnnotationGUI.yaml
+conda env create -f dlc2action_gui.yaml
+conda activate dlc2action_gui
 ``` 
 
 ### Updating
@@ -15,8 +16,8 @@ conda env create -f AnnotationGUI.yaml
 To download the latest release, you should go to the ```dlc2action_annotation``` folder and run these commands.
 ```bash
 git pull
-conda activate base
-conda env update -f AnnotationGUI.yaml
+conda activate dlc2action_gui
+conda env update -f dlc2action_gui.yaml
 ``` 
 
 ### Troubleshooting
