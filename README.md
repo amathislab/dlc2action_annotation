@@ -1,6 +1,9 @@
-# DLC2Action: annotation
+[![Generic badge](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](README.md)
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-You can use this program to label a video with a single-frame precision, without any fancy algorithms. The interface supports multi-view setups, 2D and 3D pose data from DeepLabCut. It was written by [Liza Kozlova](https://github.com/elkoz) in the [Mathis group](https://www.mathislab.org/). The algorithm is still in development but fully operational on the main branch, licensing etc. to follow. 
+# DLC2Action: Graphical user interface for annotating behaviors
+
+You can use this graphical user interface to manually label a video frame-by-frame. You can also use [DLC2action](https://github.com/amathislab/DLC2action) to semi-automatically label frames! 
 
 ## Installation
 
@@ -29,3 +32,6 @@ The standard workflow is rather straightforward and involves
 You can find detail documentation on how to use the annotation tool in the
 [Main user guide](readme_media/userguide.md)
 
+## Acknowledgments and Credits
+
+The GUI was initially written by [Liza Kozlova](https://github.com/elkoz) in the [Mathis group](https://www.mathislab.org/). The GUI is still in development but fully operational on the main branch. Please reach out, or open an issue if you have questions! Collaborations are welcome. 
