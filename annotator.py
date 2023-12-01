@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import (
 from utils import get_settings, read_settings, read_video
 from widgets.core.backup import BackupManager
 from widgets.dialog import Form
-from widgets.settings import SettingsWindow, Set_New_Project
+from widgets.settings import SettingsWindow, SetNewProject
 from widgets.viewer import Viewer as Viewer
 
 
@@ -96,17 +96,20 @@ class MainWindow(QMainWindow):
 
         if msg.clickedButton() == createProject:
                 print("Create Project button clicked")
-                newProject = Set_New_Project(self.settings_file)
+                newProject = SetNewProject(self.settings_file)
                 newProject.exec_() 
                 folder_name = newProject.getFolderName()
+                loaded_videos = newProject.getVideos()
                 print("folder name", folder_name)
                 # Ask users to select videos from folder
                 if len(videos) == 0 and self.settings["video_files"] is not None:
                     videos = self.settings["video_files"]
 
                 if len(videos) == 0 and self.settings["video_upload_window"]:
-                    self.load_video(folder_name)
-                    # print("Selected videos copied to 'Tracking data' folder.")
+                    self.videos = loaded_videos
+                
+                    # self.load_video(folder_name)
+  
                     
                 else:
                     if videos == ():
@@ -168,53 +171,54 @@ class MainWindow(QMainWindow):
             self.cur_video = len(self.videos) + self.cur_video
         self.run_viewer_single()
 
-    def load_video(self, folder = None):
+    # def load_video(self, folder = None):
 
 
-        self.videos = QFileDialog.getOpenFileNames(
-            self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
-        )[0]
+    #     self.videos = QFileDialog.getOpenFileNames(
+    #         self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
+    #     )[0]
         
-        if type(self.videos) is not list:
-            self.videos = [self.videos]
-        if len(self.videos) > 1:
-            msg = QMessageBox()
-            msg.setText(
-                "You have chosen more than one video file. Would you like to open them in multiple view mode?"
-            )
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            reply = msg.exec_()
-            if reply == QMessageBox.Yes:
+    #     if type(self.videos) is not list:
+    #         self.videos = [self.videos]
+    #     if len(self.videos) > 1:
+    #         msg = QMessageBox()
+    #         msg.setText(
+    #             "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+    #         )
+    #         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    #         reply = msg.exec_()
+    #         if reply == QMessageBox.Yes:
        
-                self.multiview = True
-            else:
+    #             self.multiview = True
+    #         else:
            
-                self.multiview = False
+    #             self.multiview = False
         
-        # After videos are selected, copy them to the 'Tracking data' folder
-
-            self.copy_videos_to_tracking_data(self.videos, folder)
+    #     # After videos are selected, copy them to the 'Tracking data' folder
     
-    # TODO: How can we change how the files are organised so that we can be in the project folder create 
-    # but still access application files 
-    def copy_videos_to_tracking_data(self, selected_videos, folder_name):
+    #     self.copy_videos_to_tracking_data(self.videos, folder)
+     
+    
+    # # TODO: How can we change how the files are organised so that we can be in the project folder create 
+    # # but still access application files 
+    # def copy_videos_to_tracking_data(self, selected_videos, folder_name):
         
-        current_directory = os.getcwd()
+    #     current_directory = os.getcwd()
       
-        # This will break if folder names would be changed
-        tracking_data_folder_path = os.path.join(current_directory, folder_name, "Tracking data")
+    #     # This will break if folder names would be changed
+    #     tracking_data_folder_path = os.path.join(current_directory, folder_name, "Tracking data")
 
-        # Create Tracking data folder if it doesn't exist
-        if not os.path.exists(tracking_data_folder_path):
-            os.makedirs(tracking_data_folder_path)
+    #     # Create Tracking data folder if it doesn't exist
+    #     if not os.path.exists(tracking_data_folder_path):
+    #         os.makedirs(tracking_data_folder_path)
 
-        # Copy selected videos to Tracking data folder
-        for video_path in selected_videos:
-            video_filename = os.path.basename(video_path)
-            destination_path = os.path.join(tracking_data_folder_path, video_filename)
-            shutil.copy2(video_path, destination_path)
+    #     # Copy selected videos to Tracking data folder
+    #     for video_path in selected_videos:
+    #         video_filename = os.path.basename(video_path)
+    #         destination_path = os.path.join(tracking_data_folder_path, video_filename)
+    #         shutil.copy2(video_path, destination_path)
 
-        # print("Selected videos copied to 'Tracking data' folder.")
+    #     # print("Selected videos copied to 'Tracking data' folder.")
         
     def load_project(self, videos, annotation_files, suggestion_files, hard_negatives):
  

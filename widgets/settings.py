@@ -6,11 +6,13 @@
 import os
 import yaml
 import numpy as np
+import shutil
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QComboBox,
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -539,9 +541,9 @@ class SettingsWindow(QDialog):
         return data
 
 # TODO: Delete unused functions 
-class Set_New_Project(QDialog):
+class SetNewProject(QDialog):
     def __init__(self, config_path):
-        super(Set_New_Project, self).__init__()
+        super(SetNewProject, self).__init__()
         # TODO: Modify this to be consistent with the creation of a new config file
         self.config_path = config_path
         self.settings = self._open_yaml(config_path)
@@ -551,18 +553,43 @@ class Set_New_Project(QDialog):
         self.folder_name = None  # Initialize folder_name as None
         self.buttonBox = QDialogButtonBox(QBtn)
         
-        # Connect the OK button's accepted signal to create_folder function
-        self.buttonBox.accepted.connect(self.create_folder)
+        self.browse_videos_button = QPushButton("Select videos")
+        # When users select a videos it triggers the creation of project folders and saves the videos selected 
+        # in the project folders
+        self.browse_videos_button.clicked.connect(self.structure_project)
+        
+        self.video_checkbox = QCheckBox("Copy video to folder")
+        self.video_checkbox.setChecked(False)
+        
+        # Create a QLabel to display the loaded video name
+        self.loaded_video_label = QLabel("No video loaded")
+        
+       
+
+  
+  
+        # Connect the OK button's accepted signal to close the current dialog box 
+        self.buttonBox.accepted.connect(self.close_)
         
         # Connect the Cancel button's rejected signal to close the dialog
-        self.buttonBox.rejected.connect(self.reject)
+        #self.buttonBox.rejected.connect(self.reject)
+        
+        #using close for now but should be "self.reject"
+        self.buttonBox.rejected.connect(self.close_)
         self.buttonBox.accepted.connect(self.accept)
         # --------------------------------------------
         self.tabs = QTabWidget()
         self.tabs.tabBarClicked.connect(self.collect)
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.tabs)
+        
+        self.layout.addWidget(self.browse_videos_button)
+        self.layout.addWidget(self.loaded_video_label)
+        self.layout.addWidget(self.video_checkbox)
+
+    
         self.layout.addWidget(self.buttonBox)
+        
         self.setLayout(self.layout)
         self.functions = [
             self.collect_general,
@@ -571,7 +598,65 @@ class Set_New_Project(QDialog):
         self.create_general_tab()
         self.set_general_tab()
 
+# TODO: Function structure_project has a larger scope bc it also changes the ui .. 
+    def structure_project(self, folder = None):
 
+
+            self.videos = QFileDialog.getOpenFileNames(
+                self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
+            )[0]
+            
+            if type(self.videos) is not list:
+                self.videos = [self.videos]
+            if len(self.videos) > 1:
+                msg = QMessageBox()
+                msg.setText(
+                    "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+                )
+                msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                reply = msg.exec_()
+                if reply == QMessageBox.Yes:
+        
+                    self.multiview = True
+                else:
+            
+                    self.multiview = False
+            
+            # After videos are selected, copy them to the 'Tracking data' folder
+            self.create_folder
+            self.copy_videos_to_tracking_data(self.videos, "Tracking data")
+            # Update the text of the loaded_video_label with the name of the first video
+            if self.videos:
+                video_name = os.path.basename(self.videos[0])
+                self.loaded_video_label.setText(f"Loaded video: {video_name}")
+            else:
+                self.loaded_video_label.setText("No video loaded")
+            
+
+        
+            
+    
+    # TODO: How can we change how the files are organised so that we can be in the project folder create 
+    # but still access application files 
+    def copy_videos_to_tracking_data(self, selected_videos, folder_name):
+        
+        current_directory = os.getcwd()
+      
+        # This will break if folder names would be changed
+        tracking_data_folder_path = os.path.join(current_directory, folder_name, "Tracking data")
+
+        # Create Tracking data folder if it doesn't exist
+        if not os.path.exists(tracking_data_folder_path):
+            os.makedirs(tracking_data_folder_path)
+
+        # Copy selected videos to Tracking data folder
+        for video_path in selected_videos:
+            video_filename = os.path.basename(video_path)
+            destination_path = os.path.join(tracking_data_folder_path, video_filename)
+            shutil.copy2(video_path, destination_path)
+
+        # print("Selected videos copied to 'Tracking data' folder.")
+        
     def update_data(self):
         self.set_general_tab()
 
@@ -665,7 +750,7 @@ class Set_New_Project(QDialog):
         self.general_layout.addRow("Annotator name: ", self.annotator)
         self.general_layout.addRow("Project Title: ", self.title)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
-        self.general_layout.addRow("Data type: ", self.data_type_combo)
+        # self.general_layout.addRow("Data type: ", self.data_type_combo)
   
     def set_general_tab_data(self):
 
@@ -673,7 +758,7 @@ class Set_New_Project(QDialog):
         #Change it from annotator to title but the program crashes   
         self.title = self.set_le("annotator", set_int=False)       
         self.behaviors = self.set_multiple_input("actions", type="category")
-        self.data_type_combo = self.set_combo("data_type", ["dlc", "calms21"])
+        # self.data_type_combo = self.set_combo("data_type", ["dlc", "calms21"])
 
     def create_fp_tab(self):
         self.fp_tab = QWidget()
@@ -691,60 +776,12 @@ class Set_New_Project(QDialog):
                     self.clearLayout(child.layout())
 
     def collect_general(self):
-        self.settings["data_type"] = self.data_type_combo.currentText()
-        
-        # self.settings["n_ind"] = int(self.n_ind_le.text())
-        # self.settings["max_loaded_frames"] = int(self.max_loaded_le.text())
-        # self.settings["load_chunk"] = int(self.chunk_le.text())
-        # self.settings["load_buffer"] = int(self.buffer_le.text())
         self.settings["actions"] = (
             self.behaviors.values() if len(self.behaviors.values()) > 0 else None
         )
-        # self.settings["min_length_frames"] = int(self.min_frames_le.text())
-
-    # def collect_al(self):
-    #     self.settings["max_loaded_frames_al"] = int(self.max_loaded_al_le.text())
-    #     self.settings["load_chunk_al"] = int(self.load_chunk_al_le.text())
-    #     self.settings["load_buffer_al"] = int(self.load_buffer_al_le.text())
-    #     self.settings["al_window_num"] = int(self.al_window_num_le.text())
-    #     self.settings["al_buffer"] = int(self.al_buffer_le.text())
-    #     self.settings["hard_negative_classes"] = [
-    #         item.text() for item in self.hn_ms.selectedItems()
-    #     ]
-    #     self.settings["assessment_n"] = int(self.assessment_n_le.text())
-
-    # def collect_display(self):
-    #     self.settings["backend"] = self.backend_combo.currentText()
-    #     self.settings["skeleton_size"] = self.skeleton_size_slider.value()
-    #     self.settings["console_width"] = self.console_width_slider.value()
-    #     self.settings["actionbar_width"] = self.actionbar_width_slider.value()
-    #     self.settings["default_frequency"] = self.default_freq_slider.value()
-    #     self.settings["canvas_size"] = [
-    #         int(self.canvas_size_le_w.text()),
-    #         int(self.canvas_size_le_h.text()),
-    #     ]
-    #     self.settings[
-    #         "detection_update_freq"
-    #     ] = self.detection_update_freq_slider.value()
-    #     self.settings["mask_opacity"] = self.mask_opacity_slider.value() / 100
-    #     self.settings["load_segmentation"] = self.load_segmentation_combo.currentText()
-    #     self.settings["likelihood_cutoff"] = self.likelihood_cutoff_slider.value() / 100
-    #     self.settings["3d_bodyparts"] = (
-    #         self.bp_3d.values() if len(self.bp_3d.values()) > 0 else None
-    #     )
-    #     self.settings["skeleton"] = (
-    #         self.skeleton.values() if len(self.skeleton.values()) > 0 else None
-    #     )
-    
+ 
     
     def collect_fp(self):
-        # self.settings["3d_suffix"] = self.suffix_3d_le.text()
-        # self.settings["suffix"] = self.suffix_le.text()
-        # self.settings["display_3d"] = self.display_3d.isChecked()
-        # self.settings["display_repr"] = self.display_repr.isChecked()
-        # self.settings["prefix_separator"] = self.prefix_separator_le.text()
-        # self.settings["prior_suffix"] = self.prior_suffix_le.text()
-        # self.settings["DLC_suffix"] = self.dlc_suffix.values()
     
         self.settings["annotator"] = self.annotator.text()
         
@@ -763,6 +800,8 @@ class Set_New_Project(QDialog):
         
         subfolder_names = ["Annotations", "Project Config", "Tracking data"]
         print(f"Folder '{folder_name}' created in '{current_directory}'")
+        
+        
         
         if not os.path.exists(folder_name):
             os.makedirs(folder_path)   
@@ -802,14 +841,21 @@ class Set_New_Project(QDialog):
             # Change the working directory to the newly created folder
             # os.chdir(folder_path)
             
-            self.close()
+            
+            
             
         else:
             print("Folder already exist")
             pass
-    
+        
+    def close_(self):
+        self.close()
+        
     def getFolderName(self):
-            return self.folder_name
+        return self.folder_name
+    
+    def getVideos(self):
+        return self.videos
     
     def accept(self) -> None:
         self.collect()
