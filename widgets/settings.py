@@ -556,26 +556,18 @@ class SetNewProject(QDialog):
         self.browse_videos_button = QPushButton("Select videos")
         # When users select a videos it triggers the creation of project folders and saves the videos selected 
         # in the project folders
-        self.browse_videos_button.clicked.connect(self.structure_project)
+        self.browse_videos_button.clicked.connect(self.load_videos)
         
         self.video_checkbox = QCheckBox("Copy video to folder")
         self.video_checkbox.setChecked(False)
         
         # Create a QLabel to display the loaded video name
         self.loaded_video_label = QLabel("No video loaded")
-        
-       
 
-  
-  
-        # Connect the OK button's accepted signal to close the current dialog box 
-        self.buttonBox.accepted.connect(self.close_)
-        
         # Connect the Cancel button's rejected signal to close the dialog
-        #self.buttonBox.rejected.connect(self.reject)
         
-        #using close for now but should be "self.reject"
-        self.buttonBox.rejected.connect(self.close_)
+        # Must correct the reject function
+        self.buttonBox.rejected.connect(self.reject)
         self.buttonBox.accepted.connect(self.accept)
         # --------------------------------------------
         self.tabs = QTabWidget()
@@ -599,7 +591,7 @@ class SetNewProject(QDialog):
         self.set_general_tab()
 
 # TODO: Function structure_project has a larger scope bc it also changes the ui .. 
-    def structure_project(self, folder = None):
+    def load_videos(self, folder = None):
 
 
             self.videos = QFileDialog.getOpenFileNames(
@@ -622,9 +614,7 @@ class SetNewProject(QDialog):
             
                     self.multiview = False
             
-            # After videos are selected, copy them to the 'Tracking data' folder
-            self.create_folder
-            self.copy_videos_to_tracking_data(self.videos, "Tracking data")
+
             # Update the text of the loaded_video_label with the name of the first video
             if self.videos:
                 video_name = os.path.basename(self.videos[0])
@@ -789,7 +779,7 @@ class SetNewProject(QDialog):
         self.settings["annotator"] = self.title.text()
         # self.settings["segmentation_suffix"] = self.segmentation_le.text()
 
-    def create_folder(self) -> None:
+    def create_folder(self):
         
         current_directory = os.getcwd()
         folder_name = self.title.text()
@@ -850,12 +840,29 @@ class SetNewProject(QDialog):
         
     def close_(self):
         self.close()
-        
+    
+    def reject(self):
+        self.close()
     def getFolderName(self):
         return self.folder_name
     
     def getVideos(self):
         return self.videos
+    
+    def create_symbolic_link(self, videos, destination_folder):
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
+
+        for video in videos:
+            video_name = os.path.basename(video)
+            link_path = os.path.join(destination_folder, video_name)
+
+            try:
+                # Create a symbolic link
+                os.symlink(video, link_path)
+                print(f"Symbolic link created: {link_path}")
+            except Exception as e:
+                print(f"Error creating symbolic link for {video_name}: {e}")
     
     def accept(self) -> None:
         self.collect()
@@ -871,7 +878,17 @@ class SetNewProject(QDialog):
             )
             msg.exec_()
             return
+        
+        # After videos are selected, copy them to the 'Tracking data' folder
+        self.create_folder
+        if self.video_checkbox.isChecked():
+            print("Copying data")
+            self.copy_videos_to_tracking_data(self.videos, "Tracking data")
+        else: 
+            self.create_symbolic_link(self.videos, "Tracking data")
+            print("Creating a link")
         super().accept()
+        self.close()
 
     def _open_yaml(self, path: str):
         """
