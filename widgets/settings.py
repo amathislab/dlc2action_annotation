@@ -779,7 +779,7 @@ class SetNewProject(QDialog):
         self.settings["annotator"] = self.title.text()
         # self.settings["segmentation_suffix"] = self.segmentation_le.text()
 
-    def create_folder(self):
+    def create_folder(self) -> None:
         
         current_directory = os.getcwd()
         folder_name = self.title.text()
@@ -880,7 +880,7 @@ class SetNewProject(QDialog):
             return
         
         # After videos are selected, copy them to the 'Tracking data' folder
-        self.create_folder
+        self.create_folder()
         if self.video_checkbox.isChecked():
             print("Copying data")
             self.copy_videos_to_tracking_data(self.videos, "Tracking data")
