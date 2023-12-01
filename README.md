@@ -1,6 +1,9 @@
+[![Generic badge](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](README.md)
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+
 # DLC2Action: Graphical user interface for annotating behaviors
 
-You can use this graphical user interface to label a video frame-by-frame, without any fancy algorithms. 
+You can use this graphical user interface to manually label a video frame-by-frame. You can also use [DLC2action](https://github.com/amathislab/DLC2action) to semi-automatically label frames! 
 
 ## Installation
 
@@ -8,7 +11,8 @@ Install git and [Anaconda](https://docs.anaconda.com/anaconda/install/) and run 
 ```bash
 git clone https://github.com/amathislab/dlc2action_annotation
 cd dlc2action_annotation
-conda env create -f AnnotationGUI.yaml
+conda env create -f dlc2action_gui.yaml
+conda activate dlc2action_gui
 ``` 
 
 Further detailed in [Installation and updating](readme_media/installation.md).
@@ -33,7 +37,7 @@ Welcome to the Annotation Workflow Tutorial section, your comprehensive guide to
 
 You can start using the interface by running the following commands in a terminal
 ```bash
-conda activate AnnotationGUI
+conda activate dlc2action_gui
 python annotator.py
 ```
 
@@ -106,7 +110,3 @@ Watch the tutorial [here](https://www.youtube.com/watch?v=etsFBnmiadc).
 
 You can find detailed documentation on how to use the annotation tool in the
 [Main user guide](readme_media/userguide.md)
-
-## Acknowledgments and Credits
-
-The GUI was originally written by [Liza Kozlova](https://github.com/elkoz) in the [Mathis group](https://www.mathislab.org/). Currently, we are in developer mode, licensing etc. to follow. 
