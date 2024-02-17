@@ -140,3 +140,8 @@ dmypy.json
 #data
 last_action_choice.pickle
 /config.yaml
+*.pickle
+*.csv
+*.npy
+*.yaml
+*.mp4

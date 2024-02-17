@@ -57,6 +57,6 @@ prior_suffix: null #a suffix or a list of suffixes that will be used to load and
 DLC_suffix:
 - DLC_resnet50.h5
 #if not null it will be used to load the skeleton file (if multiple the first suffix that leads to an existing file will be used)
-annotator: "unknown"   #will be saved as metadata in the annotation file
-
+annotator: "unknown annotator"   #will be saved as metadata in the annotation file
+project: "unknown project"
 # other
