@@ -145,3 +145,4 @@ last_action_choice.pickle
 *.npy
 *.yaml
 *.mp4
+*.h5

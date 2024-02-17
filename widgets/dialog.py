@@ -616,7 +616,7 @@ class Form(QDialog):
         self.buttons = [QRadioButton(video) for video in videos]
         for button in self.buttons:
             layout.addWidget(button)
-        # Set dialog layout
+        
         self.setLayout(layout)
         self.videos = videos
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)

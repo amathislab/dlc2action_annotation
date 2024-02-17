@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
                 newProject.exec_() 
                 folder_name = newProject.getFolderName()
                 loaded_videos = newProject.getVideos()
-                print("folder name", folder_name)
+                skeleton = newProject.getSkeletonData()
                 # Ask users to select videos from folder
                 if len(videos) == 0 and self.settings["video_files"] is not None:
                     videos = self.settings["video_files"]
@@ -109,8 +109,6 @@ class MainWindow(QMainWindow):
                     self.videos = loaded_videos
                 
                     # self.load_video(folder_name)
-  
-                    
                 else:
                     if videos == ():
                         self.videos = [None for i in self.settings["skeleton_files"]]
@@ -122,16 +120,22 @@ class MainWindow(QMainWindow):
                 if annotation_files is None:
                     annotation_files = [None for _ in self.videos]
                 self.annotation_files = annotation_files
+                
                 if suggestion_files is None:
                     suggestion_files = [None for _ in self.videos]
                 self.suggestion_files = suggestion_files
                 
+                
                 self.run_video(self.multiview)
+                
                 
                 if hard_negatives is not None:
                     self.settings["hard_negative_classes"] = hard_negatives
                 
+                print("loading skeleton")
+                self.load_data_skl(skeleton)
                 self.launch_project()
+                
 
         elif msg.clickedButton() == openProject:
                 
@@ -140,11 +144,6 @@ class MainWindow(QMainWindow):
                 self.current_folder = self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
                 self.launch_project()
 
-
-
-
-        # PROMT THE USER TO LOAD VIDEOS 
-        # TODO : Should be done automatically when the user selects "open project"
 
 
     def closeEvent(self, a0) -> None:
@@ -368,10 +367,8 @@ class MainWindow(QMainWindow):
          
 
     def open_video(self):
-        #What does this do: self.viewer.save()
         # self.viewer.save()
         self.load_video(self.current_folder)
-        print("Loading new video")
         # TODO: Bug here when you open a view it doesn't prompt you to open in multiple view 
         self.run_video()
 
@@ -472,7 +469,41 @@ class MainWindow(QMainWindow):
             else:
                 return None
             return al_points.get(name)
+        
+    def load_data_skl(self, skeleton):
+        
+        update = False
+        settings_update = {}
+        
+        if len(skeleton[0]) == 0:
+            print("No data for skeleton")
+            skeleton = None
+        elif len(self.videos) > 0:
+            print("data for skeleton")
+            video = Form(self.videos).exec_()
+            if self.settings["skeleton_files"] == [None]:
+                files = [None for _ in self.videos]
+            else:
+                files = self.settings["skeleton_files"]
+            skeleton = [
+                files[i] if x != video else skeleton[0]
+                for i, x in enumerate(self.videos)
+            ]
+        if skeleton is not None:
+            settings_update["skeleton_files"] = skeleton
+            update = True
 
+        if update:
+            self.viewer.save(verbose=False, ask=False)
+            self.run_video(
+                current=self.viewer.current(),
+                settings_update=settings_update,
+                multiview=self.multiview,
+            )
+            self._createActions()
+            self._createMenuBar()
+            self._createToolBar()
+            
     def load_data(self, type):
         update = False
         settings_update = {}
@@ -484,6 +515,7 @@ class MainWindow(QMainWindow):
                 settings_update["detection_files"] = boxes
                 update = True
         if type == "DLC":
+            
             skeleton = [
                 QFileDialog.getOpenFileName(
                     self, "Open file", filter="DLC files (*.h5 *.pickle)"
@@ -512,7 +544,7 @@ class MainWindow(QMainWindow):
         #         self.load_labels_file = load_labels_file
         #         update = True
         if update:
-            self.viewer.save(verbose=False, ask=True)
+            self.viewer.save(verbose=False, ask=False)
             self.run_video(
                 current=self.viewer.current(),
                 settings_update=settings_update,
@@ -753,7 +785,7 @@ class MainWindow(QMainWindow):
 
     def set_settings(self, event):
         SettingsWindow(self.settings_file).exec_()
-        self.viewer.save(verbose=False, ask=True)
+        self.viewer.save(verbose=False, ask=False)
         self.run_video(current=self.viewer.current(), multiview=self.multiview)
         self._createActions()
         self._createToolBar()

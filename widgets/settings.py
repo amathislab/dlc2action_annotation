@@ -552,13 +552,18 @@ class SetNewProject(QDialog):
         # --------------------------------------------
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.labels = {}
-        self.folder_name = None  # Initialize folder_name as None
+        self.folder_name = None  
+        self.skeleton = None
         self.buttonBox = QDialogButtonBox(QBtn)
         
         
-        self.browse_videos_button = QPushButton("Select videos")
-        # When users select a videos it triggers the creation of project folders and saves the videos selected 
-        # in the project folders
+        self.load_dlcfiles_label = QLabel("Select DLC files (.h5) :")
+        self.load_dlcfiles_button = QPushButton("Upload files")
+        self.load_dlcfiles_button.clicked.connect(self.load_skeleton)
+        self.loaded_dlcfiles_label = QLabel("No video loaded")
+        
+        self.browse_videos_label = QLabel("Select videos:")
+        self.browse_videos_button = QPushButton("Upload videos")
         self.browse_videos_button.clicked.connect(self.load_videos)
         
         self.video_checkbox = QCheckBox("Copy video to folder")
@@ -579,14 +584,19 @@ class SetNewProject(QDialog):
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.tabs)
         
+        self.layout.addWidget(self.load_dlcfiles_label)
+        self.layout.addWidget(self.load_dlcfiles_button)
+        self.layout.addWidget(self.loaded_dlcfiles_label)
+        
+        self.layout.addWidget(self.browse_videos_label)
         self.layout.addWidget(self.browse_videos_button)
         self.layout.addWidget(self.loaded_video_label)
         self.layout.addWidget(self.video_checkbox)
 
-    
+      
         self.layout.addWidget(self.buttonBox)
-        
         self.setLayout(self.layout)
+        
         self.functions = [
             self.collect_general,
  
@@ -596,7 +606,19 @@ class SetNewProject(QDialog):
 
 
             
-# TODO: Function structure_project has a larger scope bc it also changes the ui .. 
+# TODO: Function structure_project has a larger scope bc it also changes the ui ..
+        
+    def load_skeleton(self):
+        self.skeleton = [QFileDialog.getOpenFileName(self, "Open file")[0]]
+        if len(self.skeleton[0]) == 0:
+            self.skeleton = None
+        else:
+            
+            file_name = os.path.basename(self.skeleton[0])
+            self.loaded_dlcfiles_label.setText(f"Loaded dlc files: {file_name}")
+            
+        
+            
     def load_videos(self, folder = None):
 
 
@@ -635,12 +657,6 @@ class SetNewProject(QDialog):
     # TODO: How can we change how the files are organised so that we can be in the project folder create 
     # but still access application files 
     def copy_videos_to_tracking_data(self, selected_videos, folder_name, current_directory):
-        # print(folder_name)
-        # # current_directory = os.path.join(current_directory, folder_name)
-        # current_directory = os.getcwd()
-        # print("current working dir", current_directory)
-      
-        # This will break if folder names would be changed
         tracking_data_folder_path = os.path.join(current_directory, folder_name)
 
         # Create Tracking data folder if it doesn't exist
@@ -654,6 +670,15 @@ class SetNewProject(QDialog):
             shutil.copy2(video_path, destination_path)
 
         # print("Selected videos copied to 'Tracking data' folder.")
+    def copy_skeleton(self, files, current_directory):
+        if not files:
+            print("The list 'files' is empty.")
+        if files: 
+            for file_path in files:
+                filename = os.path.basename(file_path)
+                destination_path = os.path.join(current_directory, filename)
+                shutil.copy2(file_path, destination_path)
+            
         
     def update_data(self):
         self.set_general_tab()
@@ -748,15 +773,17 @@ class SetNewProject(QDialog):
         self.general_layout.addRow("Annotator name: ", self.annotator)
         self.general_layout.addRow("Project Title: ", self.project)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
+        
+        
         # self.general_layout.addRow("Data type: ", self.data_type_combo)
   
     def set_general_tab_data(self):
 
         self.annotator = self.set_le("annotator", set_int=False)
-        #Change it from annotator to title but the program crashes   
         self.project = self.set_le("project", set_int=False)       
         self.behaviors = self.set_multiple_input("actions", type="category")
-        # self.data_type_combo = self.set_combo("data_type", ["dlc", "calms21"])
+        
+        
 
     def create_fp_tab(self):
         self.fp_tab = QWidget()
@@ -779,24 +806,15 @@ class SetNewProject(QDialog):
         self.settings["actions"] = (
             self.behaviors.values() if len(self.behaviors.values()) > 0 else None
         )
- 
-    
-    # def collect_fp(self):
-    #     print("collect data")
-    #     self.settings["annotator"] = self.annotator.text()
-    #     self.settings["project_title"] = self.project.text()
-
+      
 
     def create_folder(self) -> None: 
         folder_name = self.settings["project"]
         self.folder_name = self.settings["project"]   
         current_directory = os.getcwd()
-        # Create the folder in the current directory
         folder_path = os.path.join(current_directory, folder_name)
-        
         subfolder_names = ["Annotations", "Project Config", "Tracking data"]
         print(f"Folder '{folder_name}' created in '{current_directory}'")
-
         
         if not os.path.exists(folder_name):
             os.makedirs(folder_path)   
@@ -833,9 +851,6 @@ class SetNewProject(QDialog):
             annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
             np.save(annotations_file_path, user_labels)
 
-            
-      
-            
         else:
             print("Folder already exist")
             pass
@@ -850,6 +865,9 @@ class SetNewProject(QDialog):
     
     def getVideos(self):
         return self.videos
+    
+    def getSkeletonData(self):
+        return self.skeleton
     
     def create_symbolic_link(self, videos, folder_name, current_directory):
         tracking_data_folder_path = os.path.join(current_directory, folder_name)
@@ -881,18 +899,19 @@ class SetNewProject(QDialog):
             msg.exec_()
             return
         
-        # After videos are selected, copy them to the 'Tracking data' folder
         self.create_folder()
-        # update working directory 
         current_directory = os.getcwd()
         folder = self.folder_name
         current_directory = os.path.join(current_directory, folder )
+        self.copy_skeleton(self.skeleton, current_directory)
+        
         if self.video_checkbox.isChecked():
             print("Copying data")
             self.copy_videos_to_tracking_data(self.videos, "Tracking data", current_directory)
         else: 
             self.create_symbolic_link(self.videos, "Tracking data", current_directory)
             print("Creating a link")
+
         super().accept()
         self.close()
 
