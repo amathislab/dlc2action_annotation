@@ -607,21 +607,23 @@ class SetNewProject(QDialog):
 
             
 # TODO: Function structure_project has a larger scope bc it also changes the ui ..
-        
     def load_skeleton(self):
-        self.skeleton = [QFileDialog.getOpenFileName(self, "Open file")[0]]
-        if len(self.skeleton[0]) == 0:
+        file_filter = ".h5 files (*.h5)"
+        self.skeleton = QFileDialog.getOpenFileNames(self, "Open file", filter=file_filter)[0]
+        if not self.skeleton:
             self.skeleton = None
+            self.loaded_dlcfiles_label.setText("No files loaded")
         else:
-            
-            file_name = os.path.basename(self.skeleton[0])
-            self.loaded_dlcfiles_label.setText(f"Loaded dlc files: {file_name}")
-            
+            h5_files = [file for file in self.skeleton if file.endswith('.h5')]
+            if not h5_files:
+                self.skeleton = None
+                self.loaded_dlcfiles_label.setText("No .h5 files selected")
+            else:
+                file_names = [os.path.basename(file) for file in h5_files]
+                self.loaded_dlcfiles_label.setText(f"Loaded dlc files: {', '.join(file_names)}")
         
             
-    def load_videos(self, folder = None):
-
-
+    def load_videos(self):
             self.videos = QFileDialog.getOpenFileNames(
                 self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
             )[0]
@@ -636,26 +638,24 @@ class SetNewProject(QDialog):
                 msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                 reply = msg.exec_()
                 if reply == QMessageBox.Yes:
+                    
         
                     self.multiview = True
+                    
                 else:
             
                     self.multiview = False
             
-
             # Update the text of the loaded_video_label with the name of the first video
             if self.videos:
-                video_name = os.path.basename(self.videos[0])
-                self.loaded_video_label.setText(f"Loaded video: {video_name}")
+                video_names = [os.path.basename(video) for video in self.videos]
+                video_names_str = ', '.join(video_names)
+                self.loaded_video_label.setText(f"Loaded videos: {video_names_str}")
             else:
-                self.loaded_video_label.setText("No video loaded")
+                self.loaded_video_label.setText("No videos loaded")
+                
             
-
-        
             
-    
-    # TODO: How can we change how the files are organised so that we can be in the project folder create 
-    # but still access application files 
     def copy_videos_to_tracking_data(self, selected_videos, folder_name, current_directory):
         tracking_data_folder_path = os.path.join(current_directory, folder_name)
 
@@ -812,6 +812,7 @@ class SetNewProject(QDialog):
         folder_name = self.settings["project"]
         self.folder_name = self.settings["project"]   
         current_directory = os.getcwd()
+        source_file = 'colors.txt'
         folder_path = os.path.join(current_directory, folder_name)
         subfolder_names = ["Annotations", "Project Config", "Tracking data"]
         print(f"Folder '{folder_name}' created in '{current_directory}'")
@@ -823,17 +824,17 @@ class SetNewProject(QDialog):
                 subfolder_path = os.path.join(folder_path, subfolder_name)
                 os.makedirs(subfolder_path)  
                 
-            # Create settings.yaml with default values
-            settings_file_path = os.path.join(folder_path, "Project Config", "settings.yaml")
-            default_settings = {
-                "setting1": "default_value1",
-                "setting2": "default_value2",
-                # Add more default settings as needed
-            }
-            with open(settings_file_path, "w") as settings_file:
-                yaml.dump(default_settings, settings_file)  
+            # # Create settings.yaml with default values
+            # settings_file_path = os.path.join(folder_path, "Project Config", "settings.yaml")
+            # default_settings = {
+            #     "setting1": "default_value1",
+            #     "setting2": "default_value2",
+            #     # Add more default settings as needed
+            # }
+            # with open(settings_file_path, "w") as settings_file:
+            #     yaml.dump(default_settings, settings_file)  
             
-            # Read data from default_config.yaml
+            
             default_config_path = os.path.join(current_directory, "default_config.yaml")
             with open(default_config_path, "r") as default_config_file:
                 default_config_data = yaml.safe_load(default_config_file)
@@ -850,21 +851,77 @@ class SetNewProject(QDialog):
             annotations_folder_path = os.path.join(folder_path, "Annotations")
             annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
             np.save(annotations_file_path, user_labels)
+            
+            try:
+                shutil.copy(source_file, folder_path)
+                print(f"File '{source_file}' copied to '{folder_path}'")
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
         else:
             print("Folder already exist")
-            pass
+            folder_name = folder_name + "(2)"
+            print(folder_name)
+            folder_path = os.path.join(current_directory, folder_name)
+            subfolder_names = ["Annotations", "Project Config", "Tracking data"]
+            print(f"Folder '{folder_name}' created in '{current_directory}'")
+            
+            os.makedirs(folder_path)   
+            # Close the dialog after creating the folder
+            for subfolder_name in subfolder_names:
+                subfolder_path = os.path.join(folder_path, subfolder_name)
+                os.makedirs(subfolder_path)  
+                
+            # # Create settings.yaml with default values
+            # settings_file_path = os.path.join(folder_path, "Project Config", "settings.yaml")
+            # default_settings = {
+            #     "setting1": "default_value1",
+            #     "setting2": "default_value2",
+            #     # Add more default settings as needed
+            # }
+            # with open(settings_file_path, "w") as settings_file:
+            #     yaml.dump(default_settings, settings_file)  
+            
+            
+            default_config_path = os.path.join(current_directory, "default_config.yaml")
+            with open(default_config_path, "r") as default_config_file:
+                default_config_data = yaml.safe_load(default_config_file)
+
+            # Create config.yaml with default values from default_config.yaml
+            config_file_path = os.path.join(folder_path, "Project Config", "config.yaml")
+            with open(config_file_path, "w") as config_file:
+                yaml.dump(default_config_data, config_file)
+
+            # Get user-defined labels 
+            user_labels = self.behaviors.values()
+
+            # Save user-defined labels to annotations.npy in Annotations folder
+            annotations_folder_path = os.path.join(folder_path, "Annotations")
+            annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
+            np.save(annotations_file_path, user_labels)
+            
+            try:
+                shutil.copy(source_file, folder_path)
+                print(f"File '{source_file}' copied to '{folder_path}'")
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
         
     def close_(self):
         self.close()
     
     def reject(self):
         self.close()
+        
     def getFolderName(self):
         return self.folder_name
     
     def getVideos(self):
         return self.videos
+    
+    def getMultiview(self):
+        return self.multiview
     
     def getSkeletonData(self):
         return self.skeleton

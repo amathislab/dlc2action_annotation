@@ -6,7 +6,8 @@
 import os
 import pickle
 import sys
-import shutil
+import yaml
+
 from pathlib import Path
 from typing import Optional
 
@@ -82,13 +83,8 @@ class MainWindow(QMainWindow):
         self.al_points_dict = al_points_dictionary
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        
-        # GIVE USER THE CHOICE TO LOAD OR CREATE A PROJECT 
-
         msg = QMessageBox()
         msg.setText("Welcome to DLC2action! ")
-
-        # Add a create and load buttons
         createProject = msg.addButton("Create Project", QMessageBox.ActionRole)
         openProject = msg.addButton("Open Project", QMessageBox.ActionRole)
 
@@ -98,17 +94,15 @@ class MainWindow(QMainWindow):
                 print("Create Project button clicked")
                 newProject = SetNewProject(self.settings_file)
                 newProject.exec_() 
-                folder_name = newProject.getFolderName()
                 loaded_videos = newProject.getVideos()
                 skeleton = newProject.getSkeletonData()
-                # Ask users to select videos from folder
+                self.multiview = newProject.getMultiview()
+
                 if len(videos) == 0 and self.settings["video_files"] is not None:
                     videos = self.settings["video_files"]
 
                 if len(videos) == 0 and self.settings["video_upload_window"]:
                     self.videos = loaded_videos
-                
-                    # self.load_video(folder_name)
                 else:
                     if videos == ():
                         self.videos = [None for i in self.settings["skeleton_files"]]
@@ -125,25 +119,18 @@ class MainWindow(QMainWindow):
                     suggestion_files = [None for _ in self.videos]
                 self.suggestion_files = suggestion_files
                 
-                
                 self.run_video(self.multiview)
-                
                 
                 if hard_negatives is not None:
                     self.settings["hard_negative_classes"] = hard_negatives
-                
-                print("loading skeleton")
+
                 self.load_data_skl(skeleton)
                 self.launch_project()
                 
 
         elif msg.clickedButton() == openProject:
-                
-                print("Open Project button clicked")
-                # Handle the open action here
                 self.current_folder = self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
-                self.launch_project()
-
+                # self.launch_project()
 
 
     def closeEvent(self, a0) -> None:
@@ -157,8 +144,6 @@ class MainWindow(QMainWindow):
             and self.cur_video == len(self.videos) - 1
         ):
             self.close()
-            # window = cluster.MainWindow(*self.clustering_parameters)
-            # window.show()
         else:
             self.cur_video = (self.cur_video + 1) % len(self.videos)
             self.settings = read_settings(self.settings_file)
@@ -169,83 +154,35 @@ class MainWindow(QMainWindow):
         if self.cur_video < 0:
             self.cur_video = len(self.videos) + self.cur_video
         self.run_viewer_single()
-
-    # def load_video(self, folder = None):
-
-
-    #     self.videos = QFileDialog.getOpenFileNames(
-    #         self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
-    #     )[0]
-        
-    #     if type(self.videos) is not list:
-    #         self.videos = [self.videos]
-    #     if len(self.videos) > 1:
-    #         msg = QMessageBox()
-    #         msg.setText(
-    #             "You have chosen more than one video file. Would you like to open them in multiple view mode?"
-    #         )
-    #         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-    #         reply = msg.exec_()
-    #         if reply == QMessageBox.Yes:
-       
-    #             self.multiview = True
-    #         else:
-           
-    #             self.multiview = False
-        
-    #     # After videos are selected, copy them to the 'Tracking data' folder
     
-    #     self.copy_videos_to_tracking_data(self.videos, folder)
-     
-    
-    # # TODO: How can we change how the files are organised so that we can be in the project folder create 
-    # # but still access application files 
-    # def copy_videos_to_tracking_data(self, selected_videos, folder_name):
-        
-    #     current_directory = os.getcwd()
-      
-    #     # This will break if folder names would be changed
-    #     tracking_data_folder_path = os.path.join(current_directory, folder_name, "Tracking data")
-
-    #     # Create Tracking data folder if it doesn't exist
-    #     if not os.path.exists(tracking_data_folder_path):
-    #         os.makedirs(tracking_data_folder_path)
-
-    #     # Copy selected videos to Tracking data folder
-    #     for video_path in selected_videos:
-    #         video_filename = os.path.basename(video_path)
-    #         destination_path = os.path.join(tracking_data_folder_path, video_filename)
-    #         shutil.copy2(video_path, destination_path)
-
-    #     # print("Selected videos copied to 'Tracking data' folder.")
-        
     def load_project(self, videos, annotation_files, suggestion_files, hard_negatives):
  
         self.folder_path = QFileDialog.getExistingDirectory(self, "Open Folder")
         
-
+        
+       
         # Get the list of folders in the selected directory
         folders = [folder for folder in os.listdir(self.folder_path) if os.path.isdir(os.path.join(self.folder_path, folder))]
-        
-        # Check if there are no subfolders
         if not folders:
-            # Move up a folder
             self.folder_path = os.path.dirname(self.folder_path)
             print("Moved up to:", self.folder_path)
-            # Get the list of folders in the selected directory
             folders = [folder for folder in os.listdir(self.folder_path) if os.path.isdir(os.path.join(self.folder_path, folder))]
-        
-        # TODO: Load files for the project 
+    
         for folder_name in folders:
             if folder_name == "Annotations":
-                print("Performing action for Folder1")
+         
+                if annotation_files is None:
+                    annotation_files = [None for _ in self.videos]
+                self.annotation_files = annotation_files
                 
             elif folder_name == "Project Config":
-                print("Performing action for Folder2")
-
+                
+                self.settings_file = os.path.join(self.folder_path, "Project Config", "config.yaml")
+                self.settings = get_settings(self.settings_file, show_settings=False)
+                skeleton = self.settings["skeleton_files"]
+                
             elif folder_name == "Tracking data":
-                print("Performing action for Folder3")
-
+           
                 # Get the list of files in Tracking data folder
                 folder_path = os.path.join(self.folder_path, "Tracking data")
                 files = os.listdir(folder_path)
@@ -286,23 +223,27 @@ class MainWindow(QMainWindow):
                         if type(self.videos) is not list:
                             self.videos = list(self.videos)
 
+   
         if annotation_files is None:
             annotation_files = [None for _ in self.videos]
         self.annotation_files = annotation_files
-
+        
         if suggestion_files is None:
             suggestion_files = [None for _ in self.videos] 
         self.suggestion_files = suggestion_files
+        os.chdir(self.folder_path)
         self.run_video(self.multiview, videos)
+    
 
         if hard_negatives is not None:
             self.settings["hard_negative_classes"] = hard_negatives
+        
+        self.load_data_skl(skeleton)
+        
+        self._createActions()
+        self._createToolBar()
+        self._createMenuBar()
 
-        else:
-            # Default action for other folders
-            pass
-            
-        # Get the name of the selected folder
         # TODO: Not the best way to do this but need folder name for load_videos
         if self.folder_path:
             folder_name = os.path.basename(self.folder_path)
@@ -314,17 +255,20 @@ class MainWindow(QMainWindow):
         self._createToolBar()
         self._createMenuBar()
 
-    def run_video(self, multiview=False, current=0, settings_update=None):
+    def run_video(self, multiview=False, current = 0, settings_update=None):
     
         if settings_update is None:
             settings_update = {}
-   
+            
         videos = self.videos
+
         stacks, shapes, lens, filepaths, filenames = [], [], [], [], []
         self.settings = read_settings(self.settings_file)
         self.settings.update(settings_update)
   
         if multiview:
+
+            
             for i, video in enumerate(videos):
                 stack, shape, length = read_video(video, self.settings["backend"])
                 stacks.append(stack)
@@ -356,13 +300,16 @@ class MainWindow(QMainWindow):
             )
         
         else:
+   
             
             if len(self.videos) > 1:
-                
                 self.sequential = True
 
             #self.run_viewer_single(current)
             self.run_viewer_single(current = 0)
+        
+        
+       
            
          
 
@@ -469,26 +416,31 @@ class MainWindow(QMainWindow):
             else:
                 return None
             return al_points.get(name)
-        
+    
     def load_data_skl(self, skeleton):
-        
+
         update = False
         settings_update = {}
+        self.settings["skeleton_files"] = skeleton
+
+        if skeleton is None or len(skeleton[0]) == 0:
+            return None
         
-        if len(skeleton[0]) == 0:
-            print("No data for skeleton")
-            skeleton = None
         elif len(self.videos) > 0:
-            print("data for skeleton")
-            video = Form(self.videos).exec_()
-            if self.settings["skeleton_files"] == [None]:
-                files = [None for _ in self.videos]
-            else:
-                files = self.settings["skeleton_files"]
-            skeleton = [
-                files[i] if x != video else skeleton[0]
-                for i, x in enumerate(self.videos)
-            ]
+            for i, (video, skeleton_file) in enumerate(zip(self.videos, skeleton)):
+                print(f"loop / SKELETON FILE {i}: {skeleton_file}")
+                video = Form(self.videos, skeleton_file).exec_()
+                if self.settings["skeleton_files"] == [None]:
+                    files = [None for _ in self.videos]
+                else:
+                    files = self.settings["skeleton_files"]
+                skeleton = [
+                    files[i] if x != video else skeleton[0]
+                    for i, x in enumerate(self.videos)
+                ]
+                        
+                
+
         if skeleton is not None:
             settings_update["skeleton_files"] = skeleton
             update = True

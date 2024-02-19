@@ -5,6 +5,8 @@
 #
 from collections import defaultdict
 
+import os
+
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont, QPixmap
 from PyQt5.QtWidgets import (
@@ -607,27 +609,41 @@ class AssessmentDialog(QDialog):
 
 
 class Form(QDialog):
-    def __init__(self, videos, parent=None):
+    def __init__(self, videos, skeleton_file, parent=None):
         super(Form, self).__init__(parent)
         # Create widgets
+        
+        self.skeleton_files =QLabel(f"Skeleton file: {os.path.basename(skeleton_file)}")
         self.label = QLabel("Which video does this skeleton file relate to?")
         layout = QVBoxLayout()
         layout.addWidget(self.label)
+        layout.addWidget(self.skeleton_files)
         self.buttons = [QRadioButton(video) for video in videos]
         for button in self.buttons:
             layout.addWidget(button)
+        
+        # Add a radio button for "None"
+        self.none_button = QRadioButton("None")
+        layout.addWidget(self.none_button)
         
         self.setLayout(layout)
         self.videos = videos
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
         layout.addWidget(self.button_box)
         self.button_box.accepted.connect(self.accept)
+        self.none_button.toggled.connect(self.check_none_selected)
 
     def exec_(self):
         super().exec_()
         for i, button in enumerate(self.buttons):
             if button.isChecked():
                 return self.videos[i]
+
+       
+
+    def check_none_selected(self, checked):
+        if checked:
+            self.reject()
 
 
 class EpisodeSelector(QDialog):

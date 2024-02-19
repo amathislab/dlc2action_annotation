@@ -318,6 +318,7 @@ class Viewer(QWidget):
         self.bar.set_al_point(self.al_current, self.al_end)
 
     def find_skeleton_files(self):
+        
         if len(self.settings["detection_files"]) < len(self.filepaths):
             for i in range(len(self.filepaths) - len(self.settings["detection_files"])):
                 self.settings["detection_files"].append(None)
