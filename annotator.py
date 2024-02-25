@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import (
 
 from utils import get_settings, read_settings, read_video
 from widgets.core.backup import BackupManager
-from widgets.dialog import Form
+from widgets.dialog import Form, FormInit
 from widgets.settings import SettingsWindow, SetNewProject
 from widgets.viewer import Viewer as Viewer
 
@@ -427,22 +427,29 @@ class MainWindow(QMainWindow):
             return None
         
         elif len(self.videos) > 0:
+            updated_skeleton = []
             for i, (video, skeleton_file) in enumerate(zip(self.videos, skeleton)):
-                print(f"loop / SKELETON FILE {i}: {skeleton_file}")
-                video = Form(self.videos, skeleton_file).exec_()
+     
+                user_input = FormInit(self.videos, skeleton_file).exec_()
                 if self.settings["skeleton_files"] == [None]:
                     files = [None for _ in self.videos]
                 else:
-                    files = self.settings["skeleton_files"]
-                skeleton = [
-                    files[i] if x != video else skeleton[0]
-                    for i, x in enumerate(self.videos)
-                ]
+                    if user_input == video:
+                    # If it does, use the skeleton file from the input
+                        updated_skeleton.append(user_input)
+                    else:
+                    # If it doesn't, use the skeleton file from the original list
+                        updated_skeleton.append(skeleton_file)
+                #     files = self.settings["skeleton_files"]
+                # skeleton = [
+                #     files[i] if x != video else skeleton[0]
+                #     for i, x in enumerate(self.videos)
+                # ]
+          
                         
-                
-
         if skeleton is not None:
             settings_update["skeleton_files"] = skeleton
+     
             update = True
 
         if update:

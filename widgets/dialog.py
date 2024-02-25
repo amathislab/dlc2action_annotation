@@ -609,8 +609,35 @@ class AssessmentDialog(QDialog):
 
 
 class Form(QDialog):
-    def __init__(self, videos, skeleton_file, parent=None):
+    def __init__(self, videos, parent=None):
         super(Form, self).__init__(parent)
+        # Create widgets
+     
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+      
+        self.buttons = [QRadioButton(video) for video in videos]
+        for button in self.buttons:
+            layout.addWidget(button)
+        
+
+        
+        self.setLayout(layout)
+        self.videos = videos
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
+        layout.addWidget(self.button_box)
+        self.button_box.accepted.connect(self.accept)
+
+    def exec_(self):
+        super().exec_()
+        for i, button in enumerate(self.buttons):
+            if button.isChecked():
+                return self.videos[i]
+
+       
+class FormInit(QDialog):
+    def __init__(self, videos,skeleton_file, parent=None):
+        super(FormInit, self).__init__(parent)
         # Create widgets
         
         self.skeleton_files =QLabel(f"Skeleton file: {os.path.basename(skeleton_file)}")
@@ -639,7 +666,6 @@ class Form(QDialog):
             if button.isChecked():
                 return self.videos[i]
 
-       
 
     def check_none_selected(self, checked):
         if checked:
