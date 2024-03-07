@@ -13,6 +13,7 @@ from typing import Optional
 
 import click
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QAction,
@@ -29,6 +30,7 @@ from widgets.core.backup import BackupManager
 from widgets.dialog import Form, FormInit
 from widgets.settings import SettingsWindow, SetNewProject
 from widgets.viewer import Viewer as Viewer
+
 
 
 class MainWindow(QMainWindow):
@@ -83,21 +85,27 @@ class MainWindow(QMainWindow):
         self.al_points_dict = al_points_dictionary
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        msg = QMessageBox()
-        msg.setText("Welcome to DLC2action! ")
-        createProject = msg.addButton("Create Project", QMessageBox.ActionRole)
-        openProject = msg.addButton("Open Project", QMessageBox.ActionRole)
-
-        msg.exec_()
-
-        if msg.clickedButton() == createProject:
-                print("Create Project button clicked")
+        
+        start_dialog = QMessageBox()
+        start_dialog.setText("Welcome to DLC2action! ")
+        create_project = start_dialog.addButton("Create Project", QMessageBox.ActionRole)
+        open_project = start_dialog.addButton("Open Project", QMessageBox.ActionRole)
+        start_dialog.exec_()
+ 
+        if start_dialog.clickedButton() == create_project:
+               
+                config_data = {}
                 newProject = SetNewProject(self.settings_file)
                 newProject.exec_() 
-                loaded_videos = newProject.getVideos()
-                skeleton = newProject.getSkeletonData()
-                self.multiview = newProject.getMultiview()
-
+                loaded_videos = newProject.get_videos()
+                skeleton = newProject.get_skeleton_data()
+                self.multiview = newProject.get_multiview()
+                project_name = newProject.get_project_name()
+                annotator = newProject.get_annotator()
+                current_dir = os.getcwd()
+                current_folder = os.path.join(current_dir, project_name)
+                self.current_folder = current_folder
+                
                 if len(videos) == 0 and self.settings["video_files"] is not None:
                     videos = self.settings["video_files"]
 
@@ -123,18 +131,38 @@ class MainWindow(QMainWindow):
                 
                 if hard_negatives is not None:
                     self.settings["hard_negative_classes"] = hard_negatives
+                
+                #Temporary solution to save settings
+                r_file_path = 'Project_Config/config.yaml'
+                file_path = os.path.join(self.current_folder, r_file_path)
+                with open(file_path, 'r') as yaml_file:
+                    config_data = yaml.safe_load(yaml_file)
+
+                # Update the necessary fields
+                config_data['skeleton_files'] = skeleton
+                config_data['annotator'] = annotator
+                config_data['project'] = project_name
+
+                # Write the updated dictionary to the file
+                with open(file_path, 'w') as yaml_file:
+                    yaml.dump(config_data, yaml_file)
 
                 self.load_data_skl(skeleton)
                 self.launch_project()
                 
 
-        elif msg.clickedButton() == openProject:
+        elif start_dialog.clickedButton() == open_project:
                 self.current_folder = self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
                 # self.launch_project()
+    
+
 
 
     def closeEvent(self, a0) -> None:
-        self.backup_manager.stop()
+
+        if self.backup_manager:
+            self.backup_manager.stop()
+        
         self.closed.emit()
         super().closeEvent(a0)
 
@@ -175,9 +203,9 @@ class MainWindow(QMainWindow):
                     annotation_files = [None for _ in self.videos]
                 self.annotation_files = annotation_files
                 
-            elif folder_name == "Project Config":
+            elif folder_name == "Project_Config":
                 
-                self.settings_file = os.path.join(self.folder_path, "Project Config", "config.yaml")
+                self.settings_file = os.path.join(self.folder_path, "Project_Config", "config.yaml")
                 self.settings = get_settings(self.settings_file, show_settings=False)
                 skeleton = self.settings["skeleton_files"]
                 
@@ -304,14 +332,11 @@ class MainWindow(QMainWindow):
             
             if len(self.videos) > 1:
                 self.sequential = True
-
             #self.run_viewer_single(current)
             self.run_viewer_single(current = 0)
         
         
        
-           
-         
 
     def open_video(self):
         # self.viewer.save()
@@ -427,6 +452,7 @@ class MainWindow(QMainWindow):
             return None
         
         elif len(self.videos) > 0:
+            
             updated_skeleton = []
             for i, (video, skeleton_file) in enumerate(zip(self.videos, skeleton)):
      
@@ -437,6 +463,8 @@ class MainWindow(QMainWindow):
                     if user_input == video:
                     # If it does, use the skeleton file from the input
                         updated_skeleton.append(user_input)
+                    # elif user_input is None:
+                    #     updated_skeleton.append(None)
                     else:
                     # If it doesn't, use the skeleton file from the original list
                         updated_skeleton.append(skeleton_file)
@@ -449,7 +477,6 @@ class MainWindow(QMainWindow):
                         
         if skeleton is not None:
             settings_update["skeleton_files"] = skeleton
-     
             update = True
 
         if update:
@@ -778,11 +805,9 @@ class MainWindow(QMainWindow):
 
 def main(video, multiview,  dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
     app = QApplication(sys.argv)
-
     window = MainWindow(
         videos=video,
         multiview=multiview,
-     
         dev=dev,
         active_learning=active_learning,
         show_settings=open_settings,
@@ -790,10 +815,12 @@ def main(video, multiview,  dev, active_learning, open_settings, config_file, ba
         backup_dir=backup_dir,
         backup_interval=backup_interval,
     )
+    
+    
     window.show()
-
     app.exec_()
 
-
 if __name__ == "__main__":
+    
     main()
+    

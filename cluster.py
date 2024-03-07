@@ -238,6 +238,7 @@ class VideoWindow(QWidget):
         return QSize(400, 300)
 
     def closeEvent(self, a0):
+        
         self.canvas.set_play(False)
         self.closed.emit(self.n)
         a0.accept()

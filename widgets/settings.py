@@ -627,6 +627,7 @@ class SetNewProject(QDialog):
             self.videos = QFileDialog.getOpenFileNames(
                 self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
             )[0]
+            self.multiview = False
             
             if type(self.videos) is not list:
                 self.videos = [self.videos]
@@ -645,6 +646,9 @@ class SetNewProject(QDialog):
                 else:
             
                     self.multiview = False
+            
+ 
+               
             
             # Update the text of the loaded_video_label with the name of the first video
             if self.videos:
@@ -810,11 +814,12 @@ class SetNewProject(QDialog):
 
     def create_folder(self) -> None: 
         folder_name = self.settings["project"]
+        self.annotator = self.settings["annotator"]   
         self.folder_name = self.settings["project"]   
         current_directory = os.getcwd()
         source_file = 'colors.txt'
         folder_path = os.path.join(current_directory, folder_name)
-        subfolder_names = ["Annotations", "Project Config", "Tracking data"]
+        subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
         print(f"Folder '{folder_name}' created in '{current_directory}'")
         
         if not os.path.exists(folder_name):
@@ -840,7 +845,7 @@ class SetNewProject(QDialog):
                 default_config_data = yaml.safe_load(default_config_file)
 
             # Create config.yaml with default values from default_config.yaml
-            config_file_path = os.path.join(folder_path, "Project Config", "config.yaml")
+            config_file_path = os.path.join(folder_path, "Project_Config", "config.yaml")
             with open(config_file_path, "w") as config_file:
                 yaml.dump(default_config_data, config_file)
 
@@ -864,7 +869,7 @@ class SetNewProject(QDialog):
             folder_name = folder_name + "(2)"
             print(folder_name)
             folder_path = os.path.join(current_directory, folder_name)
-            subfolder_names = ["Annotations", "Project Config", "Tracking data"]
+            subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
             print(f"Folder '{folder_name}' created in '{current_directory}'")
             
             os.makedirs(folder_path)   
@@ -889,7 +894,7 @@ class SetNewProject(QDialog):
                 default_config_data = yaml.safe_load(default_config_file)
 
             # Create config.yaml with default values from default_config.yaml
-            config_file_path = os.path.join(folder_path, "Project Config", "config.yaml")
+            config_file_path = os.path.join(folder_path, "Project_Config", "config.yaml")
             with open(config_file_path, "w") as config_file:
                 yaml.dump(default_config_data, config_file)
 
@@ -914,16 +919,19 @@ class SetNewProject(QDialog):
     def reject(self):
         self.close()
         
-    def getFolderName(self):
+    def get_project_name(self):
         return self.folder_name
     
-    def getVideos(self):
+    def get_annotator(self):
+        return self.annotator
+    
+    def get_videos(self):
         return self.videos
     
-    def getMultiview(self):
+    def get_multiview(self):
         return self.multiview
     
-    def getSkeletonData(self):
+    def get_skeleton_data(self):
         return self.skeleton
     
     def create_symbolic_link(self, videos, folder_name, current_directory):
