@@ -818,6 +818,7 @@ class SetNewProject(QDialog):
         self.folder_name = self.settings["project"]   
         current_directory = os.getcwd()
         source_file = 'colors.txt'
+        
         folder_path = os.path.join(current_directory, folder_name)
         subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
         print(f"Folder '{folder_name}' created in '{current_directory}'")
@@ -857,9 +858,30 @@ class SetNewProject(QDialog):
             annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
             np.save(annotations_file_path, user_labels)
             
+            try: 
+                icons_folder = os.path.join(folder_path, 'icons')
+                os.makedirs(icons_folder, exist_ok=True)
+                current_directory = os.getcwd()
+                print("Current directory:", current_directory)   
+                icon_folder = os.path.join(current_directory, 'icons')       
+                icon_files = os.listdir(icon_folder)
+
+                for file_name in icon_files:
+                    source_file = os.path.join(icon_folder, file_name)
+                    destination_file = os.path.join(icons_folder, file_name)
+                    shutil.copy2(source_file, destination_file)
+                    
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                
             try:
+          
+                shutil.copy('annotator.py', folder_path)
+                shutil.copy('cluster.py', folder_path)
+                shutil.copy('utils.py', folder_path)
+                shutil.copy('AnnotationGUI.yaml', folder_path)
                 shutil.copy(source_file, folder_path)
-                print(f"File '{source_file}' copied to '{folder_path}'")
+    
 
             except Exception as e:
                 print(f"An error occurred: {e}")
@@ -877,16 +899,6 @@ class SetNewProject(QDialog):
             for subfolder_name in subfolder_names:
                 subfolder_path = os.path.join(folder_path, subfolder_name)
                 os.makedirs(subfolder_path)  
-                
-            # # Create settings.yaml with default values
-            # settings_file_path = os.path.join(folder_path, "Project Config", "settings.yaml")
-            # default_settings = {
-            #     "setting1": "default_value1",
-            #     "setting2": "default_value2",
-            #     # Add more default settings as needed
-            # }
-            # with open(settings_file_path, "w") as settings_file:
-            #     yaml.dump(default_settings, settings_file)  
             
             
             default_config_path = os.path.join(current_directory, "default_config.yaml")

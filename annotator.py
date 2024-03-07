@@ -53,7 +53,6 @@ class MainWindow(QMainWindow):
         hard_negatives=None,
         backup_dir: Optional[str] = None,
         backup_interval: int = 30,
-        
     ):
         
         super(MainWindow, self).__init__()
@@ -93,7 +92,6 @@ class MainWindow(QMainWindow):
         start_dialog.exec_()
  
         if start_dialog.clickedButton() == create_project:
-               
                 config_data = {}
                 newProject = SetNewProject(self.settings_file)
                 newProject.exec_() 
@@ -152,10 +150,10 @@ class MainWindow(QMainWindow):
                 
 
         elif start_dialog.clickedButton() == open_project:
-                self.current_folder = self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
-                # self.launch_project()
-    
-
+                # self.current_folder = self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
+                self.load_project(videos, annotation_files, suggestion_files, hard_negatives)
+                
+                self.launch_project()
 
 
     def closeEvent(self, a0) -> None:
@@ -186,9 +184,6 @@ class MainWindow(QMainWindow):
     def load_project(self, videos, annotation_files, suggestion_files, hard_negatives):
  
         self.folder_path = QFileDialog.getExistingDirectory(self, "Open Folder")
-        
-        
-       
         # Get the list of folders in the selected directory
         folders = [folder for folder in os.listdir(self.folder_path) if os.path.isdir(os.path.join(self.folder_path, folder))]
         if not folders:
@@ -259,6 +254,7 @@ class MainWindow(QMainWindow):
         if suggestion_files is None:
             suggestion_files = [None for _ in self.videos] 
         self.suggestion_files = suggestion_files
+        
         os.chdir(self.folder_path)
         self.run_video(self.multiview, videos)
     
@@ -268,15 +264,15 @@ class MainWindow(QMainWindow):
         
         self.load_data_skl(skeleton)
         
-        self._createActions()
-        self._createToolBar()
-        self._createMenuBar()
 
         # TODO: Not the best way to do this but need folder name for load_videos
-        if self.folder_path:
-            folder_name = os.path.basename(self.folder_path)
-            print("Selected folder name:", folder_name)
-            return folder_name
+        # if self.folder_path:
+        #     folder_name = os.path.basename(self.folder_path)
+        #     print("Selected folder name:", folder_name)
+        #     current_dir = os.getcwd()
+        #     current_folder = os.path.join(current_dir, folder_name)
+        #     self.current_folder = current_folder
+            # return folder_name
         
     def launch_project(self):
         self._createActions()
