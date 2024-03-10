@@ -448,31 +448,28 @@ class MainWindow(QMainWindow):
             return None
         
         elif len(self.videos) > 0:
-            
+            # Match skeleton files with corresponding videos 
             updated_skeleton = []
-            for i, (video, skeleton_file) in enumerate(zip(self.videos, skeleton)):
-     
-                user_input = FormInit(self.videos, skeleton_file).exec_()
-                if self.settings["skeleton_files"] == [None]:
-                    files = [None for _ in self.videos]
-                else:
-                    if user_input == video:
-                    # If it does, use the skeleton file from the input
-                        updated_skeleton.append(user_input)
-                    # elif user_input is None:
-                    #     updated_skeleton.append(None)
-                    else:
-                    # If it doesn't, use the skeleton file from the original list
-                        updated_skeleton.append(skeleton_file)
-                #     files = self.settings["skeleton_files"]
-                # skeleton = [
-                #     files[i] if x != video else skeleton[0]
-                #     for i, x in enumerate(self.videos)
-                # ]
-          
-                        
+            updated_videos = []
+            
+            for video_name in self.videos:
+                filename = video_name.split('/')[-1]
+                suffix = filename.split('.')[0]
+                
+                corresponding_file = None
+                for file_name in skeleton:
+                    if suffix in file_name:
+                        corresponding_file = file_name
+                        break
+
+               
+                updated_videos.append(video_name)
+                updated_skeleton.append(corresponding_file if corresponding_file else None)
+                    
+
         if skeleton is not None:
-            settings_update["skeleton_files"] = skeleton
+            settings_update["skeleton_files"] = updated_skeleton
+            self.videos = updated_videos 
             update = True
 
         if update:

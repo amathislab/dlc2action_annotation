@@ -649,10 +649,10 @@ class FormInit(QDialog):
         for button in self.buttons:
             layout.addWidget(button)
         
+        
         # Add a radio button for "None"
         self.none_button = QRadioButton("None")
         layout.addWidget(self.none_button)
-        
         self.setLayout(layout)
         self.videos = videos
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
@@ -662,14 +662,22 @@ class FormInit(QDialog):
 
     def exec_(self):
         super().exec_()
+               
+        if self.none_button.isChecked():
+            return None
+           
         for i, button in enumerate(self.buttons):
             if button.isChecked():
+                
                 return self.videos[i]
 
 
     def check_none_selected(self, checked):
         if checked:
-            self.reject()
+            # If "None" is selected, deselect other buttons
+            for button in self.buttons:
+                button.setChecked(False)
+            
 
 
 class EpisodeSelector(QDialog):
