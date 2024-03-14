@@ -307,6 +307,8 @@ def read_tracklets(filename, min_frames=0, verbose=True):
     return dict(coords), index_dict
 
 
+# Reads a YAML file specified by settings_file
+# Parses its content, and returns the configuration settings as a dictionary
 def read_settings(settings_file):
     with open(settings_file) as f:
         settings = yaml.load(f, Loader=yaml.FullLoader)

@@ -238,6 +238,7 @@ class VideoWindow(QWidget):
         return QSize(400, 300)
 
     def closeEvent(self, a0):
+        
         self.canvas.set_play(False)
         self.closed.emit(self.n)
         a0.accept()
@@ -1048,6 +1049,7 @@ class MainWindow(QWidget):
         self.new_window = annotator.MainWindow(
             videos=videos,
             multiview=False,
+            current_folder=None,
             active_learning=True,
             al_points_dictionary=al_dict,
             clustering_parameters=self.parameters,

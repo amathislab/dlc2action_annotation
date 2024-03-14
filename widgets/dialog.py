@@ -5,6 +5,8 @@
 #
 from collections import defaultdict
 
+import os
+
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont, QPixmap
 from PyQt5.QtWidgets import (
@@ -374,6 +376,8 @@ class ChoiceDialog(QDialog):
         self.display_cats = None
         self.action_dict = action_dict
         self.button = QPushButton("OK")
+
+        
         self.button.clicked.connect(self.finish)
         self.cats_checkbox = QCheckBox("Nested annotation")
         self.cats_checkbox.setChecked(False)
@@ -396,6 +400,65 @@ class ChoiceDialog(QDialog):
         self.layout.addWidget(self.button)
         self.layout.addWidget(self.cats_checkbox)
         self.setLayout(self.layout)
+    
+    # def add_line(self, ind=None, name="", sc=""):
+    #     if type(ind) is not int:
+    #         ind = self.max_key + 1
+    #         self.max_key += 1
+    #     if type(name) is not str:
+    #         name = ""
+    #         sc = ""
+    #     col = [255, 255, 255] if name == "" else get_color(self.colors, name)
+    #     line = CatLine(self, col, name, sc, self.lines, self.hot_buttons, self.colors)
+    #     line.next_line.connect(self.new_line)
+    #     line.finished.connect(self.finish)
+    #     self.lines.append(line)
+    #     self.line_layout.addWidget(line)
+    #     line.name_field.setFocus()
+    #     self.update()
+    #     # self.cat_list[ind] = line
+
+    # def new_line(self, n):
+    #     if n + 1 < len(self.lines):
+    #         self.lines[n + 1].name_field.setFocus()
+    #     else:
+    #         self.add_line()
+    #         self.lines[-1].name_field.setFocus()
+
+    # def create_lines(self, main_key="base"):
+    #     self.lines = []
+    #     for cat in self.catDict[main_key]:
+    #         if self.catDict[main_key][cat] not in self.invisible:
+    #             sc = ""
+    #             for key in self.shortCut[main_key]:
+    #                 if self.shortCut[main_key][key] == cat:
+    #                     sc = key
+    #             self.add_line(cat, self.catDict[main_key][cat], sc)
+    #             self.cat_list[cat] = self.lines[-1]
+    #     if len(self.catDict[main_key]) == 0:
+    #         self.add_line()
+
+    # def keyPressEvent(self, event):
+    #     if event.modifiers() & Qt.ShiftModifier:
+    #         shift = True
+    #     else:
+    #         shift = False
+    #     if event.key() == Qt.Key_Enter or event.key() == 16777220:
+    #         if shift:
+    #             self.finish()
+    #     else:
+    #         super(CatDialog, self).keyPressEvent(event)
+
+    # def add_action(self, text, i, sc):
+    #     self.catDict[self.key][i] = text
+    #     self.catDict["base"][i] = text
+    #     self.actions.append(text)
+    #     if self.key == "categories" and text not in self.catDict.keys():
+    #         self.catDict[text] = {}
+    #     if len(sc) == 1:
+    #         self.shortCut[self.key][sc] = i
+
+    
 
     def finish(self, event):
         self.actions = []
@@ -549,13 +612,16 @@ class Form(QDialog):
     def __init__(self, videos, parent=None):
         super(Form, self).__init__(parent)
         # Create widgets
-        self.label = QLabel("Which video does this skeleton file relate to?")
+     
         layout = QVBoxLayout()
         layout.addWidget(self.label)
+      
         self.buttons = [QRadioButton(video) for video in videos]
         for button in self.buttons:
             layout.addWidget(button)
-        # Set dialog layout
+        
+
+        
         self.setLayout(layout)
         self.videos = videos
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
@@ -567,6 +633,51 @@ class Form(QDialog):
         for i, button in enumerate(self.buttons):
             if button.isChecked():
                 return self.videos[i]
+
+       
+class FormInit(QDialog):
+    def __init__(self, videos,skeleton_file, parent=None):
+        super(FormInit, self).__init__(parent)
+        # Create widgets
+        
+        self.skeleton_files =QLabel(f"Skeleton file: {os.path.basename(skeleton_file)}")
+        self.label = QLabel("Which video does this skeleton file relate to?")
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        layout.addWidget(self.skeleton_files)
+        self.buttons = [QRadioButton(video) for video in videos]
+        for button in self.buttons:
+            layout.addWidget(button)
+        
+        
+        # Add a radio button for "None"
+        self.none_button = QRadioButton("None")
+        layout.addWidget(self.none_button)
+        self.setLayout(layout)
+        self.videos = videos
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
+        layout.addWidget(self.button_box)
+        self.button_box.accepted.connect(self.accept)
+        self.none_button.toggled.connect(self.check_none_selected)
+
+    def exec_(self):
+        super().exec_()
+               
+        if self.none_button.isChecked():
+            return None
+           
+        for i, button in enumerate(self.buttons):
+            if button.isChecked():
+                
+                return self.videos[i]
+
+
+    def check_none_selected(self, checked):
+        if checked:
+            # If "None" is selected, deselect other buttons
+            for button in self.buttons:
+                button.setChecked(False)
+            
 
 
 class EpisodeSelector(QDialog):

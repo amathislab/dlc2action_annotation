@@ -4,11 +4,15 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import os
+import yaml
+import numpy as np
+import shutil
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import (
     QComboBox,
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -66,7 +70,6 @@ class MultipleInputWidget(QWidget):
     def values(self):
         return [line.text() for line in self.lines if line.text() != ""]
 
-
 class MultipleDoubleInputWidget(QWidget):
     def __init__(self, values):
         super(MultipleDoubleInputWidget, self).__init__()
@@ -110,7 +113,6 @@ class MultipleDoubleInputWidget(QWidget):
             for line in self.lines
             if line[0].text() != "" and line[1].text() != ""
         ]
-
 
 class CategoryInputWidget(QWidget):
     def __init__(self, values):
@@ -161,13 +163,13 @@ class CategoryInputWidget(QWidget):
             if line[0].text() != "" and line[1].text() != ""
         }
 
-
 class SettingsWindow(QDialog):
     def __init__(self, config_path):
         super(SettingsWindow, self).__init__()
         self.config_path = config_path
         self.settings = self._open_yaml(config_path)
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        
         self.labels = {}
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
@@ -334,6 +336,7 @@ class SettingsWindow(QDialog):
     def set_general_tab(self):
         self.clearLayout(self.general_layout)
         self.set_general_tab_data()
+      
         self.general_layout.addRow("Annotator name: ", self.annotator)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
         self.general_layout.addRow("Data type: ", self.data_type_combo)
@@ -346,7 +349,9 @@ class SettingsWindow(QDialog):
         )
 
     def set_general_tab_data(self):
+
         self.annotator = self.set_le("annotator", set_int=False)
+        self.project = self.set_le("project", set_int=False)
         self.behaviors = self.set_multiple_input("actions", type="category")
         self.data_type_combo = self.set_combo("data_type", ["dlc", "calms21"])
         self.n_ind_le = self.set_le("n_ind")
@@ -507,6 +512,7 @@ class SettingsWindow(QDialog):
         self.settings["prior_suffix"] = self.prior_suffix_le.text()
         self.settings["DLC_suffix"] = self.dlc_suffix.values()
         self.settings["annotator"] = self.annotator.text()
+        self.settings["project"] = self.project.text()
         self.settings["segmentation_suffix"] = self.segmentation_le.text()
 
     def accept(self) -> None:
@@ -524,6 +530,467 @@ class SettingsWindow(QDialog):
             msg.exec_()
             return
         super().accept()
+
+    def _open_yaml(self, path: str):
+        """
+        Load a parameter dictionary from a .yaml file
+        """
+
+        with open(path) as f:
+            data = YAML().load(f)
+        if data is None:
+            data = {}
+        return data
+
+# TODO: Delete unused functions 
+class SetNewProject(QDialog):
+    def __init__(self, config_path):
+        super(SetNewProject, self).__init__()
+        # TODO: Modify this to be consistent with the creation of a new config file
+        self.config_path = config_path
+        self.settings = self._open_yaml(config_path)
+        # --------------------------------------------
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.labels = {}
+        self.folder_name = None  
+        self.skeleton = None
+        self.buttonBox = QDialogButtonBox(QBtn)
+        
+        
+        self.load_dlcfiles_label = QLabel("Select DLC files (.h5) :")
+        self.load_dlcfiles_button = QPushButton("Upload files")
+        self.load_dlcfiles_button.clicked.connect(self.load_skeleton)
+        self.loaded_dlcfiles_label = QLabel("No video loaded")
+        
+        self.browse_videos_label = QLabel("Select videos:")
+        self.browse_videos_button = QPushButton("Upload videos")
+        self.browse_videos_button.clicked.connect(self.load_videos)
+        
+        self.video_checkbox = QCheckBox("Copy video to folder")
+        self.video_checkbox.setChecked(False)
+        # Create a QLabel to display the loaded video name
+        self.loaded_video_label = QLabel("No video loaded")
+
+
+
+        # Connect the Cancel button's rejected signal to close the dialog
+        
+        # Must correct the reject function
+        self.buttonBox.rejected.connect(self.reject)
+        self.buttonBox.accepted.connect(self.accept)
+        # --------------------------------------------
+        self.tabs = QTabWidget()
+        self.tabs.tabBarClicked.connect(self.collect)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.tabs)
+        
+        self.layout.addWidget(self.load_dlcfiles_label)
+        self.layout.addWidget(self.load_dlcfiles_button)
+        self.layout.addWidget(self.loaded_dlcfiles_label)
+        
+        self.layout.addWidget(self.browse_videos_label)
+        self.layout.addWidget(self.browse_videos_button)
+        self.layout.addWidget(self.loaded_video_label)
+        self.layout.addWidget(self.video_checkbox)
+
+      
+        self.layout.addWidget(self.buttonBox)
+        self.setLayout(self.layout)
+        
+        self.functions = [
+            self.collect_general,
+ 
+        ]
+        self.create_general_tab()
+        self.set_general_tab()
+
+
+            
+# TODO: Function structure_project has a larger scope bc it also changes the ui ..
+    def load_skeleton(self):
+        file_filter = ".h5 files (*.h5)"
+        self.skeleton = QFileDialog.getOpenFileNames(self, "Open file", filter=file_filter)[0]
+        if not self.skeleton:
+            self.skeleton = None
+            self.loaded_dlcfiles_label.setText("No files loaded")
+        else:
+            h5_files = [file for file in self.skeleton if file.endswith('.h5')]
+            if not h5_files:
+                self.skeleton = None
+                self.loaded_dlcfiles_label.setText("No .h5 files selected")
+            else:
+                file_names = [os.path.basename(file) for file in h5_files]
+                self.loaded_dlcfiles_label.setText(f"Loaded dlc files: {', '.join(file_names)}")
+        
+            
+    def load_videos(self):
+            self.videos = QFileDialog.getOpenFileNames(
+                self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
+            )[0]
+            self.multiview = False
+            
+            if type(self.videos) is not list:
+                self.videos = [self.videos]
+            if len(self.videos) > 1:
+                msg = QMessageBox()
+                msg.setText(
+                    "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+                )
+                msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                reply = msg.exec_()
+                if reply == QMessageBox.Yes:
+                    
+        
+                    self.multiview = True
+                    
+                else:
+            
+                    self.multiview = False
+            
+ 
+               
+            
+            # Update the text of the loaded_video_label with the name of the first video
+            if self.videos:
+                video_names = [os.path.basename(video) for video in self.videos]
+                video_names_str = ', '.join(video_names)
+                self.loaded_video_label.setText(f"Loaded videos: {video_names_str}")
+            else:
+                self.loaded_video_label.setText("No videos loaded")
+                
+            
+            
+    def copy_videos_to_tracking_data(self, selected_videos, folder_name, current_directory):
+        tracking_data_folder_path = os.path.join(current_directory, folder_name)
+
+        # Create Tracking data folder if it doesn't exist
+        if not os.path.exists(tracking_data_folder_path):
+            os.makedirs(tracking_data_folder_path)
+
+        # Copy selected videos to Tracking data folder
+        for video_path in selected_videos:
+            video_filename = os.path.basename(video_path)
+            destination_path = os.path.join(tracking_data_folder_path, video_filename)
+            shutil.copy2(video_path, destination_path)
+
+        # print("Selected videos copied to 'Tracking data' folder.")
+    def copy_skeleton(self, files, current_directory):
+        if not files:
+            print("The list 'files' is empty.")
+        if files: 
+            for file_path in files:
+                filename = os.path.basename(file_path)
+                destination_path = os.path.join(current_directory, filename)
+                shutil.copy2(file_path, destination_path)
+            
+        
+    def update_data(self):
+        self.set_general_tab()
+
+    def collect(self, event=None):
+        for func in self.functions:
+            func()
+        self.update_data()
+        
+    def set_le(self, field, set_int=True):
+        """
+            This function creates a QLineEdit widget, sets it to accept only integers 
+            if specified, populates it with a value from the self.settings dictionary 
+            based on the provided field, and then returns the configured QLineEdit widget.
+        """
+        le = QLineEdit()
+        if set_int:
+            le.setValidator(QIntValidator())
+        le.setText(str(self.settings[field]))
+        return le
+
+    def set_combo(self, field, options):
+        combo = QComboBox()
+        for o in options:
+            combo.addItem(o)
+        combo.setCurrentIndex(options.index(self.settings[field]))
+        return combo
+
+    def set_file(self, field, filter=None, dir=False):
+        layout = QHBoxLayout()
+        file = self.settings[field]
+        file = file if file is not None else "None"
+        button = QPushButton("Find")
+        label = QLabel(os.path.basename(file))
+        if dir:
+            button.clicked.connect(lambda: self.get_dir(label, field, filter))
+        else:
+            button.clicked.connect(lambda: self.get_file(label, field, filter))
+        layout.addWidget(label)
+        layout.addWidget(button)
+        return layout
+
+    def set_spinbox(self, field, minimum, maximum, singlestep=None):
+        box = QSpinBox()
+        box.setMaximum(maximum)
+        box.setMinimum(minimum)
+        if singlestep is not None:
+            box.setSingleStep(singlestep)
+        box.setValue(self.settings[field])
+        return box
+
+    def set_toggle(self, field):
+        toggle = Toggle()
+        toggle.setChecked(self.settings[field])
+        return toggle
+
+    def set_multiple_input(self, field, type="single"):
+        if self.settings[field] is None:
+            if type == "category":
+                x = {}
+            else:
+                x = []
+        else:
+            x = self.settings[field]
+        if type == "double":
+            widget = MultipleDoubleInputWidget(x)
+        elif type == "category":
+            widget = CategoryInputWidget(x)
+        else:
+            widget = MultipleInputWidget(x)
+        return widget
+
+    def get_file(self, label_widget, field, filter=None):
+        file = QFileDialog().getOpenFileName(self, filter=filter)[0]
+        label_widget.setText(os.path.basename(file))
+        self.settings[field] = file
+
+    def get_dir(self, label_widget, field, filter=None):
+        file = QFileDialog().getExistingDirectory(self)
+        label_widget.setText(os.path.basename(file))
+        self.settings[field] = file
+
+    def create_general_tab(self):
+        self.general_tab = QWidget()
+        self.tabs.addTab(self.general_tab, "General")
+        self.general_layout = QFormLayout()
+        self.general_tab.setLayout(self.general_layout)
+
+    def set_general_tab(self):
+        self.clearLayout(self.general_layout)
+        self.set_general_tab_data()
+        self.general_layout.addRow("Annotator name: ", self.annotator)
+        self.general_layout.addRow("Project Title: ", self.project)
+        self.general_layout.addRow("Behaviors: ", self.behaviors)
+        
+        
+        # self.general_layout.addRow("Data type: ", self.data_type_combo)
+  
+    def set_general_tab_data(self):
+
+        self.annotator = self.set_le("annotator", set_int=False)
+        self.project = self.set_le("project", set_int=False)       
+        self.behaviors = self.set_multiple_input("actions", type="category")
+        
+        
+
+    def create_fp_tab(self):
+        self.fp_tab = QWidget()
+        self.tabs.addTab(self.fp_tab, "File")
+        self.fp_layout = QFormLayout()
+        self.fp_tab.setLayout(self.fp_layout)
+
+    def clearLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget() is not None:
+                    child.widget().deleteLater()
+                elif child.layout() is not None:
+                    self.clearLayout(child.layout())
+
+    def collect_general(self):
+        self.settings["annotator"] = self.annotator.text()
+        self.settings["project"] = self.project.text()  
+        self.settings["actions"] = (
+            self.behaviors.values() if len(self.behaviors.values()) > 0 else None
+        )
+      
+
+    def create_folder(self) -> None: 
+        folder_name = self.settings["project"]
+        self.annotator = self.settings["annotator"]   
+        self.folder_name = self.settings["project"]   
+        current_directory = os.getcwd()
+        source_file = 'colors.txt'
+        
+        folder_path = os.path.join(current_directory, folder_name)
+        subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
+        print(f"Folder '{folder_name}' created in '{current_directory}'")
+        
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_path)   
+            # Close the dialog after creating the folder
+            for subfolder_name in subfolder_names:
+                subfolder_path = os.path.join(folder_path, subfolder_name)
+                os.makedirs(subfolder_path)  
+                
+            # # Create settings.yaml with default values
+            # settings_file_path = os.path.join(folder_path, "Project Config", "settings.yaml")
+            # default_settings = {
+            #     "setting1": "default_value1",
+            #     "setting2": "default_value2",
+            #     # Add more default settings as needed
+            # }
+            # with open(settings_file_path, "w") as settings_file:
+            #     yaml.dump(default_settings, settings_file)  
+            
+            
+            default_config_path = os.path.join(current_directory, "default_config.yaml")
+            with open(default_config_path, "r") as default_config_file:
+                default_config_data = yaml.safe_load(default_config_file)
+
+            # Create config.yaml with default values from default_config.yaml
+            config_file_path = os.path.join(folder_path, "Project_Config", "config.yaml")
+            with open(config_file_path, "w") as config_file:
+                yaml.dump(default_config_data, config_file)
+
+            # Get user-defined labels 
+            user_labels = self.behaviors.values()
+
+            # Save user-defined labels to annotations.npy in Annotations folder
+            annotations_folder_path = os.path.join(folder_path, "Annotations")
+            annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
+            np.save(annotations_file_path, user_labels)
+            
+            try: 
+                icons_folder = os.path.join(folder_path, 'icons')
+                os.makedirs(icons_folder, exist_ok=True)
+                current_directory = os.getcwd()
+                print("Current directory:", current_directory)   
+                icon_folder = os.path.join(current_directory, 'icons')       
+                icon_files = os.listdir(icon_folder)
+
+                for file_name in icon_files:
+                    source_file = os.path.join(icon_folder, file_name)
+                    destination_file = os.path.join(icons_folder, file_name)
+                    shutil.copy2(source_file, destination_file)
+                    
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                
+            try:
+          
+                shutil.copy('annotator.py', folder_path)
+                shutil.copy('cluster.py', folder_path)
+                shutil.copy('utils.py', folder_path)
+                shutil.copy('AnnotationGUI.yaml', folder_path)
+                shutil.copy(source_file, folder_path)
+    
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+        else:
+            print("Folder already exist")
+            folder_name = folder_name + "(2)"
+            print(folder_name)
+            folder_path = os.path.join(current_directory, folder_name)
+            subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
+            print(f"Folder '{folder_name}' created in '{current_directory}'")
+            
+            os.makedirs(folder_path)   
+            # Close the dialog after creating the folder
+            for subfolder_name in subfolder_names:
+                subfolder_path = os.path.join(folder_path, subfolder_name)
+                os.makedirs(subfolder_path)  
+            
+            
+            default_config_path = os.path.join(current_directory, "default_config.yaml")
+            with open(default_config_path, "r") as default_config_file:
+                default_config_data = yaml.safe_load(default_config_file)
+
+            # Create config.yaml with default values from default_config.yaml
+            config_file_path = os.path.join(folder_path, "Project_Config", "config.yaml")
+            with open(config_file_path, "w") as config_file:
+                yaml.dump(default_config_data, config_file)
+
+            # Get user-defined labels 
+            user_labels = self.behaviors.values()
+
+            # Save user-defined labels to annotations.npy in Annotations folder
+            annotations_folder_path = os.path.join(folder_path, "Annotations")
+            annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
+            np.save(annotations_file_path, user_labels)
+            
+            try:
+                shutil.copy(source_file, folder_path)
+                print(f"File '{source_file}' copied to '{folder_path}'")
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+        
+    def close_(self):
+        self.close()
+    
+    def reject(self):
+        self.close()
+        
+    def get_project_name(self):
+        return self.folder_name
+    
+    def get_annotator(self):
+        return self.annotator
+    
+    def get_videos(self):
+        return self.videos
+    
+    def get_multiview(self):
+        return self.multiview
+    
+    def get_skeleton_data(self):
+        return self.skeleton
+    
+    def create_symbolic_link(self, videos, folder_name, current_directory):
+        tracking_data_folder_path = os.path.join(current_directory, folder_name)
+        
+        if not os.path.exists(tracking_data_folder_path):
+            os.makedirs(tracking_data_folder_path)
+            
+        for video in videos:
+            video_name = os.path.basename(video)
+            link_path = os.path.join(tracking_data_folder_path, video_name)
+            try:
+                os.symlink(video, link_path)
+                print(f"Symbolic link created: {link_path}")
+            except Exception as e:
+                print(f"Error creating symbolic link for {video_name}: {e}")
+    
+    def accept(self) -> None:
+        self.collect()
+        for key, value in list(self.settings.items()):
+            if value == "None":
+                self.settings[key] = None
+        with open(self.config_path, "w") as f:
+            YAML().dump(self.settings, f)
+        if self.settings["suffix"] is None:
+            msg = QMessageBox()
+            msg.setText(
+                "The annotation suffix parameter cannot be None, please set it to a string value!"
+            )
+            msg.exec_()
+            return
+        
+        self.create_folder()
+        current_directory = os.getcwd()
+        folder = self.folder_name
+        current_directory = os.path.join(current_directory, folder )
+        self.copy_skeleton(self.skeleton, current_directory)
+        
+        if self.video_checkbox.isChecked():
+            print("Copying data")
+            self.copy_videos_to_tracking_data(self.videos, "Tracking data", current_directory)
+        else: 
+            self.create_symbolic_link(self.videos, "Tracking data", current_directory)
+            print("Creating a link")
+
+        super().accept()
+        self.close()
 
     def _open_yaml(self, path: str):
         """
