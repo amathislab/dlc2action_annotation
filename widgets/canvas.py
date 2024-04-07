@@ -10,6 +10,9 @@ from utils import SignalEmitter, WorkerThread, read_stack
 
 from .viewbox import VideoViewBox, VideoViewBox3D
 
+from PyQt5.QtWidgets import QMessageBox
+
+
 
 class VideoCanvas(SceneCanvas):
     def __init__(
@@ -631,6 +634,10 @@ class VideoCanvas(SceneCanvas):
         elif event.key.name in list(map(str, range(min(self.window.n_animals(), 10)))):
             self.window.set_animal(int(event.key.name))
         else:
+            warning = QMessageBox()
+            warning.setWindowTitle("Warning")
+            warning.setText('Shortcut does not exist.')
+            warning.exec_()
             print(f"canvas didn't recognise key {event.key.name}")
 
     def get_ind_start_end(self, animal):

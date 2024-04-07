@@ -37,7 +37,20 @@ from PyQt5.QtWidgets import (
 
 from utils import get_color
 
-
+class WarningWindow(QDialog):
+    def __init__(self, parent=None):
+        super(WarningWindow).__init__(parent)
+        self.setWindowTitle('Warning')
+        layout = QVBoxLayout()
+        btn = QPushButton("OK")
+        btn.clicked.connect(self.accept)
+        layout.addWidget(QMessageBox.warning(self, 'warning'))
+        layout.addWidget(btn)
+        self.setLayout(layout)
+        
+    def exec_(self):
+        super().exec_()
+        
 class LineEdit(QLineEdit):
     next_field = pyqtSignal()
     finished = pyqtSignal()
@@ -162,6 +175,22 @@ class CatDialog(QDialog):
         self.cat_list = {}
         self.invisible = invisible
         self.hot_buttons = []
+        
+        cwd = os.getcwd()
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
         with open("colors.txt") as f:
             self.colors = [
                 list(map(lambda x: float(x), line.split())) for line in f.readlines()
@@ -612,7 +641,6 @@ class Form(QDialog):
     def __init__(self, videos, parent=None):
         super(Form, self).__init__(parent)
         # Create widgets
-     
         layout = QVBoxLayout()
         layout.addWidget(self.label)
       
@@ -634,49 +662,65 @@ class Form(QDialog):
             if button.isChecked():
                 return self.videos[i]
 
-       
+
 class FormInit(QDialog):
-    def __init__(self, videos,skeleton_file, parent=None):
+    def __init__(self, videos, skeleton_file, parent=None):
         super(FormInit, self).__init__(parent)
-        # Create widgets
-        
         self.skeleton_files =QLabel(f"Skeleton file: {os.path.basename(skeleton_file)}")
         self.label = QLabel("Which video does this skeleton file relate to?")
         layout = QVBoxLayout()
         layout.addWidget(self.label)
         layout.addWidget(self.skeleton_files)
-        self.buttons = [QRadioButton(video) for video in videos]
-        for button in self.buttons:
-            layout.addWidget(button)
         
-        
+        if len(videos) > 1:
+            self.buttons = [QRadioButton(video) for video in videos]
+            for button in self.buttons:
+                layout.addWidget(button)
+        else:
+            self.buttons = QRadioButton(videos)
+            layout.addWidget(self.buttons)
+
+ 
         # Add a radio button for "None"
         self.none_button = QRadioButton("None")
         layout.addWidget(self.none_button)
         self.setLayout(layout)
+        
         self.videos = videos
+        
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
         layout.addWidget(self.button_box)
+        self.button_box.setEnabled(False)
+        
+        self.none_button.clicked.connect(self.toggle_accept)
+        if len(videos) > 1:
+            for button in self.buttons:
+                button.clicked.connect(self.toggle_accept)
+        else:
+            self.buttons.clicked.connect(self.toggle_accept)
+        
         self.button_box.accepted.connect(self.accept)
-        self.none_button.toggled.connect(self.check_none_selected)
+        self.none_button.toggled.connect(self.accept)
+        
 
+    def toggle_accept(self):
+        self.button_box.setEnabled(True)
+
+        
+        
     def exec_(self):
         super().exec_()
-               
-        if self.none_button.isChecked():
-            return None
-           
-        for i, button in enumerate(self.buttons):
-            if button.isChecked():
-                
-                return self.videos[i]
+        # if len(self.videos) > 1:
+        #     for i, button in enumerate(self.buttons):
+        #         if button.isChecked():        
+        #             return self.videos[i]
+        # else: 
+        #     if button.isChecked():
+        #         return self.videos
+            
+        # if self.none_button.isChecked():
+        #     return None
 
-
-    def check_none_selected(self, checked):
-        if checked:
-            # If "None" is selected, deselect other buttons
-            for button in self.buttons:
-                button.setChecked(False)
             
 
 

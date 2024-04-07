@@ -70,6 +70,7 @@ class Viewer(QWidget):
     ):
         super(Viewer, self).__init__()
         self.settings = settings
+        # Filespaths: Path to video files 
         self.filepaths = filepaths
         self.filenames = filenames
         self.layout = QHBoxLayout()
@@ -91,11 +92,23 @@ class Viewer(QWidget):
         self.displayed_animals = []
         self.sequential = sequential
         self.animals = None
-        with open("colors.txt") as f:
-            self.animal_colors = [
-                list(map(lambda x: float(x) / 255, line.split()))
-                for line in f.readlines()
-            ]
+        
+        cwd = os.getcwd()
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+                
         self.active = True
         self.display_categories = True
         if self.display_categories:
