@@ -94,7 +94,7 @@ class Viewer(QWidget):
         self.animals = None
         
         cwd = os.getcwd()
-        if not cwd.endswith('/Project_Config'):
+        if not cwd.endswith('Project_Config'):
             os.chdir(os.path.join(os.getcwd(),'Project_Config'))
             with open("colors.txt") as f:
                 self.animal_colors = [

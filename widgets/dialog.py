@@ -672,15 +672,16 @@ class FormInit(QDialog):
         layout.addWidget(self.label)
         layout.addWidget(self.skeleton_files)
         
-        if len(videos) > 1:
+        if isinstance(videos, list):
             self.buttons = [QRadioButton(video) for video in videos]
             for button in self.buttons:
                 layout.addWidget(button)
-        else:
+        elif isinstance(videos, str):
             self.buttons = QRadioButton(videos)
             layout.addWidget(self.buttons)
+        else:
+            raise TypeError("videos must be a list or a string")
 
- 
         # Add a radio button for "None"
         self.none_button = QRadioButton("None")
         layout.addWidget(self.none_button)
@@ -693,11 +694,13 @@ class FormInit(QDialog):
         self.button_box.setEnabled(False)
         
         self.none_button.clicked.connect(self.toggle_accept)
-        if len(videos) > 1:
+        if isinstance(videos,list):
             for button in self.buttons:
                 button.clicked.connect(self.toggle_accept)
-        else:
+        elif isinstance(videos, str):
             self.buttons.clicked.connect(self.toggle_accept)
+        else:
+            raise TypeError("videos must be a list or a string")
         
         self.button_box.accepted.connect(self.accept)
         self.none_button.toggled.connect(self.accept)
