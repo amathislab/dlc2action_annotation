@@ -191,11 +191,19 @@ class CatDialog(QDialog):
                     list(map(lambda x: float(x) / 255, line.split()))
                     for line in f.readlines()
                 ]
-        with open("colors.txt") as f:
-            self.colors = [
-                list(map(lambda x: float(x), line.split())) for line in f.readlines()
-            ]
-
+                
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
         self.layout = QVBoxLayout()
         self.label = QVBoxLayout()
         if self.key != "base":

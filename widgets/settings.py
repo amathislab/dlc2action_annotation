@@ -168,9 +168,11 @@ class SettingsWindow(QDialog):
     def __init__(self, config_path):
         super(SettingsWindow, self).__init__()
         self.config_path = config_path
+        cwd = os.getcwd()
+        os.chdir(os.path.join(os.getcwd(),'Project_Config'))
         self.settings = self._open_yaml(config_path)
+        os.chdir(cwd)
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        
         self.labels = {}
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
@@ -699,15 +701,13 @@ class SetNewProject(QDialog):
             destination_path = os.path.join(tracking_data_folder_path, video_filename)
             shutil.copy2(video_path, destination_path)
 
-        # print("Selected videos copied to 'Tracking data' folder.")
+      
     def copy_skeleton(self, files, current_directory):
         if not files:
             print("The list 'files' is empty.")
         if files: 
             for file_path in files:
-                filename = os.path.basename(file_path)
-                destination_path = os.path.join(current_directory, filename)
-                shutil.copy2(file_path, destination_path)
+                shutil.copy2(file_path, current_directory)
             
         
     def update_data(self):
@@ -803,8 +803,7 @@ class SetNewProject(QDialog):
         self.general_layout.addRow("Annotator name: ", self.annotator)
         self.general_layout.addRow("Project Title: ", self.project)
         self.general_layout.addRow("Behaviors: ", self.behaviors)
-        
-        
+     
         # self.general_layout.addRow("Data type: ", self.data_type_combo)
   
     def set_general_tab_data(self):
@@ -1027,6 +1026,7 @@ class SetNewProject(QDialog):
         current_directory = os.getcwd() 
         folder = self.folder_name
         current_directory = os.path.join(current_directory, folder )
+        print('current_directory  ', current_directory )
         self.copy_skeleton(self.skeleton, current_directory)
         
         if self.video_checkbox.isChecked():
