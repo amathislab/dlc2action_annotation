@@ -345,6 +345,175 @@ class CatDialog(QDialog):
     def exec_(self):
         super(CatDialog, self).exec_()
         return (self.catDict, self.shortCut, self.invisible, self.actions)
+    
+class ActListDialog(QDialog):
+    def __init__(self, actions, shortCut, invisible, *args, **kwargs):
+        super(CatDialog, self).__init__(*args, **kwargs)
+        self.shortCut = shortCut
+        self.action_list = actions
+        self.cat_list = {}
+        self.invisible = invisible
+        self.hot_buttons = []
+        
+        cwd = os.getcwd()
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+                
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
+        self.layout = QVBoxLayout()
+        self.label = QVBoxLayout()
+        self.text = QLabel(
+            "Here you can edit the label names and the shortcuts. \n"
+            "Press Enter to add a new line, Shift+Enter to move on."
+        )
+        self.label.addWidget(self.text)
+        self.layout.addLayout(self.label)
+
+        self.line_layout = QVBoxLayout()
+        self.line_widget = QWidget()
+        self.line_widget.setLayout(self.line_layout)
+        self.line_scroll = QScrollArea()
+        self.line_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.line_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.line_scroll.setWidgetResizable(True)
+        self.line_scroll.setWidget(self.line_widget)
+        scroll_bar = self.line_scroll.verticalScrollBar()
+        scroll_bar.rangeChanged.connect(
+            lambda: scroll_bar.setValue(scroll_bar.maximum())
+        )
+        self.create_lines()
+        self.max_key = max(self.action_list)
+        self.layout.addWidget(self.line_scroll)
+
+        self.new_button = QPushButton("Add label")
+        self.new_button.clicked.connect(self.add_line)
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.finish)
+        self.layout.addWidget(self.new_button)
+        self.layout.addWidget(self.ok_button)
+        self.setLayout(self.layout)
+
+    def show_warning(self, t, value=None):
+        msg = QMessageBox()
+        if t == "used":
+            msg.setText(f"The {value} shortcut is already in use!")
+        elif t == "long":
+            msg.setText("Shortcuts need to be one letter long!")
+        elif t == "line":
+            msg.setText("You need to fill all previous lines first!")
+        elif t == "category":
+            msg.setText(f"You already have a {value} label in a different category!")
+        msg.setWindowTitle("Warning")
+        msg.addButton(QMessageBox.Ok)
+        msg.exec_()
+
+    def add_line(self, ind=None, name="", sc=""):
+        if type(ind) is not int:
+            ind = self.max_key + 1
+            self.max_key += 1
+        if type(name) is not str:
+            name = ""
+            sc = ""
+        col = [255, 255, 255] if name == "" else get_color(self.colors, name)
+        line = CatLine(self, col, name, sc, self.lines, self.hot_buttons, self.colors)
+        line.next_line.connect(self.new_line)
+        line.finished.connect(self.finish)
+        self.lines.append(line)
+        self.line_layout.addWidget(line)
+        line.name_field.setFocus()
+        self.update()
+        # self.cat_list[ind] = line
+
+    def new_line(self, n):
+        if n + 1 < len(self.lines):
+            self.lines[n + 1].name_field.setFocus()
+        else:
+            self.add_line()
+            self.lines[-1].name_field.setFocus()
+
+    def create_lines(self):
+        self.lines = []
+        for action in self.action_list:
+            if action not in self.invisible:
+                sc = ""
+                for key in self.shortCut:
+                    if self.shortCut[key] == action:
+                        sc = key
+                self.add_line(action, action, sc)
+                self.cat_list[action] = self.lines[-1]
+        if len() == 0:
+            self.add_line()
+
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.ShiftModifier:
+            shift = True
+        else:
+            shift = False
+        if event.key() == Qt.Key_Enter or event.key() == 16777220:
+            if shift:
+                self.finish()
+        else:
+            super(CatDialog, self).keyPressEvent(event)
+
+    def add_action(self, text, i, sc):
+        self.action_list[i] = text
+        self.actions.append(text)
+        if len(sc) == 1:
+            self.shortCut[sc] = i
+
+    def finish(self, event=None):
+        self.actions = []
+        self.shortCut = {}
+        taken = [""] + self.invisible
+        for i, line in self.cat_list.items():
+            text = line.name_field.text()
+            if text in self.invisible:
+                self.invisible.remove(text)
+            act = self.action_list[i]
+            sc = line.sc_field.text()
+            if text == "":
+                self.invisible.append(act)
+            else:
+                self.add_action(text, i, sc)
+                taken.append(text)
+        max_key = max(self.action_list)
+        for line in self.lines:
+            text = line.name_field.text()
+            if text in self.invisible:
+                self.actions.append(text)
+                self.invisible.remove(text)
+            sc = line.sc_field.text()
+            if text not in taken:
+                max_key += 1
+                self.add_action(text, max_key, sc)
+        self.accept()
+
+    def exec_(self):
+        super(CatDialog, self).exec_()
+        return (self.catDict, self.shortCut, self.invisible, self.actions)
 
 
 class LoadDialog(QDialog):

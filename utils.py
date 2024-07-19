@@ -309,45 +309,46 @@ def read_tracklets(filename, min_frames=0, verbose=True):
 
 # Reads a YAML file specified by settings_file
 # Parses its content, and returns the configuration settings as a dictionary
-def read_settings(settings_file, folder_name):
+def read_settings(settings_file: str):
 
-    if not os.path.exists(settings_file):
-        # Change directory and try again
-        src = os.path.join(os.getcwd(), 'Project_Config')
-        os.chdir(src)
-        with open(settings_file, 'r') as f:
-            settings = yaml.load(f, Loader=yaml.FullLoader)
-        return settings
-  
-    else:
-        # Read the file if it exists
-        with open(settings_file, 'r') as f:
-            settings = yaml.load(f, Loader=yaml.FullLoader)
-        
-        return settings
+    # Read the file if it exists
+    with open(settings_file, "r") as f:
+        settings = yaml.load(f, Loader=yaml.FullLoader)
+
+    return settings
 
 
-def get_settings(config_file, show_settings, folder_name=None):
-    if not os.path.exists(config_file):
-        shutil.copyfile("default_config.yaml", config_file)
-        show_settings = True
-    else:
-        with open(config_file) as f:
-            config = YAML().load(f)
-        with open("default_config.yaml") as f:
-            default_config = YAML().load(f)
-        to_remove = []
-        for key, value in default_config.items():
-            if key in config:
-                to_remove.append(key)
-        for key in to_remove:
-            default_config.pop(key)
-        config.update(default_config)
-        with open(config_file, "w") as f:
-            YAML().dump(config, f)
+def get_settings(config_file: str, show_settings: bool):
+
+    with open(config_file) as f:
+        config = YAML().load(f)
+    with open("default_config.yaml") as f:
+        default_config = YAML().load(f)
+    to_remove = []
+    for key, value in default_config.items():
+        if key in config:
+            to_remove.append(key)
+    for key in to_remove:
+        default_config.pop(key)
+    config.update(default_config)
+    with open(config_file, "w") as f:
+        YAML().dump(config, f)
+
     if show_settings:
         SettingsWindow(config_file).exec_()
-    return read_settings(config_file, folder_name)
+
+    return read_settings(config_file)
+
+
+def save_settings(config: dict, config_file: str):
+    """Save the configuration settings to a YAML file"""
+
+    if os.path.exists(config_file):
+        prev_config = read_settings(config_file)
+    prev_config.update(config)
+
+    with open(config_file, "w") as f:
+        YAML().dump(config, f)
 
 
 class WorkerThread(QThread):
@@ -466,44 +467,6 @@ class BoxLoader:
         del array
         frames = sorted(list(self.boxes.keys()))
         self.boxes = [self.boxes[frame] for frame in range(frames[-1])]
-        # self.count = defaultdict(lambda: 0)
-        # running_dict = {}
-        # self.boxes = []
-        # self.n_ind = 0
-        # for frame_i, frame in enumerate(self.array):
-        #     self.boxes.append(defaultdict(lambda: [-100, -100, 10, 10, -100, -100]))
-        #     updated = set()
-        #     for box_i, box in enumerate(frame):
-        #         y1, x1, y2, x2, id = box
-        #         center_x = (x1 + x2) / 2
-        #         center_y = (y1 + y2) / 2
-        #         w = np.abs(x2 - x1)
-        #         h = np.abs(y2 - y1)
-        #         rect_x = center_x + w / 2
-        #         rect_y = center_y - h / 2
-        #         if id not in running_dict.keys():
-        #             cur = 0
-        #             while cur in [running_dict[x] for x in running_dict]:
-        #                 cur += 1
-        #             running_dict[id] = cur
-        #             if cur + 1 > self.n_ind:
-        #                 self.n_ind = cur + 1
-        #         updated.add(id)
-        #         self.boxes[frame_i][running_dict[id]] = [
-        #             center_x,
-        #             center_y,
-        #             w,
-        #             h,
-        #             rect_x,
-        #             rect_y,
-        #         ]
-        #         self.count[id] = 0
-        #     not_updated = set(running_dict.keys()).difference(updated)
-        #     for id in not_updated:
-        #         self.count[id] += 1
-        #         if self.count[id] > self.lim_count:
-        #             del self.count[id]
-        #             del running_dict[id]
 
     def get_boxes(self):
         return self.boxes

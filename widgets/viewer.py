@@ -70,7 +70,7 @@ class Viewer(QWidget):
     ):
         super(Viewer, self).__init__()
         self.settings = settings
-        # Filespaths: Path to video files 
+        # Filespaths: Path to video files
         self.filepaths = filepaths
         self.filenames = filenames
         self.layout = QHBoxLayout()
@@ -92,10 +92,10 @@ class Viewer(QWidget):
         self.displayed_animals = []
         self.sequential = sequential
         self.animals = None
-        
+
         cwd = os.getcwd()
-        if not cwd.endswith('Project_Config'):
-            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+        if not cwd.endswith("Project_Config"):
+            os.chdir(os.path.join(os.getcwd(), "Project_Config"))
             with open("colors.txt") as f:
                 self.animal_colors = [
                     list(map(lambda x: float(x) / 255, line.split()))
@@ -108,9 +108,9 @@ class Viewer(QWidget):
                     list(map(lambda x: float(x) / 255, line.split()))
                     for line in f.readlines()
                 ]
-                
+
         self.active = True
-        self.display_categories = True
+        self.display_categories = False
         if self.display_categories:
             self.active_list = "categories"
         else:
@@ -230,15 +230,9 @@ class Viewer(QWidget):
         # success = False
 
         # if type(self.action_dict) is dict or settings["cat_choice"]:
-            # Load or create a project window
+        # Load or create a project window
 
-        
-   
-
-
-
-
-            # self.choose_cats()
+        # self.choose_cats()
         self.initialize_cats()
 
         self.correct_animal = self.current_animal_name() in self.displayed_animals
@@ -331,7 +325,7 @@ class Viewer(QWidget):
         self.bar.set_al_point(self.al_current, self.al_end)
 
     def find_skeleton_files(self):
-        
+
         if len(self.settings["detection_files"]) < len(self.filepaths):
             for i in range(len(self.filepaths) - len(self.settings["detection_files"])):
                 self.settings["detection_files"].append(None)
@@ -514,11 +508,10 @@ class Viewer(QWidget):
         else:
             self.canvas.set_box_update(value)
 
-
     def initialize_cats(self):
         self.shortCut = defaultdict(lambda: {})
         self.catDict = defaultdict(lambda: [])
-        self.invisible_actions = []
+        self.invisible_actions = ["actions"]
         taken = defaultdict(lambda: [str(i) for i in range(min(self.n_ind, 10))])
         actions = []
         for key in self.settings["actions"]:
@@ -629,55 +622,56 @@ class Viewer(QWidget):
         #         self.catDict, self.shortCut, self.invisible_actions, "categories", self
         #     )
         #     self.catDict, self.shortCut, self.invisible_actions, _ = dialog.exec_()
-            # keys = [key for key in self.catDict if key not in ["base", "categories"]]
-        
+        # keys = [key for key in self.catDict if key not in ["base", "categories"]]
+
         # else:
         #     keys = ["base"]
         # for key in keys:
-        
-        # Changed KEY to "BASE"
-            dialog = CatDialog(
-                self.catDict, self.shortCut, self.invisible_actions, "base", self
-            )
-            (
-                self.catDict,
-                self.shortCut,
-                self.invisible_actions,
-                actions,
-            ) = dialog.exec_()
-        #     if key != "base":
-        #         self.settings["actions"][key] = actions
-        #     else:
-        #         for action in actions:
-        #             success = False
-        #             for category, label_dict in self.catDict.items():
-        #                 label_list = [v for _, v in label_dict.items()]
-        #                 if action in label_list and category != "base":
-        #                     success = True
-        #                     if category == "categories":
-        #                         if action not in self.settings["actions"]:
-        #                             self.settings["actions"][action] = []
-        #                     else:
-        #                         if category not in self.settings["actions"]:
-        #                             self.settings["actions"][category] = []
-        #                         if action not in self.settings["actions"][category]:
-        #                             self.settings["actions"][category].append(action)
-        #                     break
-        #             if not success:
-        #                 if "other" not in self.settings["actions"]:
-        #                     self.settings["actions"]["other"] = []
-        #                 if action not in self.settings["actions"]["other"]:
-        #                     self.settings["actions"]["other"].append(action)
 
-        # self.ncat = len(self.catDict["base"])
-        # self.get_ncat()
-        # try:
-        #     self.console.catlist.update_list()
-        #     self.update_animals()
-        #     self.console.seglist.update_list()
-        #     self.update()
-        # except:
-        #     pass
+        # Changed KEY to "BASE"
+        dialog = CatDialog(
+            self.catDict, self.shortCut, self.invisible_actions, "base", self
+        )
+        (
+            self.catDict,
+            self.shortCut,
+            self.invisible_actions,
+            actions,
+        ) = dialog.exec_()
+
+    #     if key != "base":
+    #         self.settings["actions"][key] = actions
+    #     else:
+    #         for action in actions:
+    #             success = False
+    #             for category, label_dict in self.catDict.items():
+    #                 label_list = [v for _, v in label_dict.items()]
+    #                 if action in label_list and category != "base":
+    #                     success = True
+    #                     if category == "categories":
+    #                         if action not in self.settings["actions"]:
+    #                             self.settings["actions"][action] = []
+    #                     else:
+    #                         if category not in self.settings["actions"]:
+    #                             self.settings["actions"][category] = []
+    #                         if action not in self.settings["actions"][category]:
+    #                             self.settings["actions"][category].append(action)
+    #                     break
+    #             if not success:
+    #                 if "other" not in self.settings["actions"]:
+    #                     self.settings["actions"]["other"] = []
+    #                 if action not in self.settings["actions"]["other"]:
+    #                     self.settings["actions"]["other"].append(action)
+
+    # self.ncat = len(self.catDict["base"])
+    # self.get_ncat()
+    # try:
+    #     self.console.catlist.update_list()
+    #     self.update_animals()
+    #     self.console.seglist.update_list()
+    #     self.update()
+    # except:
+    #     pass
 
     def current(self):
         return self.canvas.current
@@ -811,8 +805,7 @@ class Viewer(QWidget):
             "skeleton_files": self.settings["skeleton_files"],
         }
         return metadata, cat_labels, self.animals, times
-    
-  
+
     def save(self, event=None, verbose=True, new_file=False, ask=False):
         if ask:
             msg = QMessageBox()
@@ -856,10 +849,10 @@ class Viewer(QWidget):
                 human_readable=True,
                 overwrite=True,
             )
-            
+
             # if verbose:
             #     self.show_warning("Saved successfully!")
-            
+
         except IOError as err:
             warnings.warn(f"Failed to save annotation data: {err}")
 
@@ -1202,16 +1195,16 @@ class Viewer(QWidget):
         self.on_next()
 
     def next_video_f(self):
-        
+
         # if self.show_question(message="Save the current annotation?", default="yes"):
         #     success = self.save()
         # else:
         #     success = True
         # if success:
-        
+
         # Instead of asking users if they want to save the current annotation
         # we save it automatically
-        
+
         self.save()
         self.next_video.emit()
 
@@ -1371,7 +1364,7 @@ class Viewer(QWidget):
         return self.shortCut[self.active_list].keys()
 
     # SAVE CORRECTION WORKFLOW ------------
-    
+
     # def set_correct_mode(self, event):
     #     self.correct_mode = True
     #     for vb in self.canvas.viewboxes:
