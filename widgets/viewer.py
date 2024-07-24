@@ -638,7 +638,11 @@ class Viewer(QWidget):
             self.invisible_actions,
             actions,
         ) = dialog.exec_()
-
+        
+        #TODO update for nested    
+        if not self.display_categories:
+            self.settings["actions"]["actions"] = actions
+        
     #     if key != "base":
     #         self.settings["actions"][key] = actions
     #     else:
@@ -663,15 +667,15 @@ class Viewer(QWidget):
     #                 if action not in self.settings["actions"]["other"]:
     #                     self.settings["actions"]["other"].append(action)
 
-    # self.ncat = len(self.catDict["base"])
-    # self.get_ncat()
-    # try:
-    #     self.console.catlist.update_list()
-    #     self.update_animals()
-    #     self.console.seglist.update_list()
-    #     self.update()
-    # except:
-    #     pass
+        self.ncat = len(self.catDict["base"])
+        self.get_ncat()
+        try:
+            self.console.catlist.update_list()
+            self.update_animals()
+            self.console.seglist.update_list()
+            self.update()
+        except:
+            pass
 
     def current(self):
         return self.canvas.current
@@ -821,22 +825,6 @@ class Viewer(QWidget):
             if len(self.output_file) == 0:
                 self.output_file = None
                 return False
-
-        # TODO: WHY IS THE LAST ACTION CHOICE SAVED HERE
-        with open("../last_action_choice.pickle", "wb") as f:
-            loaded_shortcuts = defaultdict(lambda: {})
-            for k in self.catDict:
-                for i, sc in self.shortCutInv(k).items():
-                    cat = self.catDict[k][i]
-                    loaded_shortcuts[k][cat] = sc
-            pickle.dump(
-                (
-                    self.settings["actions"],
-                    self.display_categories,
-                    dict(loaded_shortcuts),
-                ),
-                f,
-            )
 
         # TODO: SAVING
         try:

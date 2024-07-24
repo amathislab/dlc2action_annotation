@@ -504,16 +504,18 @@ class Bar(QWidget):
                 self.add_rect(self.window.current(), cat, None, on_shortcut=True)
                 self.reorder_rects()
         else:
-            warning = QMessageBox()
-            warning.setText('Shortcut does not exist.')
-            warning.setWindowTitle('Warning')
-            warning.exec_()
-            print('msg = QMessageBox()msg = QMessageBox()')
-            msg = QMessageBox()
-            msg.setText(
-                "You have chosen more than one video file. Would you like to open them in multiple view mode?"
-            )
-            msg.setStandardButtons(QMessageBox.Ok)
+            pass
+            # This makes absolutely no sense
+            # warning = QMessageBox()
+            # warning.setText('Shortcut does not exist.')
+            # warning.setWindowTitle('Warning')
+            # warning.exec_()
+            # print('msg = QMessageBox()msg = QMessageBox()')
+            # msg = QMessageBox()
+            # msg.setText(
+            #     "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+            # )
+            # msg.setStandardButtons(QMessageBox.Ok)
         
         self.window.set_move_mode()
         
