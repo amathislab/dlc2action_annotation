@@ -7,6 +7,7 @@ import os
 import yaml
 import numpy as np
 import shutil
+import pickle
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
@@ -175,8 +176,8 @@ class SettingsWindow(QDialog):
         os.chdir(os.path.join(os.getcwd(), "Project_Config"))
         self.settings = self._open_yaml(config_path)
         os.chdir(cwd)
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.labels = {}
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
@@ -554,8 +555,6 @@ class SetNewProject(QDialog):
     def __init__(self):
         super(SetNewProject, self).__init__()
 
-        # self.config_path = config_path
-        # self.settings = self._open_yaml(config_path)
         # --------------------------------------------
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
@@ -564,6 +563,8 @@ class SetNewProject(QDialog):
         self.folder_name = None
         self.folder_path = None
         self.skeleton = None
+        self.beh_files = None
+        self.behaviors = None
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.button(QDialogButtonBox.Ok).setDisabled(True)
 
@@ -573,11 +574,6 @@ class SetNewProject(QDialog):
         self.select_folder_button = QPushButton("Select Folder")
         self.select_folder_button.clicked.connect(self.select_folder)
         self.selected_folder_label = QLabel(self.default_folder)
-
-        self.load_dlcfiles_label = QLabel("Select DLC files (.h5) :")
-        self.load_dlcfiles_button = QPushButton("Upload files")
-        self.load_dlcfiles_button.clicked.connect(self.load_skeleton)
-        self.loaded_dlcfiles_label = QLabel("No video loaded")
 
         self.browse_videos_label = QLabel("Select videos:")
         self.browse_videos_button = QPushButton("Upload videos")
@@ -602,10 +598,6 @@ class SetNewProject(QDialog):
         self.layout.addWidget(self.select_folder_label)
         self.layout.addWidget(self.select_folder_button)
         self.layout.addWidget(self.selected_folder_label)
-
-        self.layout.addWidget(self.load_dlcfiles_label)
-        self.layout.addWidget(self.load_dlcfiles_button)
-        self.layout.addWidget(self.loaded_dlcfiles_label)
 
         self.layout.addWidget(self.browse_videos_label)
         self.layout.addWidget(self.browse_videos_button)
@@ -636,29 +628,40 @@ class SetNewProject(QDialog):
 
     # TODO: Function structure_project has a larger scope bc it also changes the ui ..
     def load_skeleton(self):
-        file_filter = ".h5 files (*.h5)"
-        self.skeleton = QFileDialog.getOpenFileNames(
-            self, "Open file", filter=file_filter
-        )[0]
-        if not self.skeleton:
-            self.skeleton = None
-            self.loaded_dlcfiles_label.setText("No files loaded")
-        else:
-            h5_files = [file for file in self.skeleton if file.endswith(".h5")]
-            if not h5_files:
-                self.skeleton = None
-                self.loaded_dlcfiles_label.setText("No .h5 files selected")
-            else:
-                file_names = [os.path.basename(file) for file in h5_files]
-                self.loaded_dlcfiles_label.setText(
-                    f"Loaded dlc files: {', '.join(file_names)}"
-                )
+        """Load the skeleton files based on the video files,
+        skeleton files must be in the same folder as each video
+        files and start with the same name as the video file"""
+
+        # Search DLC files
+        for video_name in self.videos:
+            skel_filename = os.path.splitext(video_name)[0] + self.dlc_suffix.text()
+            if os.path.exists(skel_filename):
+                if self.skeleton is None:
+                    self.skeleton = [skel_filename]
+                else:
+                    self.skeleton.append(skel_filename)
+
+    def load_annotations(self):
+        """Load the behavior annotation files based on the video files,
+        behavior annotation files must be in the same folder as each video
+        files and start with the same name as the video file"""
+        # Search behavior annotation files
+        for video_name in self.videos:
+            beh_filename = os.path.splitext(video_name)[0] + self.beh_suffix.text()
+            if os.path.exists(beh_filename):
+                if self.beh_files is None:
+                    self.beh_files = [beh_filename]
+                else:
+                    self.beh_files.append(beh_filename)
 
     def load_videos(self):
         self.videos = QFileDialog.getOpenFileNames(
             self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
         )[0]
         self.multiview = False
+
+        self.load_skeleton()
+        self.load_annotations()
 
         if type(self.videos) is not list:
             self.videos = [self.videos]
@@ -674,15 +677,15 @@ class SetNewProject(QDialog):
                 self.multiview = True
 
             else:
-
                 self.multiview = False
 
-        # Update the text of the loaded_video_label with the name of the first video
+        # Update the text of the loaded_video_label with the name of the first video #TODO change that
         if self.videos:
             video_names = [os.path.basename(video) for video in self.videos]
             video_names_str = ", ".join(video_names)
             self.loaded_video_label.setText(f"Loaded videos: {video_names_str}")
             self.buttonBox.button(QDialogButtonBox.Ok).setDisabled(False)
+
         else:
             self.loaded_video_label.setText("No videos loaded")
 
@@ -769,28 +772,6 @@ class SetNewProject(QDialog):
         toggle.setChecked(self.settings[field])
         return toggle
 
-    def set_multiple_input(self, field, type="single", use_settings=True):
-
-        if use_settings:
-            data = self.settings[field]
-        else:
-            data = field
-
-        if data is None:
-            if type == "category":
-                x = {}
-            else:
-                x = []
-        else:
-            x = data
-        if type == "double":
-            widget = MultipleDoubleInputWidget(x)
-        elif type == "category":
-            widget = CategoryInputWidget(x)
-        else:
-            widget = MultipleInputWidget(x)
-        return widget
-
     def get_file(self, label_widget, field, filter=None):
         file = QFileDialog().getOpenFileName(self, filter=filter)[0]
         label_widget.setText(os.path.basename(file))
@@ -812,11 +793,9 @@ class SetNewProject(QDialog):
         self.set_general_tab_data()
         self.general_layout.addRow("Annotator name: ", self.annotator)
         self.general_layout.addRow("Project Title: ", self.project)
-        self.general_layout.addRow("Behaviors: ", self.behaviors)
         self.general_layout.addRow("Behavior suffix:", self.beh_suffix)
         self.general_layout.addRow("DLC suffix:", self.dlc_suffix)
 
-        # self.general_layout.addRow("Data type: ", self.data_type_combo)
 
     def set_general_tab_data(self):
 
@@ -824,17 +803,6 @@ class SetNewProject(QDialog):
         self.project = QLineEdit("dlc2action_project")
         self.beh_suffix = QLineEdit("_annotation.pickle")
         self.dlc_suffix = QLineEdit("DLC_resnet50.h5")
-
-        actions = [
-            "running",
-            "jumping",
-            "eating",
-            "sleeping",
-            "coding_dlc2action_annotation_gui",
-        ]
-        self.behaviors = self.set_multiple_input(
-            actions, type="single", use_settings=False
-        )
 
     def create_fp_tab(self):
         self.fp_tab = QWidget()
@@ -856,11 +824,6 @@ class SetNewProject(QDialog):
         self.settings["project"] = self.project.text()
         self.settings["suffix"] = self.beh_suffix.text()
         self.settings["DLC_suffix"] = self.dlc_suffix.text()
-        self.settings["actions"] = (
-            {"actions": self.behaviors.values()}
-            if len(self.behaviors.values()) > 0
-            else None
-        )
 
     def create_folder(self) -> None:
         self.annotator = self.settings["annotator"]
@@ -901,14 +864,15 @@ class SetNewProject(QDialog):
             shutil.copy("colors.txt", os.path.join(folder_path, "Project_Config"))
 
             # Get user-defined labels
-            user_labels = self.behaviors.values()
+            # user_labels = self.behaviors.values()
 
             # Save user-defined labels to annotations.npy in Annotations folder
-            annotations_folder_path = os.path.join(folder_path, "Annotations")
-            annotations_file_path = os.path.join(
-                annotations_folder_path, "annotations.npy"
-            )
-            np.save(annotations_file_path, user_labels)
+            # annotations_folder_path = os.path.join(folder_path, "Annotations")
+            # annotations_file_path = os.path.join(
+            #     annotations_folder_path, "annotations.npy"
+            # )
+            # TODO does that make any sense ?
+            # np.save(annotations_file_path, user_labels)
 
             try:
                 icons_folder = os.path.join(folder_path, "icons")
@@ -924,52 +888,6 @@ class SetNewProject(QDialog):
 
             except Exception as e:
                 print(f"An error occurred: {e}")
-
-            # try:
-            #     shutil.copy("annotator.py", folder_path)
-            #     shutil.copy("cluster.py", folder_path)
-            #     shutil.copy("utils.py", folder_path)
-            #     shutil.copy("AnnotationGUI.yaml", folder_path)
-
-            # except Exception as e:
-            #     print(f"An error occurred: {e}")
-
-        # else:
-        #     print("Folder already exist")
-        #     folder_name = folder_name + "(2)"
-        #     folder_path = os.path.join(current_directory, folder_name)
-        #     subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
-        #     print(f"Folder '{folder_name}' created in '{current_directory}'")
-
-        #     os.makedirs(folder_path)
-        #     # Close the dialog after creating the folder
-        #     for subfolder_name in subfolder_names:
-        #         subfolder_path = os.path.join(folder_path, subfolder_name)
-        #         os.makedirs(subfolder_path)
-
-        #     default_config_path = os.path.join(current_directory, "default_config.yaml")
-        #     with open(default_config_path, "r") as default_config_file:
-        #         default_config_data = yaml.safe_load(default_config_file)
-
-        #     # Create config.yaml with default values from default_config.yaml
-        #     config_file_path = os.path.join(folder_path, "Project_Config", "config.yaml")
-        #     with open(config_file_path, "w") as config_file:
-        #         yaml.dump(default_config_data, config_file)
-
-        #     # Get user-defined labels
-        #     user_labels = self.behaviors.values()
-
-        #     # Save user-defined labels to annotations.npy in Annotations folder
-        #     annotations_folder_path = os.path.join(folder_path, "Annotations")
-        #     annotations_file_path = os.path.join(annotations_folder_path, "annotations.npy")
-        #     np.save(annotations_file_path, user_labels)
-
-        #     try:
-        #         shutil.copy(source_file, folder_path)
-        #         print(f"File '{source_file}' copied to '{folder_path}'")
-
-        #     except Exception as e:
-        #         print(f"An error occurred: {e}")
 
     def close_(self):
         self.close()
@@ -1013,7 +931,12 @@ class SetNewProject(QDialog):
             shutil.move(src, self.folder_path)
         except shutil.Error:
             print("Error: Failed to move folder to ", self.folder_path)
-
+    
+    def choose_behaviors(self):
+        behchoose = ChooseBehaviors(self.config_path, self.default_config_path, self.settings)
+        behchoose.exec_()
+        
+        
     def accept(self) -> None:
         self.collect()
         # Warning if no video is selected
@@ -1026,7 +949,7 @@ class SetNewProject(QDialog):
             if value == "None":
                 self.settings[key] = None
 
-        if self.settings["suffix"] is None:
+        if self.settings["suffix"] and self.settings["DLC_suffix"] is None:
             msg = QMessageBox()
             msg.setText(
                 "The annotation suffix parameter cannot be None, please set it to a string value!"
@@ -1048,23 +971,54 @@ class SetNewProject(QDialog):
             self.copy_videos_to_tracking_data(
                 self.videos, "Tracking data", self.folder_path
             )
-            self.copy_skeleton(
-                self.skeleton, os.path.join(self.folder_path, "Tracking data")
-            )
+            if not self.skeleton is None:
+                self.copy_skeleton(
+                    self.skeleton, os.path.join(self.folder_path, "Tracking data")
+                )
         else:
             print("Creating a link")
             self.create_symbolic_link(self.videos, "Tracking data", self.folder_path)
-            self.create_symbolic_link(self.skeleton, "Tracking data", self.folder_path)
             self.settings["video_files"] = self.videos
-            self.settings["skeleton_files"] = self.skeleton
+            if not self.skeleton is None:
+                self.create_symbolic_link(
+                    self.skeleton, "Tracking data", self.folder_path
+                )
+                self.settings["skeleton_files"] = self.skeleton
 
         self.config_path = os.path.join(
             self.folder_path, "Project_Config", "config.yaml"
         )
-        self._save_yaml(self.config_path, copy_default=True)
+
+        self.get_behaviors()
+        if self.behaviors is None:
+            self.choose_behaviors() #settings are saved in the function
+        else:
+            self._save_yaml(self.config_path, copy_default=True)
 
         super().accept()
         self.close()
+
+    def get_behaviors(self):
+        if self.beh_files is not None:
+            print("Found behavior files, behavior list will be updated")
+            behaviors = []
+            for filename in self.beh_files:
+                assert filename.endswith(".pickle")
+                with open(filename, "rb") as file:
+                    data = pickle.load(file)
+                
+                individuals = data[2]
+                label_array = data[3]
+                beh_list = []
+                for ind in range(len(individuals)):
+                    for k, beh in enumerate(label_array[ind]):
+                        if len(beh) > 0:
+                            beh_list.append(data[1][k])
+                behaviors += beh_list
+
+            self.behaviors = behaviors
+            self.settings["actions"] = {"actions" : self.behaviors} #TODO adapt for nested dict
+                
 
     def _save_yaml(self, path: str, copy_default=False):
         """
@@ -1088,3 +1042,105 @@ class SetNewProject(QDialog):
         if data is None:
             data = {}
         return data
+
+class ChooseBehaviors(QDialog):
+    def __init__(self, config_path, default_config_path, settings):
+        super(ChooseBehaviors, self).__init__()
+
+        self.behaviors = None
+        self.config_path = config_path
+        self.default_config_path = default_config_path
+        self.settings = settings
+        QBtn = QDialogButtonBox.Ok
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+        self.tabs = QTabWidget()
+        self.create_behavior_tab()
+        self.set_behavior_tab()
+        self.tabs.tabBarClicked.connect(self.collect)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.tabs)
+        self.layout.addWidget(self.buttonBox)
+
+        self.setLayout(self.layout)
+
+
+    def collect(self):
+        self.set_behavior_tab()
+
+    def accept(self):
+        self.settings["actions"] = {"actions" : self.behaviors.values()}
+        self._save_yaml(self.config_path, copy_default=True)
+        self.close()
+    
+    def create_behavior_tab(self):
+        self.behavior_tab = QWidget()
+        self.tabs.addTab(self.behavior_tab, "Behaviors")
+        self.behavior_layout = QFormLayout()
+        self.behavior_tab.setLayout(self.behavior_layout)
+        actions = [
+            "running",
+            "sleeping",
+            "coding_dlc2action_annotation_gui",
+        ]
+        self.behaviors = set_multiple_input(self.settings,
+            actions, type="single", use_settings=False
+        )
+    def set_behavior_tab(self):
+        self.clearLayout(self.behavior_layout)
+        self.behavior_layout.addRow("Behaviors: ", self.behaviors)
+        
+        
+    def _save_yaml(self, path: str, copy_default=False):
+        """
+        Save the current settings to a .yaml file, copy from default for folder creation
+        """
+        if copy_default:
+            default_settings = self._open_yaml(self.default_config_path)
+            default_settings.update(self.settings)
+            self.settings = default_settings
+
+        with open(path, "w") as f:
+            YAML().dump(self.settings, f)
+
+    def _open_yaml(self, path: str):
+        """
+        Load a parameter dictionary from a .yaml file
+        """
+
+        with open(path) as f:
+            data = YAML().load(f)
+        if data is None:
+            data = {}
+        return data
+
+
+    def clearLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget() is not None:
+                    child.widget().deleteLater()
+                elif child.layout() is not None:
+                    self.clearLayout(child.layout())
+
+def set_multiple_input(settings, field, type="single", use_settings=True):
+        if use_settings:
+            data = settings[field]
+        else:
+            data = field
+
+        if data is None:
+            if type == "category":
+                x = {}
+            else:
+                x = []
+        else:
+            x = data
+        if type == "double":
+            widget = MultipleDoubleInputWidget(x)
+        elif type == "category":
+            widget = CategoryInputWidget(x)
+        else:
+            widget = MultipleInputWidget(x)
+        return widget

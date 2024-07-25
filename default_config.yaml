@@ -2,7 +2,7 @@
 video_files:    #list of video file paths
 data_type: dlc   #either dlc (DeepLabCut) or calms21 (Caltech Mouse Social Interactions)
 n_ind: 1 #this will be set as the number of individuals if no detection or annotation files are available
-actions: {locomotion: ["running", "walking", "jumping"], other: ["eating", "freezing"]}
+actions: null
 #actions to label (you can also enter them in the GUI)
 min_length_frames: 0 #tracklets shorter than this number or frames will be omitted
 

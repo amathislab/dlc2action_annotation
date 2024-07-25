@@ -58,12 +58,11 @@ def create_load():
     if start_dialog.clickedButton() == create_project:
         newProject = SetNewProject()
         newProject.exec_()
-        print(newProject.folder_path)
+        
         folder_path = newProject.folder_path
     elif start_dialog.clickedButton() == open_project:
         folder_path = select_folder()
 
-    print(folder_path)
     return folder_path
 
 
