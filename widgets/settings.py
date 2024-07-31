@@ -570,7 +570,7 @@ class SetNewProject(QDialog):
 
         self.default_folder = os.getcwd()
 
-        self.select_folder_label = QLabel("Folder location :")
+        self.select_folder_label = QLabel("Project folder location :")
         self.select_folder_button = QPushButton("Select Folder")
         self.select_folder_button.clicked.connect(self.select_folder)
         self.selected_folder_label = QLabel(self.default_folder)

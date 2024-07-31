@@ -155,7 +155,7 @@ class MainWindow(QMainWindow):
         num_videos = len(os.listdir(os.path.join(self.folder_path, "Tracking data")))
 
         videos = self.settings["video_files"]
-        annotation_files = self.settings["skeleton_files"]
+        annotation_files = [os.path.splitext(v)[0] + self.settings["suffix"] for v in videos]
         suggestion_files = self.settings["suggestion_files"]
         hard_negatives = self.settings["hard_negative_classes"]
 
