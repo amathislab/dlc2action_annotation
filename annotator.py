@@ -49,19 +49,21 @@ def create_load():
 
     start_dialog = QMessageBox()
     start_dialog.setText("Welcome to DLC2action! ")
-
     create_project = start_dialog.addButton("Create Project", QMessageBox.ActionRole)
     open_project = start_dialog.addButton("Open Project", QMessageBox.ActionRole)
-
+    cancel = start_dialog.addButton("Cancel", QMessageBox.ActionRole)
+    start_dialog.setDefaultButton(create_project)
     start_dialog.exec_()
 
     if start_dialog.clickedButton() == create_project:
         newProject = SetNewProject()
         newProject.exec_()
-        
         folder_path = newProject.folder_path
     elif start_dialog.clickedButton() == open_project:
         folder_path = select_folder()
+    elif start_dialog.clickedButton() == cancel:
+        start_dialog.close()
+        exit()
 
     return folder_path
 
@@ -151,18 +153,23 @@ class MainWindow(QMainWindow):
             self.folder_path = folder_path
 
         # Get the list of folders in the selected directory
-        folders = ["Annotations", "Project_Config", "Tracking data"]
+        folders = ["Annotations", "Project_Config", "Tracking data", "Suggestions"]
         num_videos = len(os.listdir(os.path.join(self.folder_path, "Tracking data")))
 
         videos = self.settings["video_files"]
-        annotation_files = [os.path.splitext(v)[0] + self.settings["suffix"] for v in videos]
+        # annotation_files = [os.path.splitext(v)[0] + self.settings["suffix"] for v in videos]
+        annotation_files = [
+            os.path.join(self.folder_path, "Annotations", a_file)
+            for a_file in os.listdir(os.path.join(self.folder_path, "Annotations"))
+            if a_file.endswith(self.settings["suffix"])
+        ]
         suggestion_files = self.settings["suggestion_files"]
         hard_negatives = self.settings["hard_negative_classes"]
 
         for folder_name in folders:
             if folder_name == "Annotations":
 
-                if annotation_files is None:
+                if len(annotation_files) == 0:
                     annotation_files = [None for _ in num_videos]
                 self.annotation_files = annotation_files
 
@@ -224,9 +231,9 @@ class MainWindow(QMainWindow):
                         if type(self.videos) is not list:
                             self.videos = list(self.videos)
 
-        if annotation_files is None:
-            annotation_files = [None for _ in self.videos]
-        self.annotation_files = annotation_files
+        # if annotation_files is None:
+        #     annotation_files = [None for _ in self.videos]
+        # self.annotation_files = annotation_files
 
         if suggestion_files is None:
             suggestion_files = [None for _ in self.videos]
@@ -350,7 +357,7 @@ class MainWindow(QMainWindow):
             lens,
             None,
             annotation,
-            suggestion,
+            suggestion, 
             self.settings,
             self.sequential,
             filenames,

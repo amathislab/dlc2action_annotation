@@ -586,7 +586,6 @@ class SetNewProject(QDialog):
 
         # Connect the Cancel button's rejected signal to close the dialog
 
-        # Must correct the reject function
         self.buttonBox.rejected.connect(self.reject)
         self.buttonBox.accepted.connect(self.accept)
         # --------------------------------------------
@@ -832,7 +831,7 @@ class SetNewProject(QDialog):
         source_file = "colors.txt"
 
         folder_path = os.path.join(current_directory, self.folder_name)
-        subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
+        subfolder_names = ["Annotations", "Project_Config", "Tracking data", "Suggestions"]
 
         # Generate a unique folder name
         i = 0
@@ -842,7 +841,6 @@ class SetNewProject(QDialog):
 
         self.settings["project"] = self.folder_name
         folder_path = os.path.join(current_directory, self.folder_name)
-        subfolder_names = ["Annotations", "Project_Config", "Tracking data"]
 
         print(f"Folder '{self.folder_name}' created in '{current_directory}'")
 
@@ -889,11 +887,9 @@ class SetNewProject(QDialog):
             except Exception as e:
                 print(f"An error occurred: {e}")
 
-    def close_(self):
-        self.close()
-
     def reject(self):
         self.close()
+        exit()
 
     def get_project_name(self):
         return self.folder_name
@@ -965,7 +961,6 @@ class SetNewProject(QDialog):
         # Copy skeleton files and video files
         os.chdir(self.default_folder)
         self.folder_path = os.path.join(os.getcwd(), self.folder_name)
-
         if self.video_checkbox.isChecked():
             print("Copying data")
             self.copy_videos_to_tracking_data(
@@ -984,11 +979,13 @@ class SetNewProject(QDialog):
                     self.skeleton, "Tracking data", self.folder_path
                 )
                 self.settings["skeleton_files"] = self.skeleton
-
+        
+        # Copy config file to project folder
         self.config_path = os.path.join(
             self.folder_path, "Project_Config", "config.yaml"
         )
 
+        # Copy behavior files to project folder and update behavior list if needed 
         self.get_behaviors()
         if self.behaviors is None:
             self.choose_behaviors() #settings are saved in the function
@@ -1004,6 +1001,10 @@ class SetNewProject(QDialog):
             behaviors = []
             for filename in self.beh_files:
                 assert filename.endswith(".pickle")
+                
+                # Copy behavior files to project folder
+                shutil.copy2(filename, os.path.join(self.folder_path, "Annotations"))
+                
                 with open(filename, "rb") as file:
                     data = pickle.load(file)
                 

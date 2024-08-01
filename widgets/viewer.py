@@ -146,7 +146,7 @@ class Viewer(QWidget):
                 filename = sep.join(split[1:])
         self.basename = os.path.join(filepath, filename.split(".")[0])
 
-        if self.labels_file is None and self.settings["suffix"] is not None:
+        if self.labels_file is None and self.settings["suffix"] is not None: #Not sure in which case this part of the code is executed
             self.labels_file = self.basename + self.settings["suffix"]
             if not os.path.exists(self.labels_file):
                 print(f"{self.labels_file} does not exist")
@@ -827,22 +827,21 @@ class Viewer(QWidget):
                 return False
 
         # TODO: SAVING
-        try:
-            save_annotations(
-                output_path=Path(self.output_file),
-                metadata=metadata,
-                animals=animals,
-                cat_labels=cat_labels,
-                times=times,
-                human_readable=True,
-                overwrite=True,
-            )
+        save_annotations(
+            output_path=Path(self.output_file),
+            metadata=metadata,
+            animals=animals,
+            cat_labels=cat_labels,
+            times=times,
+            human_readable=True,
+            overwrite=True,
+        )
 
             # if verbose:
             #     self.show_warning("Saved successfully!")
 
-        except IOError as err:
-            warnings.warn(f"Failed to save annotation data: {err}")
+        # except IOError as err:
+            # warnings.warn(f"Failed to save annotation data: {err}")
 
         return True
 
