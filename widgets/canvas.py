@@ -638,7 +638,8 @@ class VideoCanvas(SceneCanvas):
             # warning.setWindowTitle("Warning")
             # warning.setText('Shortcut does not exist.')
             # warning.exec_()
-            print(f"canvas didn't recognise key {event.key.name}")
+            if not event.key.name == "Control":
+                print(f"canvas didn't recognise key {event.key.name}")
 
     def get_ind_start_end(self, animal):
         starts = []

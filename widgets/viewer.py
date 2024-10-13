@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from random import sample as smp
 from typing import Tuple
+import yaml
 
 import numpy as np
 import pandas as pd
@@ -65,11 +66,13 @@ class Viewer(QWidget):
         filenames,
         filepaths,
         current,
+        animal_colors,
         al_mode,
         al_points=None,
     ):
         super(Viewer, self).__init__()
         self.settings = settings
+        self.animal_colors = animal_colors
         # Filespaths: Path to video files
         self.filepaths = filepaths
         self.filenames = filenames
@@ -92,22 +95,6 @@ class Viewer(QWidget):
         self.displayed_animals = []
         self.sequential = sequential
         self.animals = None
-
-        cwd = os.getcwd()
-        if not cwd.endswith("Project_Config"):
-            os.chdir(os.path.join(os.getcwd(), "Project_Config"))
-            with open("colors.txt") as f:
-                self.animal_colors = [
-                    list(map(lambda x: float(x) / 255, line.split()))
-                    for line in f.readlines()
-                ]
-            os.chdir(cwd)
-        else:
-            with open("colors.txt") as f:
-                self.animal_colors = [
-                    list(map(lambda x: float(x) / 255, line.split()))
-                    for line in f.readlines()
-                ]
 
         self.active = True
         self.display_categories = False
@@ -146,27 +133,21 @@ class Viewer(QWidget):
                 filename = sep.join(split[1:])
         self.basename = os.path.join(filepath, filename.split(".")[0])
 
-        if self.labels_file is None and self.settings["suffix"] is not None: #Not sure in which case this part of the code is executed
-            self.labels_file = self.basename + self.settings["suffix"]
-            if not os.path.exists(self.labels_file):
-                print(f"{self.labels_file} does not exist")
-                self.labels_file = None
-
         if self.suggestions_file is None:
             self.suggestions_file = self.basename + "_suggestion.pickle"
             if self.suggestions_file == self.labels_file:
                 self.suggestions_file = None
             elif not os.path.exists(self.suggestions_file):
-                print(f"{self.suggestions_file} does not exist")
                 self.suggestions_file = None
 
         if self.output_file is None:
-            if self.labels_file is not None:
-                self.output_file = self.labels_file
-            elif self.settings["suffix"] is not None:
-                self.output_file = self.basename + self.settings["suffix"]
-            else:
-                raise ValueError("Please set the annotation suffix in settings!")
+            self.ouput_file = self.labels_file
+            # if self.settings["suffix"] is not None:
+            #     self.output_file = os.path.join(
+            #         "Annotations", self.basename + self.settings["suffix"]
+            #     )
+            # else:
+            #     raise ValueError("Please set the annotation suffix in settings!")
         self.load_labels()
 
         data_2d = [None for _ in self.filenames]
@@ -204,7 +185,31 @@ class Viewer(QWidget):
         for x in segmentation_list:
             if x is not None:
                 self.draw_segmentation = True
-
+        
+        if self.animals is None:
+            self.animals = ["ind{}".format(i) for i in range(self.n_ind)]
+        self.settings["individuals"] = self.animals
+            
+        print("SHOW ME THAT",
+            stacks,
+            shapes,
+            lengths,
+            self.n_ind,
+            self.animals,
+            boxes,
+            points_df_list,
+            segmentation_list,
+            index_dict,
+            current,
+            current_animal,
+            self.correct_mode,
+            self.al_points,
+            self.settings["mask_opacity"],
+            data_3d,
+            data_2d,
+            self.settings["skeleton"],
+            self.settings["3d_bodyparts"])
+        
         self.canvas = VideoCanvas(
             self,
             stacks,
@@ -329,28 +334,23 @@ class Viewer(QWidget):
         if len(self.settings["detection_files"]) < len(self.filepaths):
             for i in range(len(self.filepaths) - len(self.settings["detection_files"])):
                 self.settings["detection_files"].append(None)
-        if self.settings["DLC_suffix"][0] is not None:
+        if self.settings["DLC_suffix"] is not None:
+            skeleton_files = []
             for i in range(len(self.filepaths)):
-                if (
-                    len(self.settings["skeleton_files"]) <= i
-                    or self.settings["skeleton_files"][i] is None
-                ):
-                    path = None
-                    for suffix in self.settings["DLC_suffix"]:
-                        possible_path = os.path.join(
-                            self.filepaths[i], self.filenames[i].split(".")[0] + suffix
-                        )
-                        if os.path.exists(possible_path):
-                            path = possible_path
-                        else:
-                            print(f"{possible_path} does not exist")
-                    if len(self.settings["skeleton_files"]) <= i:
-                        self.settings["skeleton_files"].append(path)
-                    else:
-                        self.settings["skeleton_files"][i] = path
+                skeleton_file_path = os.path.join(
+                    self.filepaths[i],
+                    self.filenames[i].split(".")[0] + self.settings["DLC_suffix"],
+                )
+                if os.path.exists(skeleton_file_path):
+                    skeleton_files.append(skeleton_file_path)
+            self.settings["skeleton_files"] = skeleton_files
+        return len(skeleton_files) > 0
 
     def load_skeleton(self, current=None):
-        self.find_skeleton_files()
+        check = self.find_skeleton_files()
+        if not check:
+            return [], defaultdict(lambda: None)
+
         points_df_list = []
         for skeleton_file in self.settings["skeleton_files"]:
             points_df, index_dict, animals = self.load_animals(skeleton_file)
@@ -578,6 +578,7 @@ class Viewer(QWidget):
                     cat_dict[category][a_i] = a
         for k, v in cat_dict.items():
             self.catDict[k] = v
+        print(self.catDict)
         for k, v in self.catDict.items():
             for i, a in v.items():
                 if a not in self.invisible_actions:
@@ -638,35 +639,35 @@ class Viewer(QWidget):
             self.invisible_actions,
             actions,
         ) = dialog.exec_()
-        
-        #TODO update for nested    
+
+        # TODO update for nested
         if not self.display_categories:
             self.settings["actions"]["actions"] = actions
-        
-    #     if key != "base":
-    #         self.settings["actions"][key] = actions
-    #     else:
-    #         for action in actions:
-    #             success = False
-    #             for category, label_dict in self.catDict.items():
-    #                 label_list = [v for _, v in label_dict.items()]
-    #                 if action in label_list and category != "base":
-    #                     success = True
-    #                     if category == "categories":
-    #                         if action not in self.settings["actions"]:
-    #                             self.settings["actions"][action] = []
-    #                     else:
-    #                         if category not in self.settings["actions"]:
-    #                             self.settings["actions"][category] = []
-    #                         if action not in self.settings["actions"][category]:
-    #                             self.settings["actions"][category].append(action)
-    #                     break
-    #             if not success:
-    #                 if "other" not in self.settings["actions"]:
-    #                     self.settings["actions"]["other"] = []
-    #                 if action not in self.settings["actions"]["other"]:
-    #                     self.settings["actions"]["other"].append(action)
 
+        #     if key != "base":
+        #         self.settings["actions"][key] = actions
+        #     else:
+        #         for action in actions:
+        #             success = False
+        #             for category, label_dict in self.catDict.items():
+        #                 label_list = [v for _, v in label_dict.items()]
+        #                 if action in label_list and category != "base":
+        #                     success = True
+        #                     if category == "categories":
+        #                         if action not in self.settings["actions"]:
+        #                             self.settings["actions"][action] = []
+        #                     else:
+        #                         if category not in self.settings["actions"]:
+        #                             self.settings["actions"][category] = []
+        #                         if action not in self.settings["actions"][category]:
+        #                             self.settings["actions"][category].append(action)
+        #                     break
+        #             if not success:
+        #                 if "other" not in self.settings["actions"]:
+        #                     self.settings["actions"]["other"] = []
+        #                 if action not in self.settings["actions"]["other"]:
+        #                     self.settings["actions"]["other"].append(action)
+        self._save_yaml(os.path.join("Project_Config", "config.yaml"))
         self.ncat = len(self.catDict["base"])
         self.get_ncat()
         try:
@@ -676,6 +677,10 @@ class Viewer(QWidget):
             self.update()
         except:
             pass
+
+    def _save_yaml(self, path):
+        with open(path, "w") as f:
+            yaml.dump(self.settings, f)
 
     def current(self):
         return self.canvas.current
@@ -837,11 +842,11 @@ class Viewer(QWidget):
             overwrite=True,
         )
 
-            # if verbose:
-            #     self.show_warning("Saved successfully!")
+        # if verbose:
+        #     self.show_warning("Saved successfully!")
 
         # except IOError as err:
-            # warnings.warn(f"Failed to save annotation data: {err}")
+        # warnings.warn(f"Failed to save annotation data: {err}")
 
         return True
 
@@ -866,8 +871,8 @@ class Viewer(QWidget):
         else:
             return True
 
-    def load_prior(self, file, amb_replace):
-        with open(file, "rb") as f:
+    def load_prior(self, filename, amb_replace):
+        with open(filename, "rb") as f:
             _, loaded_labels, animals, loaded_times = pickle.load(f)
         animals_i = []
         for ind in animals:
@@ -983,9 +988,9 @@ class Viewer(QWidget):
         #         else:
         #             self.load_prior(file, amb)
 
-    def load_annotation(self, file, amb=None):
+    def load_annotation(self, filename, amb=None):
         if self.settings["data_type"] == "dlc":
-            with open(file, "rb") as f:
+            with open(filename, "rb") as f:
                 (
                     metadata,
                     self.loaded_labels,
@@ -1004,7 +1009,7 @@ class Viewer(QWidget):
                         for k in range(len(cat_list)):
                             self.loaded_times[i][j][k][-1] = amb
         elif self.settings["data_type"] == "calms21":
-            f = np.load(file, allow_pickle=True).item()
+            f = np.load(filename, allow_pickle=True).item()
             keys = sorted(list(f.keys()))
             seq = keys[0]
             f = f[seq]

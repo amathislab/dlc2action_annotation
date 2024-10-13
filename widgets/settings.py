@@ -829,37 +829,35 @@ class SetNewProject(QDialog):
         self.folder_name = self.settings["project"]
         current_directory = os.getcwd()
         source_file = "colors.txt"
-
-        folder_path = os.path.join(current_directory, self.folder_name)
+        
         subfolder_names = ["Annotations", "Project_Config", "Tracking data", "Suggestions"]
 
         # Generate a unique folder name
         i = 0
-        while os.path.exists(os.path.join(current_directory, self.folder_name)):
+        while os.path.exists(os.path.join(self.folder_path, self.folder_name)):
             self.folder_name = f"{self.settings['project']} ({i})"
             i += 1
 
         self.settings["project"] = self.folder_name
-        folder_path = os.path.join(current_directory, self.folder_name)
+        self.folder_path = os.path.join(self.folder_path, self.folder_name)
 
-        print(f"Folder '{self.folder_name}' created in '{current_directory}'")
+        print(f"Folder '{self.folder_name}' created in '{self.folder_path}'")
 
-        if not os.path.exists(self.folder_name):
-            os.makedirs(folder_path)
+        if not os.path.exists(self.folder_path):
+            os.makedirs(self.folder_path)
             # Close the dialog after creating the folder
             for subfolder_name in subfolder_names:
-                subfolder_path = os.path.join(folder_path, subfolder_name)
-                os.makedirs(subfolder_path)
+                os.makedirs(os.path.join(self.folder_path, subfolder_name))
 
             self.default_config_path = os.path.join(
                 current_directory, "default_config.yaml"
             )
             config_file_path = os.path.join(
-                folder_path, "Project_Config", "config.yaml"
+                self.folder_path, "Project_Config", "config.yaml"
             )
             self._save_yaml(config_file_path, copy_default=True)
 
-            shutil.copy("colors.txt", os.path.join(folder_path, "Project_Config"))
+            shutil.copy("colors.txt", os.path.join(self.folder_path, "Project_Config"))
 
             # Get user-defined labels
             # user_labels = self.behaviors.values()
@@ -873,9 +871,8 @@ class SetNewProject(QDialog):
             # np.save(annotations_file_path, user_labels)
 
             try:
-                icons_folder = os.path.join(folder_path, "icons")
+                icons_folder = os.path.join(self.folder_path, "icons")
                 os.makedirs(icons_folder, exist_ok=True)
-                current_directory = os.getcwd()
                 icon_folder = os.path.join(current_directory, "icons")
                 icon_files = os.listdir(icon_folder)
 
@@ -929,6 +926,7 @@ class SetNewProject(QDialog):
             print("Error: Failed to move folder to ", self.folder_path)
     
     def choose_behaviors(self):
+        print(self.settings["suffix"])
         behchoose = ChooseBehaviors(self.config_path, self.default_config_path, self.settings)
         behchoose.exec_()
         
@@ -953,14 +951,20 @@ class SetNewProject(QDialog):
             msg.exec_()
             return
 
+        if self.folder_path is None:
+            msg = QMessageBox()
+            msg.setText("No folder selected. Please select a folder.")
+            msg.exec_()
+            return
+        
         self.create_folder()
-        if self.folder_path is not None:
-            self.move_folder()
-            os.chdir(self.folder_path)
+        # if self.folder_path is not None:
+        #     self.move_folder()
+        #     os.chdir(self.folder_path)
 
         # Copy skeleton files and video files
         os.chdir(self.default_folder)
-        self.folder_path = os.path.join(os.getcwd(), self.folder_name)
+        # self.folder_path = os.path.join(os.getcwd(), self.folder_name)
         if self.video_checkbox.isChecked():
             print("Copying data")
             self.copy_videos_to_tracking_data(

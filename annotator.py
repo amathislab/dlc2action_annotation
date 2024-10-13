@@ -4,6 +4,7 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import os
+import os.path as osp
 import pickle
 import sys
 import yaml
@@ -113,7 +114,7 @@ class MainWindow(QMainWindow):
         self.launch_project()
 
     def read_settings(self):
-        self.settings_file = os.path.join(
+        self.settings_file = osp.join(
             self.root_directory, "Project_Config", "config.yaml"
         )
         self.settings = read_settings(self.settings_file)
@@ -153,14 +154,14 @@ class MainWindow(QMainWindow):
             self.folder_path = folder_path
 
         # Get the list of folders in the selected directory
-        folders = ["Annotations", "Project_Config", "Tracking data", "Suggestions"]
-        num_videos = len(os.listdir(os.path.join(self.folder_path, "Tracking data")))
+        folders = ["Project_Config", "Tracking data", "Annotations", "Suggestions"]
+        num_videos = len(os.listdir(osp.join(self.folder_path, "Tracking data")))
 
         videos = self.settings["video_files"]
-        # annotation_files = [os.path.splitext(v)[0] + self.settings["suffix"] for v in videos]
+        # annotation_files = [osp.splitext(v)[0] + self.settings["suffix"] for v in videos]
         annotation_files = [
-            os.path.join(self.folder_path, "Annotations", a_file)
-            for a_file in os.listdir(os.path.join(self.folder_path, "Annotations"))
+            osp.join(self.folder_path, "Annotations", a_file)
+            for a_file in os.listdir(osp.join(self.folder_path, "Annotations"))
             if a_file.endswith(self.settings["suffix"])
         ]
         suggestion_files = self.settings["suggestion_files"]
@@ -168,14 +169,16 @@ class MainWindow(QMainWindow):
 
         for folder_name in folders:
             if folder_name == "Annotations":
-
                 if len(annotation_files) == 0:
-                    annotation_files = [None for _ in num_videos]
+                    annotation_files = [
+                        osp.splitext(osp.basename(v))[0] + self.settings["suffix"]
+                        for v in self.videos
+                    ]
                 self.annotation_files = annotation_files
 
             elif folder_name == "Project_Config":
 
-                self.settings_file = os.path.join(
+                self.settings_file = osp.join(
                     self.folder_path, "Project_Config", "config.yaml"
                 )
                 self.settings = get_settings(self.settings_file, show_settings=False)
@@ -189,14 +192,14 @@ class MainWindow(QMainWindow):
             elif folder_name == "Tracking data":
 
                 # Get the list of files in Tracking data folder
-                folder_path = os.path.join(self.folder_path, "Tracking data")
+                folder_path = osp.join(self.folder_path, "Tracking data")
                 files = os.listdir(folder_path)
 
                 # Filter video files based on extensions
                 self.videos = [
-                    os.path.join(folder_path, file)
-                    for file in files
-                    if file.lower().endswith((".mov", ".avi", ".mp4", ".mkv"))
+                    osp.join(folder_path, f)
+                    for f in files
+                    if f.lower().endswith((".mov", ".avi", ".mp4", ".mkv"))
                 ]
 
                 # Check the number of video files
@@ -219,17 +222,17 @@ class MainWindow(QMainWindow):
                 if len(videos) == 0 and self.settings["video_files"] is not None:
                     videos = self.settings["video_files"]
 
-                if len(videos) == 0 and self.settings["video_upload_window"]:
-                    # This is extra because videos already loaded
-                    # self.load_video()
-                    pass
                 else:
                     if videos == ():
                         self.videos = [None for i in self.settings["skeleton_files"]]
                     else:
-                        self.videos = videos
-                        if type(self.videos) is not list:
-                            self.videos = list(self.videos)
+                        self.videos = [
+                            osp.join(folder_path, osp.basename(f))
+                            for f in os.listdir(folder_path)
+                        ]
+                        # self.videos = videos
+                        # if type(self.videos) is not list:
+                        #     self.videos = list(self.videos)
 
         # if annotation_files is None:
         #     annotation_files = [None for _ in self.videos]
@@ -239,7 +242,6 @@ class MainWindow(QMainWindow):
             suggestion_files = [None for _ in self.videos]
         self.suggestion_files = suggestion_files
 
-        os.chdir(self.folder_path)
         self.run_video(self.multiview)
 
         if hard_negatives is not None:
@@ -270,15 +272,13 @@ class MainWindow(QMainWindow):
 
                 if video is not None:
 
-                    filepath, filename = os.path.split(video)
+                    filepath, filename = osp.split(video)
                     filepaths.append(filepath)
                     filenames.append(filename)
 
                 else:
                     print('self.settings["skeleton_files"][i] ', self.settings)
-                    filepath, filename = os.path.split(
-                        self.settings["skeleton_files"][i]
-                    )
+                    filepath, filename = osp.split(self.settings["skeleton_files"][i])
                     filepaths.append(filepath)
                     filenames.append(filename)
 
@@ -289,7 +289,8 @@ class MainWindow(QMainWindow):
                 filenames,
                 filepaths,
                 self.annotation_files[self.cur_video],
-                self.suggestion_files,
+                self.suggestion_files[self.cur_video],
+                self.animal_colors,
                 current=0,
             )
 
@@ -309,10 +310,7 @@ class MainWindow(QMainWindow):
         stacks = [stack]
         shapes = [shape]
         lens = [length]
-        if self.videos[n] is None:
-            filepath, filename = os.path.split(self.settings["skeleton_files"][n])
-        else:
-            filepath, filename = os.path.split(self.videos[n])
+        filepath, filename = osp.split(self.videos[n])
         return stacks, shapes, lens, filename, filepath
 
     def run_viewer_single(self, current=0):
@@ -325,6 +323,7 @@ class MainWindow(QMainWindow):
             [filepath],
             self.annotation_files[self.cur_video],
             self.suggestion_files[self.cur_video],
+            self.animal_colors,
             current,
         )
 
@@ -337,6 +336,7 @@ class MainWindow(QMainWindow):
         filepaths,
         annotation,
         suggestion,
+        animal_colors,
         current,
     ):
 
@@ -351,18 +351,24 @@ class MainWindow(QMainWindow):
         if self.backup_manager is not None:
             self.backup_manager.stop()
 
+        os.chdir(self.folder_path)
+        print(filenames)
+        print(filepaths)
+        print(annotation)
+        print(suggestion)
         self.viewer = Viewer(
             stacks,
             shapes,
             lens,
-            None,
             annotation,
-            suggestion, 
+            annotation,
+            suggestion,
             self.settings,
             self.sequential,
             filenames,
             filepaths,
             current,
+            animal_colors,
             al_mode=self.al_mode,
             al_points=al_points,
         )
