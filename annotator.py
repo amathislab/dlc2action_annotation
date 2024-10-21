@@ -31,7 +31,6 @@ from widgets.core.backup import BackupManager
 from widgets.dialog import Form, FormInit
 from widgets.settings import SettingsWindow, SetNewProject
 from widgets.viewer import Viewer
-from widgets.viewer_act_list import ViewerActList
 
 
 def select_folder():
@@ -159,38 +158,11 @@ class MainWindow(QMainWindow):
 
         videos = self.settings["video_files"]
         # annotation_files = [osp.splitext(v)[0] + self.settings["suffix"] for v in videos]
-        annotation_files = [
-            osp.join(self.folder_path, "Annotations", a_file)
-            for a_file in os.listdir(osp.join(self.folder_path, "Annotations"))
-            if a_file.endswith(self.settings["suffix"])
-        ]
-        suggestion_files = self.settings["suggestion_files"]
         hard_negatives = self.settings["hard_negative_classes"]
 
         for folder_name in folders:
-            if folder_name == "Annotations":
-                if len(annotation_files) == 0:
-                    annotation_files = [
-                        osp.join(self.folder_path, folder_name, osp.splitext(osp.basename(v))[0] + self.settings["suffix"])
-                        for v in self.videos
-                    ]
-                self.annotation_files = annotation_files
-
-            elif folder_name == "Project_Config":
-
-                self.settings_file = osp.join(
-                    self.folder_path, "Project_Config", "config.yaml"
-                )
-                self.settings = get_settings(self.settings_file, show_settings=False)
-                skeleton = self.settings["skeleton_files"]
-                with open("colors.txt") as f:
-                    self.animal_colors = [
-                        list(map(lambda x: float(x) / 255, line.split()))
-                        for line in f.readlines()
-                    ]
-
-            elif folder_name == "Tracking data":
-
+            
+            if folder_name == "Tracking data":
                 # Get the list of files in Tracking data folder
                 folder_path = osp.join(self.folder_path, "Tracking data")
                 files = os.listdir(folder_path)
@@ -218,12 +190,37 @@ class MainWindow(QMainWindow):
                         # self.videos = videos
                         # if type(self.videos) is not list:
                         #     self.videos = list(self.videos)
+            
+            elif folder_name == "Annotations":
+                self.annotation_files = [
+                    osp.join(self.folder_path, folder_name, osp.splitext(osp.basename(v))[0] + self.settings["suffix"])
+                    for v in self.videos
+                ]
+
+            elif folder_name == "Suggestions":
+                self.suggestion_files = [
+                    osp.join(self.folder_path, folder_name, osp.splitext(osp.basename(v))[0] + self.settings["suggestion_suffix"])
+                    for v in self.videos
+                ]
+            
+            elif folder_name == "Project_Config":
+
+                self.settings_file = osp.join(
+                    self.folder_path, "Project_Config", "config.yaml"
+                )
+                self.settings = get_settings(self.settings_file, show_settings=False)
+                skeleton = self.settings["skeleton_files"]
+                with open("colors.txt") as f:
+                    self.animal_colors = [
+                        list(map(lambda x: float(x) / 255, line.split()))
+                        for line in f.readlines()
+                    ]
+
+            
 
         # if annotation_files is None:
         #     annotation_files = [None for _ in self.videos]
         # self.annotation_files = annotation_files
-
-        self.suggestion_files = [None for i in self.videos] #TODO include suggestion files
 
         self.run_video(self.multiview)
 
@@ -244,8 +241,6 @@ class MainWindow(QMainWindow):
         stacks, shapes, lens, filepaths, filenames = [], [], [], [], []
         self.settings = read_settings(self.settings_file)
 
-        print(" self.settings  ", self.settings["skeleton_files"])
-
         if multiview:
             for i, video in enumerate(videos):
                 stack, shape, length = read_video(video, self.settings["backend"])
@@ -260,7 +255,6 @@ class MainWindow(QMainWindow):
                     filenames.append(filename)
 
                 else:
-                    print('self.settings["skeleton_files"][i] ', self.settings)
                     filepath, filename = osp.split(self.settings["skeleton_files"][i])
                     filepaths.append(filepath)
                     filenames.append(filename)
@@ -330,7 +324,11 @@ class MainWindow(QMainWindow):
             annotation = self.annotation_files[0]
         if annotation is None:
             suggestion = self.suggestion_files[0]
-
+            
+        annotation_file = annotation
+        if not os.path.exists(annotation):
+            annotation_file = None
+        output_file = annotation
         if self.backup_manager is not None:
             self.backup_manager.stop()
 
@@ -339,8 +337,8 @@ class MainWindow(QMainWindow):
             stacks,
             shapes,
             lens,
-            osp.join("Annotations", annotation),
-            annotation,
+            output_file,
+            annotation_file,
             suggestion,
             self.settings,
             self.sequential,
@@ -367,12 +365,14 @@ class MainWindow(QMainWindow):
             )
         else:
             backup_path = Path(self.backup_dir)
-        self.backup_manager = BackupManager(
-            backup_path=backup_path,
-            viewer=self.viewer,
-            interval=self.backup_interval,
-        )
-        self.backup_manager.start()
+        
+        if not self.multiview: #TODO fix backup manager for multiview
+            self.backup_manager = BackupManager(
+                backup_path=backup_path,
+                viewer=self.viewer,
+                interval=self.backup_interval,
+            )
+            self.backup_manager.start()
 
     def get_al_points(self, filename):
         if self.dev:
@@ -427,7 +427,6 @@ class MainWindow(QMainWindow):
 
         if update:
             self.viewer.save(verbose=False, ask=False)
-            print("settings_update ", settings_update)
             self.run_video(
                 current=self.viewer.current(),
                 settings_update=settings_update,
@@ -488,12 +487,10 @@ class MainWindow(QMainWindow):
             self._createToolBar()
 
     def setRootDirectory(self):
-        print("os.chdir(self.root_directory) ", self.root_directory)
         os.chdir(self.root_directory)
 
     def _createActions(self):
         self.setRootDirectory()
-        print("curr dir ", os.getcwd())
         # File actions
         self.play_action = QAction(self)
         self.play_action.setText("Play / Stop")

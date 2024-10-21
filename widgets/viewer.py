@@ -134,12 +134,8 @@ class Viewer(QWidget):
                 filename = sep.join(split[1:])
         self.basename = osp.join(filepath, filename.split(".")[0])
 
-        if self.suggestions_file is None:
-            self.suggestions_file = self.basename + "_suggestion.pickle"
-            if self.suggestions_file == self.labels_file:
-                self.suggestions_file = None
-            elif not osp.exists(self.suggestions_file):
-                self.suggestions_file = None
+        if not osp.exists(self.suggestions_file):
+            self.suggestions_file = None
 
         if self.output_file is None:
             self.output_file = osp.join("Annotations", self.labels_file)
