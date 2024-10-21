@@ -569,7 +569,7 @@ class SetNewProject(QDialog):
         self.buttonBox.button(QDialogButtonBox.Ok).setDisabled(True)
 
         self.default_folder = os.getcwd()
-
+        
         self.select_folder_label = QLabel("Project folder location :")
         self.select_folder_button = QPushButton("Select Folder")
         self.select_folder_button.clicked.connect(self.select_folder)
@@ -625,7 +625,6 @@ class SetNewProject(QDialog):
             self.folder_path = folder_path
             self.selected_folder_label.setText(folder_path)
 
-    # TODO: Function structure_project has a larger scope bc it also changes the ui ..
     def load_skeleton(self):
         """Load the skeleton files based on the video files,
         skeleton files must be in the same folder as each video
@@ -664,6 +663,7 @@ class SetNewProject(QDialog):
 
         if type(self.videos) is not list:
             self.videos = [self.videos]
+        
         if len(self.videos) > 1:
             msg = QMessageBox()
             msg.setText(
@@ -984,6 +984,8 @@ class SetNewProject(QDialog):
                 )
                 self.settings["skeleton_files"] = self.skeleton
         
+        self.settings["multiview"] = self.multiview
+        
         # Copy config file to project folder
         self.config_path = os.path.join(
             self.folder_path, "Project_Config", "config.yaml"
@@ -1070,11 +1072,19 @@ class ChooseBehaviors(QDialog):
         self.setLayout(self.layout)
 
 
+    def set_le(self, field, set_int=True):
+        le = QLineEdit()
+        if set_int:
+            le.setValidator(QIntValidator())
+        le.setText(str(self.settings[field]))
+        return le
+    
     def collect(self):
         self.set_behavior_tab()
 
     def accept(self):
         self.settings["actions"] = {"actions" : self.behaviors.values()}
+        self.settings["n_ind"] = int(self.num_ind_le.text())
         self._save_yaml(self.config_path, copy_default=True)
         self.close()
     
@@ -1091,9 +1101,12 @@ class ChooseBehaviors(QDialog):
         self.behaviors = set_multiple_input(self.settings,
             actions, type="single", use_settings=False
         )
+        self.num_ind_le = self.set_le("n_ind", set_int=True)
+        
     def set_behavior_tab(self):
         self.clearLayout(self.behavior_layout)
         self.behavior_layout.addRow("Behaviors: ", self.behaviors)
+        self.behavior_layout.addRow("Number of individuals: ", self.num_ind_le)
         
         
     def _save_yaml(self, path: str, copy_default=False):

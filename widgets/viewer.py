@@ -4,6 +4,7 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import os
+import os.path as osp
 import pickle
 import warnings
 from collections import defaultdict
@@ -131,19 +132,19 @@ class Viewer(QWidget):
             split = filename.split(sep)
             if len(split) > 1:
                 filename = sep.join(split[1:])
-        self.basename = os.path.join(filepath, filename.split(".")[0])
+        self.basename = osp.join(filepath, filename.split(".")[0])
 
         if self.suggestions_file is None:
             self.suggestions_file = self.basename + "_suggestion.pickle"
             if self.suggestions_file == self.labels_file:
                 self.suggestions_file = None
-            elif not os.path.exists(self.suggestions_file):
+            elif not osp.exists(self.suggestions_file):
                 self.suggestions_file = None
 
         if self.output_file is None:
-            self.ouput_file = self.labels_file
+            self.output_file = osp.join("Annotations", self.labels_file)
             # if self.settings["suffix"] is not None:
-            #     self.output_file = os.path.join(
+            #     self.output_file = osp.join(
             #         "Annotations", self.basename + self.settings["suffix"]
             #     )
             # else:
@@ -157,7 +158,7 @@ class Viewer(QWidget):
                 self.output_file.split(".")[0][: -len(self.settings["suffix"])]
                 + self.settings["3d_suffix"]
             )
-            if os.path.exists(file_3d):
+            if osp.exists(file_3d):
                 data_3d = np.load(file_3d)
                 if self.settings["calibration_path"] is not None:
                     data_2d = get_2d_files(
@@ -188,27 +189,8 @@ class Viewer(QWidget):
         
         if self.animals is None:
             self.animals = ["ind{}".format(i) for i in range(self.n_ind)]
+        self.displayed_animals = self.animals #TODO change to display a subset of animals
         self.settings["individuals"] = self.animals
-            
-        print("SHOW ME THAT",
-            stacks,
-            shapes,
-            lengths,
-            self.n_ind,
-            self.animals,
-            boxes,
-            points_df_list,
-            segmentation_list,
-            index_dict,
-            current,
-            current_animal,
-            self.correct_mode,
-            self.al_points,
-            self.settings["mask_opacity"],
-            data_3d,
-            data_2d,
-            self.settings["skeleton"],
-            self.settings["3d_bodyparts"])
         
         self.canvas = VideoCanvas(
             self,
@@ -288,13 +270,13 @@ class Viewer(QWidget):
             return segmentation_list
 
         self.segmentation_files = [
-            os.path.join(fp, fn.split(".")[0] + self.settings["segmentation_suffix"])
+            osp.join(fp, fn.split(".")[0] + self.settings["segmentation_suffix"])
             for fp, fn in zip(self.filepaths, self.filenames)
         ]
 
         segmentation_list = []
         for file in self.segmentation_files:
-            if os.path.exists(file):
+            if osp.exists(file):
                 segmentation_list.append(Segmentation(file))
             else:
                 segmentation_list.append(None)
@@ -337,11 +319,11 @@ class Viewer(QWidget):
         if self.settings["DLC_suffix"] is not None:
             skeleton_files = []
             for i in range(len(self.filepaths)):
-                skeleton_file_path = os.path.join(
+                skeleton_file_path = osp.join(
                     self.filepaths[i],
                     self.filenames[i].split(".")[0] + self.settings["DLC_suffix"],
                 )
-                if os.path.exists(skeleton_file_path):
+                if osp.exists(skeleton_file_path):
                     skeleton_files.append(skeleton_file_path)
             self.settings["skeleton_files"] = skeleton_files
         return len(skeleton_files) > 0
@@ -667,7 +649,7 @@ class Viewer(QWidget):
         #                     self.settings["actions"]["other"] = []
         #                 if action not in self.settings["actions"]["other"]:
         #                     self.settings["actions"]["other"].append(action)
-        self._save_yaml(os.path.join("Project_Config", "config.yaml"))
+        self._save_yaml(osp.join("Project_Config", "config.yaml"))
         self.ncat = len(self.catDict["base"])
         self.get_ncat()
         try:
@@ -818,7 +800,7 @@ class Viewer(QWidget):
     def save(self, event=None, verbose=True, new_file=False, ask=False):
         if ask:
             msg = QMessageBox()
-            msg.setText("Save the current annotations?")
+            msg.setText("Save te current annotations?")
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             reply = msg.exec_()
             if reply == QMessageBox.No:
@@ -955,7 +937,7 @@ class Viewer(QWidget):
                 del self.loaded_data
 
         except:
-            if self.labels_file is not None and os.path.exists(self.labels_file):
+            if self.labels_file is not None and osp.exists(self.labels_file):
                 print(f"annotation file {self.labels_file} is invalid")
             elif self.labels_file is not None:
                 print(f"annotation file {self.labels_file} does not exist")
@@ -982,7 +964,7 @@ class Viewer(QWidget):
         #         + prior
         #         + ".pickle"
         #     )
-        #     if os.path.exists(file):
+        #     if osp.exists(file):
         #         if self.loaded_times is None:
         #             self.load_annotation(file, amb)
         #         else:
@@ -1001,7 +983,8 @@ class Viewer(QWidget):
             if self.animals is None:
                 self.animals = self.loaded_animals
             else:
-                self.anmals = list(set(self.animals + self.loaded_animals))
+                self.animals = list(set(self.animals + self.loaded_animals))
+            self.displayed_animals = self.animals
             self.n_ind = len(self.animals)
             if amb is not None:
                 for i, ind_list in enumerate(self.loaded_times):
@@ -1374,11 +1357,11 @@ class Viewer(QWidget):
     #             if corrections is not None:
     #                 fp = self.filepaths[i]
     #                 fn = (
-    #                     os.path.basename(self.filenames[i]).split(".")[0]
+    #                     osp.basename(self.filenames[i]).split(".")[0]
     #                     + "_corrections.pickle"
     #                 )
-    #                 file = os.path.join(fp, fn)
-    #                 if os.path.exists(file):
+    #                 file = osp.join(fp, fn)
+    #                 if osp.exists(file):
     #                     with open(file, "rb") as f:
     #                         data = pickle.load(f)
     #                         data.update(corrections)
@@ -1388,10 +1371,10 @@ class Viewer(QWidget):
     #                     pickle.dump(corrections, f)
     #                 im = Image.fromarray(vb.get_image(self.current()))
     #                 fn = (
-    #                     os.path.basename(self.filenames[i]).split(".")[0]
+    #                     osp.basename(self.filenames[i]).split(".")[0]
     #                     + f"_frame{self.current():07}.jpeg"
     #                 )
-    #                 file = os.path.join(fp, fn)
+    #                 file = osp.join(fp, fn)
     #                 im.save(file)
     #     self.message = self.mode_message
     #     self.status.emit(self.message)
@@ -1520,13 +1503,13 @@ class Viewer(QWidget):
         labels = dlg.exec_()
         cat_labels = [self.catDict["base"][i] for i in self.catDict["base"]]
         num_clips = 5
-        target_dir = os.path.join(
+        target_dir = osp.join(
             QFileDialog.getExistingDirectory(self, "Save File"), "extracted_clips"
         )
-        fps = VideoFileClip(os.path.join(self.filepaths[0], self.filenames[0])).fps
+        fps = VideoFileClip(osp.join(self.filepaths[0], self.filenames[0])).fps
         os.mkdir(target_dir)
         for label in labels:
-            os.mkdir(os.path.join(target_dir, label))
+            os.mkdir(osp.join(target_dir, label))
             cnt = 0
             if label not in cat_labels:
                 continue
@@ -1542,9 +1525,9 @@ class Viewer(QWidget):
                     if amb != 0 or end - start < 2 * fps // 3:
                         continue
                     for fn, fp in zip(self.filenames, self.filepaths):
-                        filename_in = os.path.join(fp, fn)
+                        filename_in = osp.join(fp, fn)
                         name, ext = fn.split(".")
-                        filename_out = os.path.join(
+                        filename_out = osp.join(
                             target_dir, label, f"{name}_{label}_{cnt}.{ext}"
                         )
                         ffmpeg_extract_subclip(

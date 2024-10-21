@@ -295,6 +295,8 @@ class VideoCanvas(SceneCanvas):
             self.next()
         elif event.key.name == "Left":
             self.prev()
+        elif event.key.name == "Control":
+            pass
         else:
             print(f"canvas didn't recognise key {event.key.name}")
 

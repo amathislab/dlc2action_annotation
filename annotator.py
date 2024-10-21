@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
             if folder_name == "Annotations":
                 if len(annotation_files) == 0:
                     annotation_files = [
-                        osp.splitext(osp.basename(v))[0] + self.settings["suffix"]
+                        osp.join(self.folder_path, folder_name, osp.splitext(osp.basename(v))[0] + self.settings["suffix"])
                         for v in self.videos
                     ]
                 self.annotation_files = annotation_files
@@ -201,23 +201,8 @@ class MainWindow(QMainWindow):
                     for f in files
                     if f.lower().endswith((".mov", ".avi", ".mp4", ".mkv"))
                 ]
-
-                # Check the number of video files
-                num_videos = len(self.videos)
-
-                # Perform actions based on the number of videos
-                if num_videos > 1:
-                    msg = QMessageBox()
-                    msg.setText(
-                        "You have chosen more than one video file. Would you like to open them in multiple view mode?"
-                    )
-                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-                    reply = msg.exec_()
-                    if reply == QMessageBox.Yes:
-                        self.multiview = True
-                    else:
-
-                        self.multiview = False
+                
+                self.multiview = self.settings["multiview"]
 
                 if len(videos) == 0 and self.settings["video_files"] is not None:
                     videos = self.settings["video_files"]
@@ -238,9 +223,7 @@ class MainWindow(QMainWindow):
         #     annotation_files = [None for _ in self.videos]
         # self.annotation_files = annotation_files
 
-        if suggestion_files is None:
-            suggestion_files = [None for _ in self.videos]
-        self.suggestion_files = suggestion_files
+        self.suggestion_files = [None for i in self.videos] #TODO include suggestion files
 
         self.run_video(self.multiview)
 
@@ -352,15 +335,11 @@ class MainWindow(QMainWindow):
             self.backup_manager.stop()
 
         os.chdir(self.folder_path)
-        print(filenames)
-        print(filepaths)
-        print(annotation)
-        print(suggestion)
         self.viewer = Viewer(
             stacks,
             shapes,
             lens,
-            annotation,
+            osp.join("Annotations", annotation),
             annotation,
             suggestion,
             self.settings,
@@ -373,7 +352,10 @@ class MainWindow(QMainWindow):
             al_points=al_points,
         )
         self.setCentralWidget(self.viewer)
-        self.viewer.status.connect(self.statusBar().showMessage)
+        try:
+            self.viewer.status.connect(self.statusBar().showMessage)
+        except:
+            self.viewer.status.connect(self.statusBar.showMessage)
         self.viewer.next_video.connect(self.next_video)
         self.viewer.prev_video.connect(self.prev_video)
         self.viewer.mode_changed.connect(self.on_mode)

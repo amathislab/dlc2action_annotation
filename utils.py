@@ -380,6 +380,7 @@ class WorkerThread(QThread):
 
     def do_work(self):
         start, end = self.loading
+        #TODO fix multivideos 
         videos = [
             read_stack(stack, start, end, shape, self.backend)
             for stack, shape in zip(self.stacks, self.shapes)
