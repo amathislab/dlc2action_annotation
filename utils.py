@@ -962,3 +962,14 @@ def detect_and_remap(
                 )
             p_bar.update(1)
     p_bar.close()
+
+
+def split_consecutive_sequences(input_array:np.ndarray, target_value:float = 1):
+    '''Split an array into consecutive subsequences of a target value, input array is a 1D numpy array''' 
+    if isinstance(input_array, list):
+        input_array = np.array(input_array)
+    is_target = input_array == target_value
+    changes = np.diff(np.concatenate(([False], is_target, [False])))
+    indices = np.where(changes)[0].reshape(-1, 2)
+    subsequences = [list(range(start, end)) for start, end in indices]
+    return subsequences

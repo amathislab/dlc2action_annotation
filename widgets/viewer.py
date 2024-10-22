@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils import BoxLoader, Segmentation, get_2d_files, read_skeleton
+from utils import BoxLoader, Segmentation, get_2d_files, read_skeleton, split_consecutive_sequences
 
 from .actionbar import Bar
 from .canvas import VideoCanvas
@@ -95,6 +95,7 @@ class Viewer(QWidget):
         self.al_points = al_points
         self.displayed_animals = []
         self.sequential = sequential
+        self.loaded_animals = None
         self.animals = None
 
         self.active = True
@@ -849,9 +850,23 @@ class Viewer(QWidget):
         else:
             return True
 
-    def load_prior(self, filename, amb_replace):
+    def load_prior(self, filename:str, amb_replace:bool):
+        
         with open(filename, "rb") as f:
-            _, loaded_labels, animals, loaded_times = pickle.load(f)
+            temp = pickle.load(f)
+            if isinstance(temp, tuple):
+                #Load from DLC annotation formats
+                (metadata, loaded_labels, animals, loaded_times) = temp
+            elif isinstance(temp, dict):
+                #Load from DLC2Action prediction files,
+                if self.settings["n_ind"] == 1:
+                    loaded_times, labels = self.load_from_predictions(temp, len(self.loaded_labels) == 0)
+                    loaded_labels = labels if len(self.loaded_labels)==0 else self.loaded_labels
+                    animals = self.loaded_animals
+                else:
+                    raise NotImplementedError("Multiple individuals not supported for predictions")
+            del temp
+            
         animals_i = []
         for ind in animals:
             if ind in self.loaded_animals:
@@ -966,16 +981,45 @@ class Viewer(QWidget):
         #         else:
         #             self.load_prior(file, amb)
 
+    @staticmethod
+    def load_from_predictions(predictions:dict, return_behaviors:bool=False, threshold:float = 0.5):
+        for video_name in predictions["min_frames"].keys():
+            data = predictions[video_name]
+            data = data.numpy()
+            data = np.roll(data , 1, axis=0)  #TODO find the behavior order and include it in the predicitons
+            preds = (data > threshold)*1
+            times = []
+            for beh in preds:
+                subseq = split_consecutive_sequences(beh)
+                temp = []
+                for s in subseq:
+                    temp.append([s[0], s[-1], 2])
+                times.append(temp)
+
+            behaviors = None
+            if return_behaviors:
+                behaviors = [f"beh_{i}" for i in range(data.shape[0])]
+            return [times], behaviors
+
     def load_annotation(self, filename, amb=None):
         if self.settings["data_type"] == "dlc":
             with open(filename, "rb") as f:
-                (
-                    metadata,
-                    self.loaded_labels,
-                    self.loaded_animals,
-                    self.loaded_times,
-                ) = pickle.load(f)
-
+                temp = pickle.load(f)
+            if isinstance(temp, tuple):
+                #Load from DLC annotation formats
+                (metadata, self.loaded_labels, self.loaded_animals, self.loaded_times) = temp
+            elif isinstance(temp, dict):
+                #Load from DLC2Action prediction files,
+                self.loaded_animals = [] 
+                if self.animals is None:
+                    self.loaded_animals = ["ind0"]
+                if self.settings["n_ind"] == 1:
+                    self.loaded_times, labels = self.load_from_predictions(temp, len(self.loaded_labels) == 0)
+                    self.loaded_labels = labels if len(self.loaded_labels)==0 else self.loaded_labels
+                else:
+                    raise NotImplementedError("Multiple individuals not supported for predictions")
+            del temp
+                
             if self.animals is None:
                 self.animals = self.loaded_animals
             else:
@@ -987,6 +1031,8 @@ class Viewer(QWidget):
                     for j, cat_list in enumerate(ind_list):
                         for k in range(len(cat_list)):
                             self.loaded_times[i][j][k][-1] = amb
+        
+        
         elif self.settings["data_type"] == "calms21":
             f = np.load(filename, allow_pickle=True).item()
             keys = sorted(list(f.keys()))
