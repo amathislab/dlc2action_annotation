@@ -161,7 +161,7 @@ class MainWindow(QMainWindow):
         hard_negatives = self.settings["hard_negative_classes"]
 
         for folder_name in folders:
-            
+
             if folder_name == "Tracking data":
                 # Get the list of files in Tracking data folder
                 folder_path = osp.join(self.folder_path, "Tracking data")
@@ -173,7 +173,7 @@ class MainWindow(QMainWindow):
                     for f in files
                     if f.lower().endswith((".mov", ".avi", ".mp4", ".mkv"))
                 ]
-                
+
                 self.multiview = self.settings["multiview"]
 
                 if len(videos) == 0 and self.settings["video_files"] is not None:
@@ -190,19 +190,28 @@ class MainWindow(QMainWindow):
                         # self.videos = videos
                         # if type(self.videos) is not list:
                         #     self.videos = list(self.videos)
-            
+
             elif folder_name == "Annotations":
                 self.annotation_files = [
-                    osp.join(self.folder_path, folder_name, osp.splitext(osp.basename(v))[0] + self.settings["suffix"])
+                    osp.join(
+                        self.folder_path,
+                        folder_name,
+                        osp.splitext(osp.basename(v))[0] + self.settings["suffix"],
+                    )
                     for v in self.videos
                 ]
 
             elif folder_name == "Suggestions":
                 self.suggestion_files = [
-                    osp.join(self.folder_path, folder_name, osp.splitext(osp.basename(v))[0] + self.settings["suggestion_suffix"])
+                    osp.join(
+                        self.folder_path,
+                        folder_name,
+                        osp.splitext(osp.basename(v))[0]
+                        + self.settings["suggestion_suffix"],
+                    )
                     for v in self.videos
                 ]
-            
+
             elif folder_name == "Project_Config":
 
                 self.settings_file = osp.join(
@@ -215,8 +224,6 @@ class MainWindow(QMainWindow):
                         list(map(lambda x: float(x) / 255, line.split()))
                         for line in f.readlines()
                     ]
-
-            
 
         # if annotation_files is None:
         #     annotation_files = [None for _ in self.videos]
@@ -324,7 +331,7 @@ class MainWindow(QMainWindow):
             annotation = self.annotation_files[0]
         if annotation is None:
             suggestion = self.suggestion_files[0]
-            
+
         annotation_file = annotation
         if not os.path.exists(annotation):
             annotation_file = None
@@ -365,8 +372,8 @@ class MainWindow(QMainWindow):
             )
         else:
             backup_path = Path(self.backup_dir)
-        
-        if not self.multiview: #TODO fix backup manager for multiview
+
+        if not self.multiview:  # TODO fix backup manager for multiview
             self.backup_manager = BackupManager(
                 backup_path=backup_path,
                 viewer=self.viewer,

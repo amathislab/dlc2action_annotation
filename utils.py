@@ -380,7 +380,7 @@ class WorkerThread(QThread):
 
     def do_work(self):
         start, end = self.loading
-        #TODO fix multivideos 
+        # TODO fix multivideos
         videos = [
             read_stack(stack, start, end, shape, self.backend)
             for stack, shape in zip(self.stacks, self.shapes)
@@ -964,8 +964,8 @@ def detect_and_remap(
     p_bar.close()
 
 
-def split_consecutive_sequences(input_array:np.ndarray, target_value:float = 1):
-    '''Split an array into consecutive subsequences of a target value, input array is a 1D numpy array''' 
+def split_consecutive_sequences(input_array: np.ndarray, target_value: float = 1):
+    """Split an array into consecutive subsequences of a target value, input array is a 1D numpy array"""
     if isinstance(input_array, list):
         input_array = np.array(input_array)
     is_target = input_array == target_value
