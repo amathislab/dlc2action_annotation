@@ -565,7 +565,6 @@ class Viewer(QWidget):
                     cat_dict[category][a_i] = a
         for k, v in cat_dict.items():
             self.catDict[k] = v
-        print(self.catDict)
         for k, v in self.catDict.items():
             for i, a in v.items():
                 if a not in self.invisible_actions:
