@@ -38,7 +38,9 @@ class Console(QWidget):
 
         self.catlist = CatList(key=self.window.active_list, window=self.window)
         self.catlist.itemClicked.connect(self.window.item_clicked)
+        
         self.catlist.itemDoubleClicked.connect(self.window.doubleclick)
+        
         self.animallist = AnimalList(
             window=self.window,
             current=self.window.current_animal_name(),
@@ -85,9 +87,9 @@ class Console(QWidget):
         self.ind_names_tick.stateChanged.connect(self.window.set_display_names)
         self.ind_names_label = QLabel("Display names:")
 
-        self.correct_button = QPushButton("Save correction")
-        self.correct_button.clicked.connect(self.window.save_correction)
-        self.correct_button.setVisible(self.window.correct_mode)
+        # self.correct_button = QPushButton("Save correction")
+        # self.correct_button.clicked.connect(self.window.save_correction)
+        # self.correct_button.setVisible(self.window.correct_mode)
 
         self.speed_form = QFormLayout()
         self.speed_form.addRow(self.speed_label, self.speed_slider)
@@ -125,9 +127,12 @@ class Console(QWidget):
             self.prev_button.setVisible(False)
 
         self.back_button = QPushButton("Back to categories")
+        
         self.back_button.clicked.connect(
             lambda: self.window.set_active_list("categories")
         )
+        
+        # TODO: CHANGE THIS TO TOGGLE
         if self.window.active_list == "base":
             self.back_button.setVisible(False)
         elif self.window.active_list == "categories":
@@ -143,7 +148,7 @@ class Console(QWidget):
         self.layout.addWidget(self.catlist, 70)
         self.layout.addWidget(self.back_button)
         self.layout.addLayout(self.speed_form)
-        self.layout.addWidget(self.correct_button)
+        # self.layout.addWidget(self.correct_button)
         self.layout.addLayout(self.video_buttons)
         self.layout.addLayout(self.assessment_buttons)
         self.setLayout(self.layout)

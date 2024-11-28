@@ -4,6 +4,7 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import math
+import os
 from collections import defaultdict
 from copy import copy
 
@@ -11,7 +12,7 @@ import numpy as np
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QColor, QPainter, QPen
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QMessageBox
 
 from utils import get_color
 
@@ -79,10 +80,27 @@ class Bar(QWidget):
         self.len = segment_len
         self.setMouseTracking(True)
         self.get_labels()
-        with open("colors.txt") as f:
+        
+        cwd = os.getcwd()
+        try:
+          with open("colors.txt") as f:
+
             self.colors = [
+
                 list(map(lambda x: float(x), line.split())) for line in f.readlines()
+
             ]
+        except:
+            if not cwd.endswith('/Project_Config'):
+                os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+                with open("colors.txt") as f:
+
+                    self.colors = [
+
+                        list(map(lambda x: float(x), line.split())) for line in f.readlines()
+
+                    ]
+                os.chdir(cwd)
 
     def get_color(self, name):
         if isinstance(name, int):
@@ -464,27 +482,43 @@ class Bar(QWidget):
     def on_shortcut(self, sc):
         add_new = True
         key = self.window.active_list
-        cat = self.window.shortCut[key][sc]
-        rects = self.grow_rects.copy()
-        for rect in rects:
-            if rect.cat == cat:
-                add_new = False
-                if self.minus_rect == rect:
-                    self.move_minus()
-                if self.plus_rect == rect:
-                    self.move_plus()
-                rect.stop()
-                self.grow_rects.remove(rect)
-        if add_new and key not in ["base", "categories"]:
-            cat_key = self.window.catDictInv("categories")[key]
-            for rect in self.grow_rects:
-                if rect.cat == cat_key:
+        if sc in self.window.shortCut[key]:
+            cat = self.window.shortCut[key][sc]
+            rects = self.grow_rects.copy()
+            for rect in rects:
+                if rect.cat == cat:
                     add_new = False
-                    rect.cat = cat
-        if add_new:
-            self.add_rect(self.window.current(), cat, None, on_shortcut=True)
-            self.reorder_rects()
+                    if self.minus_rect == rect:
+                        self.move_minus()
+                    if self.plus_rect == rect:
+                        self.move_plus()
+                    rect.stop()
+                    self.grow_rects.remove(rect)
+            if add_new and key not in ["base", "categories"]:
+                cat_key = self.window.catDictInv("categories")[key]
+                for rect in self.grow_rects:
+                    if rect.cat == cat_key:
+                        add_new = False
+                        rect.cat = cat
+            if add_new:
+                self.add_rect(self.window.current(), cat, None, on_shortcut=True)
+                self.reorder_rects()
+        else:
+            pass
+            # This makes absolutely no sense
+            # warning = QMessageBox()
+            # warning.setText('Shortcut does not exist.')
+            # warning.setWindowTitle('Warning')
+            # warning.exec_()
+            # print('msg = QMessageBox()msg = QMessageBox()')
+            # msg = QMessageBox()
+            # msg.setText(
+            #     "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+            # )
+            # msg.setStandardButtons(QMessageBox.Ok)
+        
         self.window.set_move_mode()
+        
 
     def check_merge(self, move_rect):
         rect_start, rect_end = move_rect.times
