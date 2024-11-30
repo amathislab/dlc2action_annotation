@@ -11,7 +11,7 @@ import csv
 import pickle
 from pathlib import Path
 
-import numpy
+
 import numpy as np
 
 
@@ -75,7 +75,7 @@ def save_annotations(
 
     with open(output_path, "wb") as f:
         pickle.dump((metadata, cat_labels, animals, times), f)
-
+    print(f"saved annotations to {output_path}")
     if human_readable:
         human_readable_path = output_path.with_suffix(".csv")
         human_readable_data = form_annotations_csv(

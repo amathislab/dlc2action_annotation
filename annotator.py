@@ -4,13 +4,17 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import os
+import os.path as osp
 import pickle
 import sys
+import yaml
+
 from pathlib import Path
 from typing import Optional
 
 import click
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QAction,
@@ -22,11 +26,46 @@ from PyQt5.QtWidgets import (
     QStatusBar,
 )
 
-from utils import get_settings, read_settings, read_video
+from utils import get_settings, read_settings, read_video, save_settings
 from widgets.core.backup import BackupManager
-from widgets.dialog import Form
-from widgets.settings import SettingsWindow
-from widgets.viewer import Viewer as Viewer
+from widgets.dialog import Form, FormInit
+from widgets.settings import SettingsWindow, SetNewProject
+from widgets.viewer import Viewer
+
+
+def select_folder():
+    options = QFileDialog.Options()
+    options |= QFileDialog.ShowDirsOnly
+    folder_path = QFileDialog.getExistingDirectory(
+        None, "Select Directory", "", options=options
+    )
+
+    if folder_path:
+        return folder_path
+
+
+def create_load():
+    """Create a new project or load an existing project, returns the project folder path"""
+
+    start_dialog = QMessageBox()
+    start_dialog.setText("Welcome to DLC2action! ")
+    create_project = start_dialog.addButton("Create Project", QMessageBox.ActionRole)
+    open_project = start_dialog.addButton("Open Project", QMessageBox.ActionRole)
+    cancel = start_dialog.addButton("Cancel", QMessageBox.ActionRole)
+    start_dialog.setDefaultButton(create_project)
+    start_dialog.exec_()
+
+    if start_dialog.clickedButton() == create_project:
+        newProject = SetNewProject()
+        newProject.exec_()
+        folder_path = newProject.folder_path
+    elif start_dialog.clickedButton() == open_project:
+        folder_path = select_folder()
+    elif start_dialog.clickedButton() == cancel:
+        start_dialog.close()
+        exit()
+
+    return folder_path
 
 
 class MainWindow(QMainWindow):
@@ -34,78 +73,57 @@ class MainWindow(QMainWindow):
 
     def __init__(
         self,
-        videos,
-        multiview=True,
-        dev=False,
-        active_learning=False,
-        show_settings=False,
-        config_file="config.yaml",
-        al_points_dictionary=None,
-        clustering_parameters=None,
-        skeleton_files=None,
-        annotation_files=None,
-        suggestion_files=None,
-        hard_negatives=None,
+        folder_path: str,
         backup_dir: Optional[str] = None,
         backup_interval: int = 30,
     ):
+
         super(MainWindow, self).__init__()
+
         self.toolbar = None
         self.menubar = None
         self.viewer: Optional[Viewer] = None
+
+        # Backup parameters
         self.backup_manager: Optional[BackupManager] = None
         self.backup_dir = backup_dir
         self.backup_interval = backup_interval
 
+        # Video parameters
         self.cur_video = 0
-        self.clustering_parameters = clustering_parameters
-        self.settings = get_settings(config_file, show_settings)
-
-        self.settings_file = config_file
+        self.clustering_parameters = None
+        self.root_directory = folder_path
+        self.multiview = False
+        self.dev = False
+        # Modes
         self.sequential = False
-        self.dev = dev
-        self.multiview = multiview
-        self.al_mode = self.settings["start_al"]
-        if skeleton_files is not None:
-            self.settings["skeleton_files"] = skeleton_files
-        if active_learning:
-            self.al_mode = True
-        if al_points_dictionary is not None:
-            self.al_points_file = self.settings["al_points_file"]
-        else:
-            self.al_points_file = None
-        self.al_points_dict = al_points_dictionary
+        self.current_folder = None
+        self.al_mode = True
+        self.al_points_file = None
+        # self.al_points_dict = al_points_dictionary
+        self.al_points_dict = {}
+
+        self.read_settings()
+        self.load_project(folder_path=folder_path)
+
+        self.run_video(self.multiview)
+
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
+        self.launch_project()
 
-        if len(videos) == 0 and self.settings["video_files"] is not None:
-            videos = self.settings["video_files"]
-
-        if len(videos) == 0 and self.settings["video_upload_window"]:
-            self.load_video()
-        else:
-            if videos == ():
-                self.videos = [None for i in self.settings["skeleton_files"]]
-            else:
-                self.videos = videos
-                if type(self.videos) is not list:
-                    self.videos = list(self.videos)
-        if annotation_files is None:
-            annotation_files = [None for _ in self.videos]
-        self.annotation_files = annotation_files
-        if suggestion_files is None:
-            suggestion_files = [None for _ in self.videos]
-        self.suggestion_files = suggestion_files
-        self.run_video(self.multiview)
-        if hard_negatives is not None:
-            self.settings["hard_negative_classes"] = hard_negatives
-
-        self._createActions()
-        self._createToolBar()
-        self._createMenuBar()
+    def read_settings(self):
+        self.settings_file = osp.join(
+            self.root_directory, "Project_Config", "config.yaml"
+        )
+        self.settings = read_settings(self.settings_file)
 
     def closeEvent(self, a0) -> None:
-        self.backup_manager.stop()
+        print("closeEvent(self, a0) -> None:")
+
+        if self.backup_manager:
+            self.backup_manager.stop()
+        # self.backup_manager.stop()
         self.closed.emit()
         super().closeEvent(a0)
 
@@ -115,8 +133,6 @@ class MainWindow(QMainWindow):
             and self.cur_video == len(self.videos) - 1
         ):
             self.close()
-            # window = cluster.MainWindow(*self.clustering_parameters)
-            # window.show()
         else:
             self.cur_video = (self.cur_video + 1) % len(self.videos)
             self.settings = read_settings(self.settings_file)
@@ -128,47 +144,128 @@ class MainWindow(QMainWindow):
             self.cur_video = len(self.videos) + self.cur_video
         self.run_viewer_single()
 
-    def load_video(self):
-        self.videos = QFileDialog.getOpenFileNames(
-            self, "Open file", filter="Video files (*.mov *.avi *mp4 *mkv)"
-        )[0]
-        if type(self.videos) is not list:
-            self.videos = [self.videos]
-        if len(self.videos) > 1:
-            msg = QMessageBox()
-            msg.setText(
-                "You have chosen more than one video file. Would you like to open them in multiple view mode?"
-            )
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            reply = msg.exec_()
-            if reply == QMessageBox.Yes:
-                self.multiview = True
-            else:
-                self.multiview = False
+    # def load_project(self, videos, annotation_files, suggestion_files, hard_negatives):
+    def load_project(self, folder_path=None):
 
-    def run_video(self, multiview=False, current=0, settings_update=None):
-        if settings_update is None:
-            settings_update = {}
+        if folder_path is None:
+            self.folder_path = QFileDialog.getExistingDirectory(self, "Open Folder")
+        else:
+            self.folder_path = folder_path
+
+        # Get the list of folders in the selected directory
+        folders = ["Project_Config", "Tracking data", "Annotations", "Suggestions"]
+        num_videos = len(os.listdir(osp.join(self.folder_path, "Tracking data")))
+
+        videos = self.settings["video_files"]
+        # annotation_files = [osp.splitext(v)[0] + self.settings["suffix"] for v in videos]
+        hard_negatives = self.settings["hard_negative_classes"]
+
+        for folder_name in folders:
+
+            if folder_name == "Tracking data":
+                # Get the list of files in Tracking data folder
+                folder_path = osp.join(self.folder_path, "Tracking data")
+                files = os.listdir(folder_path)
+
+                # Filter video files based on extensions
+                self.videos = [
+                    osp.join(folder_path, f)
+                    for f in files
+                    if f.lower().endswith((".mov", ".avi", ".mp4", ".mkv"))
+                ]
+
+                self.multiview = self.settings["multiview"]
+
+                if len(videos) == 0 and self.settings["video_files"] is not None:
+                    videos = self.settings["video_files"]
+
+                else:
+                    if videos == ():
+                        self.videos = [None for i in self.settings["skeleton_files"]]
+                    else:
+                        self.videos = [
+                            osp.join(folder_path, osp.basename(f))
+                            for f in os.listdir(folder_path)
+                        ]
+                        # self.videos = videos
+                        # if type(self.videos) is not list:
+                        #     self.videos = list(self.videos)
+
+            elif folder_name == "Annotations":
+                self.annotation_files = [
+                    osp.join(
+                        self.folder_path,
+                        folder_name,
+                        osp.splitext(osp.basename(v))[0] + self.settings["suffix"],
+                    )
+                    for v in self.videos
+                ]
+
+            elif folder_name == "Suggestions":
+                self.suggestion_files = [
+                    osp.join(
+                        self.folder_path,
+                        folder_name,
+                        osp.splitext(osp.basename(v))[0]
+                        + self.settings["suggestion_suffix"],
+                    )
+                    for v in self.videos
+                ]
+
+            elif folder_name == "Project_Config":
+
+                self.settings_file = osp.join(
+                    self.folder_path, "Project_Config", "config.yaml"
+                )
+                self.settings = get_settings(self.settings_file, show_settings=False)
+                skeleton = self.settings["skeleton_files"]
+                with open("colors.txt") as f:
+                    self.animal_colors = [
+                        list(map(lambda x: float(x) / 255, line.split()))
+                        for line in f.readlines()
+                    ]
+
+        # if annotation_files is None:
+        #     annotation_files = [None for _ in self.videos]
+        # self.annotation_files = annotation_files
+
+        self.run_video(self.multiview)
+
+        if hard_negatives is not None:
+            self.settings["hard_negative_classes"] = hard_negatives
+
+        return skeleton
+
+    def launch_project(self):
+        self._createActions()
+        self._createToolBar()
+        self._createMenuBar()
+
+    def run_video(self, multiview=False):
+
         videos = self.videos
+
         stacks, shapes, lens, filepaths, filenames = [], [], [], [], []
         self.settings = read_settings(self.settings_file)
-        self.settings.update(settings_update)
+
         if multiview:
             for i, video in enumerate(videos):
                 stack, shape, length = read_video(video, self.settings["backend"])
                 stacks.append(stack)
                 shapes.append(shape)
                 lens.append(length)
+
                 if video is not None:
-                    filepath, filename = os.path.split(video)
+
+                    filepath, filename = osp.split(video)
                     filepaths.append(filepath)
                     filenames.append(filename)
+
                 else:
-                    filepath, filename = os.path.split(
-                        self.settings["skeleton_files"][i]
-                    )
+                    filepath, filename = osp.split(self.settings["skeleton_files"][i])
                     filepaths.append(filepath)
                     filenames.append(filename)
+
             self.run_viewer(
                 stacks,
                 shapes,
@@ -176,17 +273,20 @@ class MainWindow(QMainWindow):
                 filenames,
                 filepaths,
                 self.annotation_files[self.cur_video],
-                self.suggestion_files,
-                current,
+                self.suggestion_files[self.cur_video],
+                self.animal_colors,
+                current=0,
             )
+
         else:
             if len(self.videos) > 1:
                 self.sequential = True
-            self.run_viewer_single(current)
+            self.run_viewer_single(current=0)
 
     def open_video(self):
-        self.viewer.save()
-        self.load_video()
+        # self.viewer.save()
+        self.load_video(self.current_folder)
+        # TODO: Bug here when you open a view it doesn't prompt you to open in multiple view
         self.run_video()
 
     def read_video_stack(self, n):
@@ -194,10 +294,7 @@ class MainWindow(QMainWindow):
         stacks = [stack]
         shapes = [shape]
         lens = [length]
-        if self.videos[n] is None:
-            filepath, filename = os.path.split(self.settings["skeleton_files"][n])
-        else:
-            filepath, filename = os.path.split(self.videos[n])
+        filepath, filename = osp.split(self.videos[n])
         return stacks, shapes, lens, filename, filepath
 
     def run_viewer_single(self, current=0):
@@ -210,6 +307,7 @@ class MainWindow(QMainWindow):
             [filepath],
             self.annotation_files[self.cur_video],
             self.suggestion_files[self.cur_video],
+            self.animal_colors,
             current,
         )
 
@@ -222,8 +320,10 @@ class MainWindow(QMainWindow):
         filepaths,
         annotation,
         suggestion,
-        current=0,
+        animal_colors,
+        current,
     ):
+
         al_points = self.get_al_points(filenames[0])
         if al_points is None:
             self.al_mode = False
@@ -232,41 +332,54 @@ class MainWindow(QMainWindow):
         if annotation is None:
             suggestion = self.suggestion_files[0]
 
+        annotation_file = annotation
+        if not os.path.exists(annotation):
+            annotation_file = None
+        output_file = annotation
         if self.backup_manager is not None:
             self.backup_manager.stop()
 
+        os.chdir(self.folder_path)
         self.viewer = Viewer(
             stacks,
             shapes,
             lens,
-            None,
-            annotation,
+            output_file,
+            annotation_file,
             suggestion,
             self.settings,
             self.sequential,
             filenames,
             filepaths,
             current,
+            animal_colors,
             al_mode=self.al_mode,
             al_points=al_points,
         )
         self.setCentralWidget(self.viewer)
-        self.viewer.status.connect(self.statusBar.showMessage)
+        try:
+            self.viewer.status.connect(self.statusBar().showMessage)
+        except:
+            self.viewer.status.connect(self.statusBar.showMessage)
         self.viewer.next_video.connect(self.next_video)
         self.viewer.prev_video.connect(self.prev_video)
         self.viewer.mode_changed.connect(self.on_mode)
 
         if self.backup_dir is None:
             default_video_path = Path(self.videos[0])
-            backup_path = default_video_path.with_name(default_video_path.stem + "_backups")
+            backup_path = default_video_path.with_name(
+                default_video_path.stem + "_backups"
+            )
         else:
             backup_path = Path(self.backup_dir)
-        self.backup_manager = BackupManager(
-            backup_path=backup_path,
-            viewer=self.viewer,
-            interval=self.backup_interval,
-        )
-        self.backup_manager.start()
+
+        if not self.multiview:  # TODO fix backup manager for multiview
+            self.backup_manager = BackupManager(
+                backup_path=backup_path,
+                viewer=self.viewer,
+                interval=self.backup_interval,
+            )
+            self.backup_manager.start()
 
     def get_al_points(self, filename):
         if self.dev:
@@ -286,6 +399,50 @@ class MainWindow(QMainWindow):
                 return None
             return al_points.get(name)
 
+    def load_data_skl(self, skeleton):
+
+        update = False
+        settings_update = {}
+        self.settings["skeleton_files"] = skeleton
+        videos = self.videos
+
+        if skeleton is None or len(skeleton[0]) == 0:
+            return None
+
+        elif len(self.videos) > 0:
+            # Match skeleton files with corresponding videos
+
+            for skeleton_file in skeleton:
+                user_input = FormInit(videos, skeleton_file)
+                user_input.exec_()
+
+            updated_skeleton = []
+            suffixes = [file.split("/")[-1].split(".")[0] for file in self.videos]
+            suffix_to_filename = {}
+            for suffix in suffixes:
+                for filename in skeleton:
+                    if suffix in filename:
+                        suffix_to_filename[suffix] = filename
+                        break
+                else:
+                    suffix_to_filename[suffix] = None
+            updated_skeleton = [suffix_to_filename[suffix] for suffix in suffixes]
+            skeleton = updated_skeleton
+            self.settings["skeleton_files"] = updated_skeleton
+            settings_update["skeleton_files"] = updated_skeleton
+            update = True
+
+        if update:
+            self.viewer.save(verbose=False, ask=False)
+            self.run_video(
+                current=self.viewer.current(),
+                settings_update=settings_update,
+                multiview=self.multiview,
+            )
+            self._createActions()
+            self._createMenuBar()
+            self._createToolBar()
+
     def load_data(self, type):
         update = False
         settings_update = {}
@@ -297,6 +454,7 @@ class MainWindow(QMainWindow):
                 settings_update["detection_files"] = boxes
                 update = True
         if type == "DLC":
+
             skeleton = [
                 QFileDialog.getOpenFileName(
                     self, "Open file", filter="DLC files (*.h5 *.pickle)"
@@ -325,7 +483,7 @@ class MainWindow(QMainWindow):
         #         self.load_labels_file = load_labels_file
         #         update = True
         if update:
-            self.viewer.save(verbose=False, ask=True)
+            self.viewer.save(verbose=False, ask=False)
             self.run_video(
                 current=self.viewer.current(),
                 settings_update=settings_update,
@@ -335,7 +493,11 @@ class MainWindow(QMainWindow):
             self._createMenuBar()
             self._createToolBar()
 
+    def setRootDirectory(self):
+        os.chdir(self.root_directory)
+
     def _createActions(self):
+        self.setRootDirectory()
         # File actions
         self.play_action = QAction(self)
         self.play_action.setText("Play / Stop")
@@ -419,7 +581,9 @@ class MainWindow(QMainWindow):
             "Load labels from the settings file list and switch to/from nested annotation"
         )
         loadFromListAction.triggered.connect(self.viewer.load_cats)
+
         changeLabelsAction = QAction("&Change labels...", self)
+        changeLabelsAction.setShortcut("Ctrl+L")  # Set the shortcut for changing labels
         changeLabelsAction.setStatusTip("Modify the label names and the shortcuts")
         changeLabelsAction.triggered.connect(self.viewer.get_cats)
         activeLearningAction = QAction("&Start/Stop active learning", self)
@@ -427,11 +591,6 @@ class MainWindow(QMainWindow):
             "Activate or deactivate the more efficient active learning mode"
         )
         activeLearningAction.triggered.connect(self.change_al_mode)
-        correctAction = QAction("&Save a correction...", self)
-        correctAction.setStatusTip(
-            "Click ang drag keypoints to correct DLC errors, save the frame and the keypoints"
-        )
-        correctAction.triggered.connect(self.viewer.set_correct_mode)
         unlabeledAction = QAction("&Start unlabeled search", self)
         unlabeledAction.setStatusTip(
             "Navigate through the unlabeled intervals in the video"
@@ -445,9 +604,7 @@ class MainWindow(QMainWindow):
         trackletAction = QAction("&Start tracklet navigation", self)
         trackletAction.setStatusTip("Go through tracklets one by one")
         trackletAction.triggered.connect(self.set_tracklet_al)
-        exampleAction = QAction("&Export example clips", self)
-        exampleAction.setStatusTip("Export example clips of the behaviors")
-        exampleAction.triggered.connect(self.viewer.export_examples)
+
         rainbowAction = QAction("&Body part colors", self)
         rainbowAction.setStatusTip("Switch between individual and body part coloring")
         rainbowAction.triggered.connect(self.viewer.switch_rainbow)
@@ -474,11 +631,15 @@ class MainWindow(QMainWindow):
         self.menubar = self.menuBar()
         self.menubar.setNativeMenuBar(False)
         file = self.menubar.addMenu("File")
+
+        # TODO: Does this save the project?
         file.addAction(saveAction)
         file.addAction(saveasAction)
+
         file.addAction(openVideoAction)
-        file.addAction(correctAction)
-        file.addAction(exampleAction)
+
+        # file.addAction(correctAction)
+        # file.addAction(exampleAction)
         loadMenu = file.addMenu("Load")
         loadMenu.addAction(loadDLCAction)
         loadMenu.addAction(loadLabelAction)
@@ -555,7 +716,7 @@ class MainWindow(QMainWindow):
 
     def set_settings(self, event):
         SettingsWindow(self.settings_file).exec_()
-        self.viewer.save(verbose=False, ask=True)
+        self.viewer.save(verbose=False, ask=False)
         self.run_video(current=self.viewer.current(), multiview=self.multiview)
         self._createActions()
         self._createToolBar()
@@ -581,27 +742,27 @@ class MainWindow(QMainWindow):
     help="Development mode (some artificial debugging settings)",
 )
 @click.option("--active_learning", "-a", is_flag=True, help="Active learning mode")
-@click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
-@click.option("--config_file", "-c", default="config.yaml", help="The config file path")
-@click.option("--backup-dir", "-b", default=None, help="The directory where backups are saved")
-@click.option("--backup-interval", default=30, type=int, help="The interval between backups, in minutes")
-def main(video, multiview, dev, active_learning, open_settings, config_file, backup_dir, backup_interval):
+@click.option(
+    "--backup-dir", "-b", default=None, help="The directory where backups are saved"
+)
+@click.option(
+    "--backup-interval",
+    default=30,
+    type=int,
+    help="The interval between backups, in minutes",
+)
+def main(video, multiview, dev, active_learning, backup_dir, backup_interval):
     app = QApplication(sys.argv)
+    folder_path = create_load()
 
     window = MainWindow(
-        videos=video,
-        multiview=multiview,
-        dev=dev,
-        active_learning=active_learning,
-        show_settings=open_settings,
-        config_file=config_file,
-        backup_dir=backup_dir,
-        backup_interval=backup_interval,
+        folder_path=folder_path, backup_dir=backup_dir, backup_interval=backup_interval
     )
-    window.show()
 
+    window.show()
     app.exec_()
 
 
 if __name__ == "__main__":
+
     main()

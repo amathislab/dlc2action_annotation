@@ -43,6 +43,7 @@ from widgets.dialog import (
     EpisodeParamsSelector,
     EpisodeSelector,
     SuggestionParamsSelector,
+    WarningWindow,
 )
 from widgets.viewbox import VideoViewBox
 
@@ -238,6 +239,7 @@ class VideoWindow(QWidget):
         return QSize(400, 300)
 
     def closeEvent(self, a0):
+        
         self.canvas.set_play(False)
         self.closed.emit(self.n)
         a0.accept()
@@ -285,7 +287,7 @@ class VideoCanvas(SceneCanvas):
         self.timer = QTimer()
         self.timer.timeout.connect(self.next)
         self.set_play(True)
-
+    
     def on_key_press(self, event):
         if event.key.name == "Space":
             self.set_play()
@@ -293,6 +295,8 @@ class VideoCanvas(SceneCanvas):
             self.next()
         elif event.key.name == "Left":
             self.prev()
+        elif event.key.name == "Control":
+            pass
         else:
             print(f"canvas didn't recognise key {event.key.name}")
 
@@ -383,9 +387,11 @@ class ModWindow(QWidget):
 
     def reset_args(self):
         self.window.reset_args()
+        print("reset_args(self):/Args are reset")
         self.close()
-
+        
     def stop(self):
+        print("stop(self)/ Args are reset")
         self.close()
 
     def plot_graph(self):
@@ -549,10 +555,24 @@ class MainWindow(QWidget):
             dlc2action_path,
             skip_dlc2action,
         ]
-        with open("colors.txt") as f:
-            self.colors = (
-                np.array([list(map(int, line.split())) for line in f.readlines()]) / 255
-            )
+
+        
+        cwd = os.getcwd()
+        try:
+            with open("colors.txt") as f:
+                self.colors = (
+                    np.array([list(map(int, line.split())) for line in f.readlines()]) / 255
+                )
+        except:
+            if not cwd.endswith('/Project_Config'):
+                os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+                with open("colors.txt") as f:
+                    self.colors = (
+                        np.array([list(map(int, line.split())) for line in f.readlines()]) / 255
+                    )
+                os.chdir(cwd)
+
+        
         self.video_mode = "same"
         self.open_videos = {}
         self.color_i = 0
@@ -828,6 +848,7 @@ class MainWindow(QWidget):
                 self.data = torch.stack(self.data, 0).numpy()
 
     def reset_args(self):
+        print("reset_args(self): Window /Args are reset")
         self.args[self.method] = {"n_components": 2}
         self.get_clustering(self.args[self.method])
 
@@ -930,6 +951,7 @@ class MainWindow(QWidget):
             self.video_mode = "new"
 
     def close_all_videos(self):
+        print("close_all_videos(self):")
         for n in list(self.open_videos.keys()):
             self.open_videos[n].close()
 
@@ -971,6 +993,7 @@ class MainWindow(QWidget):
             pickle.dump(self.chosen, f)
 
     def reopen(self):
+        print("reopen(self): window closed")
         self.get_data()
         self.show()
 
@@ -1048,6 +1071,7 @@ class MainWindow(QWidget):
         self.new_window = annotator.MainWindow(
             videos=videos,
             multiview=False,
+            current_folder=None,
             active_learning=True,
             al_points_dictionary=al_dict,
             clustering_parameters=self.parameters,

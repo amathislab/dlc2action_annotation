@@ -3,6 +3,7 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
+import os 
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QKeySequence, QPixmap
 from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem
@@ -106,10 +107,28 @@ class SegmentationList(List):
 
     def __init__(self, cats, *args, **kwargs):
         super(SegmentationList, self).__init__(*args, **kwargs)
-        with open("colors.txt") as f:
-            colors = [
-                list(map(lambda x: float(x), line.split())) for line in f.readlines()
-            ][::-1]
+        
+        cwd = os.getcwd()
+        try:
+            with open("colors.txt") as f:
+                colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ][::-1]
+        except:
+            if not cwd.endswith('/Project_Config'):
+                os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+                with open("colors.txt") as f:
+                    colors = [
+                        list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                    ][::-1]
+                os.chdir(cwd)
+            else:
+                with open("colors.txt") as f:
+                    colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ][::-1]
+        
+
 
         for i, cat in enumerate(cats):
             if type(cat) is int:

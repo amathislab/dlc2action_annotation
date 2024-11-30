@@ -8,40 +8,98 @@ You can use this program to label a video frame-by-frame, without any fancy algo
 
 ## User guide
 
+Further detailed in [Installation and updating](readme_media/installation.md).
+
+## Quick Start : Annotation Workflow Tutorial
+
+Welcome to the Annotation Workflow Tutorial section, your comprehensive guide to mastering the annotation process. Below is a breakdown of the standard workflow, designed to ensure a seamless experience:
+
+## Table of Contents
+
+- [Setting up your environment](#Setting-up-your-environment)
+- [Creating a project](#Creating-a-project)
+- [Loading videos](#Loading-videos)
+- [Handling videos](#Handling-videos)
+- [Annotating videos](#Annotating-videos)
+- [Add or modify labels](#Add-or-modify-labelss)
+- [Saving your work](#Saving-your-work)
+- [Opening a project](#Opening-a-project)
+- [Change settings](#Change-settings)
+
+## 1) Setting up your environment :
+
+You can start using the interface by running the following commands in a terminal
+```bash
+conda activate dlc2action_gui
+python annotator.py
+```
+
+## 2) Creating a project :
+Once the application is launched, locate the option to create a new project. 
+- Provide a title for your project
+- Set the annotator's name
+- Set your labels for the project and/or select existing labels
+- Set a keyboard shortcut for your annotations to improve your workflow speed
+
+Watch the tutorial [here](https://www.youtube.com/watch?v=iTTREcVEL4U).
+
+## 3) Loading videos :
+Once the project is created a window will open to prompt you to select your videos.
+- You can select one or multiple videos
+- If you select multiple videos you'll have the option to display them sequentially or in multiple view 
+- Select 'Yes' to display all videos conjointly (depending on the size of your videos this will take a few minutes)
+
+## 4) Handling videos :
+Actions you can perform: 
+- Play/stop (shortcut: space bar)
+- Set video speed
+- Select frames
+- Move video frames using the hand icon
+- Drag and zoom
+- Clicking anywhere on the bar will take you to the corresponding frame
+- If multiple animals are displayed and their key points have been uploaded, the animal that is being annotated is the one with the colored key point markers
+
+
+## 5) Annotating videos :
+
+Dive into detailed tutorials on the annotation process. Explore techniques for tagging and marking within videos.
+- To annotate or handle your annotations you have to first select the action you want to perform then click on the annotation
+- To create a new annotation, hit the + icon then drag the label below the video 
+- Modify any actions by clicking and dragging the edges of your annotation in the **Move** mode.  
+- Select the trash bin icon / press `Cmd + R` to delete an annotation
+- Select the scissors icon / press `Cmd + C` to split an annotation in two
+- Select the transparency icon / press `Cmd + B` to mark actions as ambiguous. In that case, the actions will be transparent on the action bar
+- Select the label icon / press `Cmd + A` to change the annotation's label to another in the label's menu.
+
+Watch the tutorial [here](https://www.youtube.com/watch?v=QiTD5HngoVk).
+
+## 6) Add, edit or delete labels :
+- Use the keyboard shortcut cmd+L or go to "labels" then "Change labels"
+- For nested annotation, you can choose a category by double-clicking it and going back to the categories  list by pressing `Esc` or the 'Go back to categories' button. 
+
+Watch the tutorial [here](https://www.youtube.com/watch?v=yRKC_ppjWbw).
+
+## 7) Saving your work :
+
+The program should run smoothly, but please don't forget to save your results regularly by selecting the 'Save' action in the 'File' menu or pressing `Cmd + S`, just in case.
+
+Backups for your annotated data are automatically created every **30 minutes** in a folder located next to your first video: `path/to/video1_backups`. You can change the directory
+where backups are saved for your project, and the interval at which they are saved. 
+Running
+```bash
+python annotator.py --backup-dir /path/to/backups --backup-interval 120
+```
+will save backups every 2 hours (120 minutes) in the `/path/to/backups` folder.
+
+The results of your work will be saved at `path/to/video1_annotation.pickle`. The `_annotation.pickle` suffix is the default, you can change it in the settings window (at Files / Annotation suffix). If you open a video that already has a corresponding annotation file in the same folder, that file will be loaded automatically. A human-readable version of the annotations will also be saved in CSV format (with the same suffix, and `.csv` extension).
+
+## 8) Opening a project :
+Once the application is launched, locate the option to open a project. 
+- Select your project folder then click open
+
+Watch the tutorial [here](https://www.youtube.com/watch?v=etsFBnmiadc).
+
+## 9) Change settings :
+
+You can find detailed documentation on how to use the annotation tool in the
 [Main user guide](readme_media/userguide.md)
-
-[Clustering interface](readme_media/cluster.md)
-
-
-# User experience design project
-
-You can experiment and improve in this branch the overall package design. 
-
-### Datasets
-You can use the data stored in the [drive](https://drive.google.com/drive/folders/1BVJ9W3VMJvw9DYi4lrJbMEH4veEzfMxa?usp=sharing), it should contains an example from the [Open Field Test of Sturman (2020)](https://www.nature.com/articles/s41386-020-0776-y) and some data from the MausHaus project (internal). The OFT data video, DLC pose and orignal behavior annotation converted to DLC2Action format of a freely moving mouse in a constrained environment. There is also a suggestion file representing predictions from a DLC2Action model. We also have access to more data examples if needed. The MausHaus project contains multi-view video and DLC poses of a single mouse freely moving in a cage along with the behavior annotations and the corresponding 3D poses.
-
-### First steps
-* Try the annotation tool
-    - Maybe draw a map on how it works
-    - Load data and play with the tool
-    - Feel free to report every single bug
-    - Feel free to update the documentation whenever you understand anything
-
-* There is nothing better than fixing some bugs in order to get familiar with the code base. Here are 2 known design problems to improve:
-    - Loading label choices everytime a setting is change
-        - Get rid of the previous label choice feature
-        - Labels may be automatically infered from the annotation file but the algorithm should be flexible for new unannotated labels.
-    - Changing labels for nested behaviors
-        - Having nested behavior is a feature that we want but it also comes with more complex ways to select the data
-        - The user should be able to choose when selecting behavior whether it is nested or not
-        - Behavior categories should work without subcategories
-        - Collapse all pop-up windows into one "Change Behavior" window that should have the potential to add associate the shortcuts.
-
-### GOAL
-* After improving the user designs, record a short tutorial video on how to use the annotation tool !
-
-### Future steps
-* Test the active learning pipeline
-* Test the clustering pipeline
-
-* Link the annotation tool with DLC2Action 

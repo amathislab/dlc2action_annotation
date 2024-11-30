@@ -1,14 +1,15 @@
 # general
-video_files:    #if not null, those files will be loaded by default (a list of string file paths)
+video_files:    #list of video file paths
 data_type: dlc   #either dlc (DeepLabCut) or calms21 (Caltech Mouse Social Interactions)
 n_ind: 1 #this will be set as the number of individuals if no detection or annotation files are available
-actions: {locomotion: ["running", "walking", "jumping"], other: ["eating", "freezing"]}
+individuals: [null] # The name of the individuals
+actions: null
 #actions to label (you can also enter them in the GUI)
 min_length_frames: 0 #tracklets shorter than this number or frames will be omitted
 
 # loading
-max_loaded_frames: 2000 #the maximum number of frames kept in RAM
-load_chunk: 200 #the number of frames loaded per loading operation
+max_loaded_frames: 500 #the maximum number of frames kept in RAM
+load_chunk: 50 #the number of frames loaded per loading operation
 load_buffer: 100 #when you move further than this number of frames from the beginning of the loaded part, earlier frames will be deleted from RAM
 backend: pyav_fast        #backend for loading the videos (either 'cv2', 'pyav', 'pyav_fast' or 'decord', depends on which library you have installed; 'pyav' is currently recommended)
 
@@ -45,10 +46,12 @@ likelihood_cutoff: 0.6 #bodyparts with a lower likelihood will not be displayed
 3d_bodyparts: null #a list of bodypart names corresponding to the 3d pose file (used to draw the skeleton)
 display_3d: true #display the 3D data by default if provided
 display_repr: true #display the reprojections by default if provided
+multiview: false #display multiple views if available
 
 # file paths
 detection_files: [null] #pickled lists of per-frame detections in [y_min, x_min, y_max, x_max, id] format (one per video view)
 skeleton_files: [null] #the DLC output files (one per video view)
+suggestion_files: [null] #the paths to the suggestion files (one per video view)
 3d_suffix: null #the suffix of the 3d pose file
 calibration_path: #the path to a numpy calibration file that can be used with the 3d pose file to display reprojections
 suffix: "_annotation.pickle"   #if not null it will be used to create a default output file name
@@ -57,6 +60,6 @@ prior_suffix: null #a suffix or a list of suffixes that will be used to load and
 DLC_suffix:
 - DLC_resnet50.h5
 #if not null it will be used to load the skeleton file (if multiple the first suffix that leads to an existing file will be used)
-annotator: "unknown"   #will be saved as metadata in the annotation file
-
+annotator: "unknown annotator"   #will be saved as metadata in the annotation file
+project: "unknown project"
 # other
