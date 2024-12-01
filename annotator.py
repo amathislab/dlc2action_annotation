@@ -110,6 +110,8 @@ class MainWindow(QMainWindow):
 
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
+        self.statusBar.setVisible(True)
+        
         self.launch_project()
 
     def read_settings(self):
@@ -358,7 +360,8 @@ class MainWindow(QMainWindow):
         )
         self.setCentralWidget(self.viewer)
         try:
-            self.viewer.status.connect(self.statusBar().showMessage)
+            # self.viewer.status.connect(self.statusBar().showMessage)
+            self.viewer.status.connect(self.setVisible_showMessage)
         except:
             self.viewer.status.connect(self.statusBar.showMessage)
         self.viewer.next_video.connect(self.next_video)
@@ -380,6 +383,10 @@ class MainWindow(QMainWindow):
                 interval=self.backup_interval,
             )
             self.backup_manager.start()
+
+    def setVisible_showMessage(self, message):
+        self.statusBar.setVisible(True)
+        self.statusBar.showMessage(message)
 
     def get_al_points(self, filename):
         if self.dev:
@@ -571,9 +578,11 @@ class MainWindow(QMainWindow):
         openVideoAction.setStatusTip("Open another video")
         openVideoAction.triggered.connect(self.open_video)
         loadDLCAction = QAction("&DLC...", self)
+        loadDLCAction.setDisabled(True) # TODO disabled until fixed
         loadDLCAction.setStatusTip("Load DLC output")
         loadDLCAction.triggered.connect(lambda: self.load_data(type="DLC"))
         loadLabelAction = QAction("&Annotation...", self)
+        loadLabelAction.setDisabled(True) # TODO disabled until fixed
         loadLabelAction.setStatusTip("Load an annotation file")
         loadLabelAction.triggered.connect(lambda: self.load_data(type="labels"))
         loadFromListAction = QAction("&Load from list...", self)
@@ -717,7 +726,7 @@ class MainWindow(QMainWindow):
     def set_settings(self, event):
         SettingsWindow(self.settings_file).exec_()
         self.viewer.save(verbose=False, ask=False)
-        self.run_video(current=self.viewer.current(), multiview=self.multiview)
+        self.run_video(multiview=self.multiview)
         self._createActions()
         self._createToolBar()
         self._createMenuBar()
@@ -758,7 +767,6 @@ def main(video, multiview, dev, active_learning, backup_dir, backup_interval):
     window = MainWindow(
         folder_path=folder_path, backup_dir=backup_dir, backup_interval=backup_interval
     )
-
     window.show()
     app.exec_()
 

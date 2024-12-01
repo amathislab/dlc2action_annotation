@@ -105,7 +105,7 @@ class Viewer(QWidget):
         self.animals = None
 
         self.active = True
-        self.display_categories = False
+        self.display_categories = self.settings["is_nested"]
         if self.display_categories:
             self.active_list = "categories"
         else:
@@ -218,36 +218,6 @@ class Viewer(QWidget):
             self.settings["skeleton"],
             self.settings["3d_bodyparts"],
         )
-<<<<<<< Updated upstream
-
-        if os.path.exists("../last_action_choice.pickle"):
-            msg = QMessageBox()
-            msg.setText("Load the last label choice?")
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            self.load_action_choice = msg.exec_() == QMessageBox.Yes
-        else:
-            self.load_action_choice = False
-
-        success = False
-        if self.load_action_choice:
-            try:
-                with open("../last_action_choice.pickle", "rb") as f:
-                    (
-                        self.settings["actions"],
-                        display_categories,
-                        self.loaded_shortcuts,
-                    ) = pickle.load(f)
-                    self.loaded_shortcuts = defaultdict(
-                        lambda: {}, self.loaded_shortcuts
-                    )
-                    self.set_display_categories(display_categories)
-                    success = True
-            except:
-                pass
-
-        if not success and (type(self.action_dict) is dict or settings["cat_choice"]):
-            self.choose_cats()
-=======
 
         # success = False
 
@@ -255,7 +225,6 @@ class Viewer(QWidget):
         # Load or create a project window
 
         # self.choose_cats()
->>>>>>> Stashed changes
         self.initialize_cats()
 
         self.correct_animal = self.current_animal_name() in self.displayed_animals
@@ -635,12 +604,12 @@ class Viewer(QWidget):
     # FUNCTION TO HANDLE "CHANGE LABELS" ------------------
     def get_cats(self):
         # When you change labels you want to have all your labels listed
-        # if self.display_categories:
-        #     dialog = CatDialog(
-        #         self.catDict, self.shortCut, self.invisible_actions, "categories", self
-        #     )
-        #     self.catDict, self.shortCut, self.invisible_actions, _ = dialog.exec_()
-        # keys = [key for key in self.catDict if key not in ["base", "categories"]]
+        if self.display_categories:
+            dialog = CatDialog(
+                self.catDict, self.shortCut, self.invisible_actions, "categories", self
+            )
+            self.catDict, self.shortCut, self.invisible_actions, _ = dialog.exec_()
+        keys = [key for key in self.catDict if key not in ["base", "categories"]]
 
         # else:
         #     keys = ["base"]
@@ -657,33 +626,35 @@ class Viewer(QWidget):
             actions,
         ) = dialog.exec_()
 
-        # TODO update for nested
         if not self.display_categories:
             self.settings["actions"]["actions"] = actions
-
-        #     if key != "base":
-        #         self.settings["actions"][key] = actions
-        #     else:
-        #         for action in actions:
-        #             success = False
-        #             for category, label_dict in self.catDict.items():
-        #                 label_list = [v for _, v in label_dict.items()]
-        #                 if action in label_list and category != "base":
-        #                     success = True
-        #                     if category == "categories":
-        #                         if action not in self.settings["actions"]:
-        #                             self.settings["actions"][action] = []
-        #                     else:
-        #                         if category not in self.settings["actions"]:
-        #                             self.settings["actions"][category] = []
-        #                         if action not in self.settings["actions"][category]:
-        #                             self.settings["actions"][category].append(action)
-        #                     break
-        #             if not success:
-        #                 if "other" not in self.settings["actions"]:
-        #                     self.settings["actions"]["other"] = []
-        #                 if action not in self.settings["actions"]["other"]:
-        #                     self.settings["actions"]["other"].append(action)
+        else:
+            for key in keys:
+                if key != "base":
+                    self.settings["actions"][key] = actions
+                else:
+                    for action in actions:
+                        success = False
+                        for category, label_dict in self.catDict.items():
+                            label_list = [v for _, v in label_dict.items()]
+                            if action in label_list and category != "base":
+                                success = True
+                                if category == "categories":
+                                    if action not in self.settings["actions"]:
+                                        self.settings["actions"][action] = []
+                                else:
+                                    if category not in self.settings["actions"]:
+                                        self.settings["actions"][category] = []
+                                    if action not in self.settings["actions"][category]:
+                                        self.settings["actions"][category].append(
+                                            action
+                                        )
+                                break
+                        if not success:
+                            if "other" not in self.settings["actions"]:
+                                self.settings["actions"]["other"] = []
+                            if action not in self.settings["actions"]["other"]:
+                                self.settings["actions"]["other"].append(action)
         self._save_yaml(osp.join("Project_Config", "config.yaml"))
         self.ncat = len(self.catDict["base"])
         self.get_ncat()
@@ -930,7 +901,7 @@ class Viewer(QWidget):
                         cat_list = list(cat_list)
                         if len(self.loaded_times[i][j]) > 0:
                             self.loaded_times[i][j] = np.array(self.loaded_times[i][j])
-                            to_remove = []
+                            # to_remove = []
                             # for k, (start, end, amb) in enumerate(cat_list):
                             #     mask = (self.loaded_times[i][j][:, 0] < end) & (
                             #         self.loaded_times[i][j][:, 1] >= start
@@ -1346,6 +1317,16 @@ class Viewer(QWidget):
     def set_active_list(self, key):
         self.active_list = key
         self.console.catlist.set_key(key)
+        # if self.settings["is_nested"]:
+        #     self.console.cat_button.setVisible(True)
+        #     self.console.cat_button.setEnabled(True)
+        #     if (
+        #         self.active_list == "categories" and not self.console.cat_button.isChecked()
+        #     ) or (self.active_list == "base" and self.console.cat_button.isChecked()):
+        #         self.console.cat_button.setChecked(not self.console.cat_button.isChecked())
+        # else:
+        #     self.console.cat_button.setVisible(False)
+        #     self.console.cat_button.setEnabled(False)
         if key == "base":
             self.console.back_button.setVisible(False)
         else:

@@ -57,8 +57,7 @@ calibration_path: #the path to a numpy calibration file that can be used with th
 suffix: "_annotation.pickle"   #if not null it will be used to create a default output file name
 prefix_separator: null #if not null, everything before the first occurence of the separator will be stripped from the default output file name
 prior_suffix: null #a suffix or a list of suffixes that will be used to load and display pre-existing annotations; in that case the new and the old annotations will be kept in separate files
-DLC_suffix:
-- DLC_resnet50.h5
+DLC_suffix: null
 #if not null it will be used to load the skeleton file (if multiple the first suffix that leads to an existing file will be used)
 annotator: "unknown annotator"   #will be saved as metadata in the annotation file
 project: "unknown project"

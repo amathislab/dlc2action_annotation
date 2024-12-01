@@ -3,7 +3,7 @@
 To start using the annotator you just need to go to the `classic_annotation` directory and 
 run these commands in your terminal.
 ```bash
-conda activate AnnotationGUI
+conda activate dlc2action_gui
 python annotator.py
 ```
 The app will prompt you to open the video you are going to annotate. 
@@ -168,20 +168,20 @@ Press 'Bodypart colors' to color the keypoints according to their bodypart name 
 
 ![](colors.gif)
 
-Add skeleton edges in 'Display' settings (use the bodypart names from the DLC files) and choose 'Skeleton' in the 'Display' menu to start or stop displaying them.
+<!-- Add skeleton edges in 'Display' settings (use the bodypart names from the DLC files) and choose 'Skeleton' in the 'Display' menu to start or stop displaying them.
 
 ![](skeleton_settings.png)
 
-![](skeleton.gif)
+![](skeleton.gif) -->
 
 You can also check which bodypart each keypoint represents by pressing it and checking the status bar.
 
 ![](bodypart.gif)
 
-### Correcting pose estimation errors
+<!-- ### Correcting pose estimation errors
 You can choose 'Save correction...' in the 'File' menu to enter the pose estimation correction mode. Then you can simply click and drag the points that are misplaced. The bodypart name will be displayed at the status bar when you click a point. When you are done, click the 'Save correction' button to finish. If you are working with a video named `/folder/VIDEO.mp4`, the new positions will be saved at `/folder/VIDEO_correction.pickle`. 
 
-![](correct_mode.gif)
+![](correct_mode.gif) -->
 
 ### Search
 If you want to get an overview of your annotation, you can use the 'Start label search' (or 'Start unlabeled search') option in the 'Active learning' menu. It will go over all the clips

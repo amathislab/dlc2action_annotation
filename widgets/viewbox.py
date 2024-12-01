@@ -348,7 +348,8 @@ class VideoViewBox(vispy.scene.widgets.ViewBox):
             self.box_visuals[i].set_display_names(state)
 
     def select(self, event):
-        tr = self.node_transform_(self.points[0])
+        # tr = self.node_transform_(self.points[0])
+        tr = self.node_transform_(self.points[list(self.points.keys())[0]])
         pos = tr.map(event.pos)[:2]
         for animal in self.points:
             norm = np.linalg.norm(self.points[animal].pos - pos, axis=1)

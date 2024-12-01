@@ -130,9 +130,11 @@ def save_hdf(df, metadata, output_file):
 def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0):
     """Open track or tracklet DLC file"""
     if data_type == "dlc":
-        if filename[-3:] == ".h5" or filename[-5:] == ".hdf5":
+        ext = os.path.splitext(filename)[1]
+        print(ext)
+        if ext == ".h5" or ext == ".hdf5":
             df, index = read_hdf(filename, likelihood_cutoff)
-        else:
+        elif ext == ".pickle":
             df, index = read_tracklets(filename, min_length_frames)
     elif data_type == "calms21":
         df, index = read_calms21(filename)
@@ -173,6 +175,7 @@ def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
 class PointsData:
     def __init__(self, points_df):
         self.points_df = points_df
+        # self.dict_type = isinstance(points_df, dict)
         self.dict_type = type(points_df) is dict
         if self.dict_type:
             self.animals = points_df.pop("animals")

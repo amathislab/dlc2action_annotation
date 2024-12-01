@@ -819,8 +819,9 @@ class Form(QDialog):
         super(Form, self).__init__(parent)
         # Create widgets
         layout = QVBoxLayout()
+        self.label = QLabel("Which video does this skeleton file relate to?")
         layout.addWidget(self.label)
-      
+
         self.buttons = [QRadioButton(video) for video in videos]
         for button in self.buttons:
             layout.addWidget(button)

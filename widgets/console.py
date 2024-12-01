@@ -38,9 +38,9 @@ class Console(QWidget):
 
         self.catlist = CatList(key=self.window.active_list, window=self.window)
         self.catlist.itemClicked.connect(self.window.item_clicked)
-        
+
         self.catlist.itemDoubleClicked.connect(self.window.doubleclick)
-        
+
         self.animallist = AnimalList(
             window=self.window,
             current=self.window.current_animal_name(),
@@ -127,16 +127,30 @@ class Console(QWidget):
             self.prev_button.setVisible(False)
 
         self.back_button = QPushButton("Back to categories")
-        
         self.back_button.clicked.connect(
-            lambda: self.window.set_active_list("categories")
+        lambda: self.window.set_active_list("categories")
         )
-        
         # TODO: CHANGE THIS TO TOGGLE
         if self.window.active_list == "base":
             self.back_button.setVisible(False)
         elif self.window.active_list == "categories":
             self.back_button.setEnabled(False)
+
+        # if self.window.active_list == "categories":
+        #     self.cat_button = ToggleButton("ON", self)
+        # elif self.window.active_list == "base":
+        #     self.cat_button = ToggleButton("OFF", self)
+
+        # self.cat_button.clicked.connect(
+        #     lambda: self.window.set_active_list(
+        #         ["base", "categories"][self.cat_button.isChecked()]
+        #     )
+        # )
+
+        # Remove button in non nested mode
+        # if not self.window.settings["is_nested"]:
+        #     self.cat_button.setVisible(False)
+        #     self.cat_button.setEnabled(False)
 
         if self.window.draw_segmentation:
             self.layout.addWidget(self.seglabel)
@@ -147,6 +161,7 @@ class Console(QWidget):
         self.layout.addWidget(self.catlabel)
         self.layout.addWidget(self.catlist, 70)
         self.layout.addWidget(self.back_button)
+        # self.layout.addWidget(self.cat_button)
         self.layout.addLayout(self.speed_form)
         # self.layout.addWidget(self.correct_button)
         self.layout.addLayout(self.video_buttons)
@@ -172,3 +187,22 @@ class Console(QWidget):
             else:
                 self.prev_button.clicked.connect(self.window.on_prev)
                 self.next_button.clicked.connect(self.window.on_next)
+
+
+# class ToggleButton(QPushButton):
+#     def __init__(self, text, parent=None):
+#         super().__init__(text, parent)
+#         self.setCheckable(True)
+#         self.toggled.connect(self.on_toggled)
+#         self.update_style()
+
+#     def on_toggled(self, checked):
+#         self.update_style()
+
+#     def update_style(self):
+#         if self.isChecked():
+#             self.setStyleSheet("background-color: lightgreen; color: black;")
+#             self.setText("Categories")
+#         else:
+#             self.setStyleSheet("background-color: lightcoral; color: black;")
+#             self.setText("Actions")

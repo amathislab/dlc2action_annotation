@@ -582,6 +582,12 @@ class SetNewProject(QDialog):
 
         self.video_checkbox = QCheckBox("Copy video to folder")
         self.video_checkbox.setChecked(False)
+
+        self.nested_checkbox = QCheckBox("Nested behaviors")
+        self.nested_checkbox.setChecked(False)
+        self.nested_checkbox.setVisible(False)  # TODO: Enable this feature
+        self.nested_checkbox.setEnabled(False) #TODO: Enable this feature
+
         # Create a QLabel to display the loaded video name
         self.loaded_video_label = QLabel("No video loaded")
 
@@ -603,6 +609,7 @@ class SetNewProject(QDialog):
         self.layout.addWidget(self.browse_videos_button)
         self.layout.addWidget(self.loaded_video_label)
         self.layout.addWidget(self.video_checkbox)
+        self.layout.addWidget(self.nested_checkbox)
 
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
@@ -844,6 +851,7 @@ class SetNewProject(QDialog):
         self.settings["suffix"] = self.beh_suffix.text()
         self.settings["DLC_suffix"] = self.dlc_suffix.text()
         self.settings["suggestion_suffix"] = self.suggestion_suffix.text()
+        self.settings["is_nested"] = self.nested_checkbox.isChecked()
 
     def create_folder(self) -> None:
         self.annotator = self.settings["annotator"]
@@ -946,6 +954,7 @@ class SetNewProject(QDialog):
             self.config_path,
             self.default_config_path,
             self.settings,
+            isnested=self.nested_checkbox.isChecked(),
             no_skeleton=no_skeleton,
         )
         behchoose.exec_()
@@ -1081,7 +1090,7 @@ class SetNewProject(QDialog):
 
 
 class ChooseBehaviors(QDialog):
-    def __init__(self, config_path, default_config_path, settings, no_skeleton=True):
+    def __init__(self, config_path, default_config_path, settings, isnested=False, no_skeleton=True):
         super(ChooseBehaviors, self).__init__()
 
         self.behaviors = None
@@ -1092,6 +1101,8 @@ class ChooseBehaviors(QDialog):
         QBtn = QDialogButtonBox.Ok
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
+        self.isnested = isnested
+
         self.tabs = QTabWidget()
         self.create_behavior_tab()
         self.set_behavior_tab()
@@ -1113,7 +1124,10 @@ class ChooseBehaviors(QDialog):
         self.set_behavior_tab()
 
     def accept(self):
-        self.settings["actions"] = {"actions": self.behaviors.values()}
+        if not self.isnested:
+            self.settings["actions"] = {"actions": self.behaviors.values()} #TODO use "actions" to make it invisible
+        else:
+            self.settings["actions"] = self.behaviors.values()
         if self.no_skeleton:
             self.settings["n_ind"] = int(self.num_ind_le.text())
         self._save_yaml(self.config_path, copy_default=True)
@@ -1124,14 +1138,25 @@ class ChooseBehaviors(QDialog):
         self.tabs.addTab(self.behavior_tab, "Behaviors")
         self.behavior_layout = QFormLayout()
         self.behavior_tab.setLayout(self.behavior_layout)
-        actions = [
+        
+
+        if not self.isnested:
+            actions = [
             "running",
             "sleeping",
             "jumping",
-        ]
-        self.behaviors = set_multiple_input(
-            self.settings, actions, type="single", use_settings=False
-        )
+            ]
+            self.behaviors = set_multiple_input(
+                self.settings, actions, type="single", use_settings=False
+            )
+        else:
+            actions = {
+                "locomotion": ["running", "jumping"],
+                "resting": ["sleeping"],
+            }
+            self.behaviors = set_multiple_input(
+                self.settings, actions, type="category", use_settings=False
+            )
         if self.no_skeleton:
             self.num_ind_le = self.set_le("n_ind", set_int=True)
 
