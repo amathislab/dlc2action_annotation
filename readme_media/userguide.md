@@ -189,6 +189,7 @@ in this video file that you have annotated with a specific label. If you have lo
 and select 'Start/Stop active learning' in the 'Active learning' menu to go back to the normal annotation mode. 
 
 ![](search.gif)
+Note : You might need to save the annotation file before starting the search !
 
 ### Saving
 The program should run smoothly, but please don't forget to save your results regularly by selecting the 'Save' action in the 'File' menu or pressing `Cmd + S`, just in case.
