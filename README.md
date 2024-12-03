@@ -27,7 +27,6 @@ Welcome to the Annotation Workflow Tutorial section, your comprehensive guide to
 - [Change settings](#Change-settings)
 
 ## 1) Setting up your environment :
-
 You can start using the interface by running the following commands in a terminal
 ```bash
 conda activate dlc2action_gui
@@ -103,3 +102,6 @@ Watch the tutorial [here](https://www.youtube.com/watch?v=etsFBnmiadc).
 
 You can find detailed documentation on how to use the annotation tool in the
 [Main user guide](readme_media/userguide.md)
+## Acknowledgments and Credits
+
+The GUI was initially written by [Liza Kozlova](https://github.com/elkoz) in the [Mathis group](https://www.mathislab.org/). The GUI is still in development but fully operational on the main branch. Please reach out, or open an issue if you have questions! Collaborations are welcome. 
