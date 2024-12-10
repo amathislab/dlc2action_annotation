@@ -131,10 +131,6 @@ def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0)
     """Open track or tracklet DLC file"""
     if data_type == "dlc":
         ext = os.path.splitext(filename)[1]
-<<<<<<< HEAD
-=======
-        #print(ext)
->>>>>>> 3c5848ceea215a58718a2bd63aaf298ad09a2874
         if ext == ".h5" or ext == ".hdf5":
             df, index = read_hdf(filename, likelihood_cutoff)
         elif ext == ".pickle":
