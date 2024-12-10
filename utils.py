@@ -28,7 +28,7 @@ try:
     import msgpack
     from pycocotools.mask import decode, encode
 except ImportError:
-    print("failed segmentation related imports")
+    print("Failed to import segmentation related library (pycocotools).")
     pass
 try:
     import cv2
@@ -131,6 +131,10 @@ def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0)
     """Open track or tracklet DLC file"""
     if data_type == "dlc":
         ext = os.path.splitext(filename)[1]
+<<<<<<< HEAD
+=======
+        #print(ext)
+>>>>>>> 3c5848ceea215a58718a2bd63aaf298ad09a2874
         if ext == ".h5" or ext == ".hdf5":
             df, index = read_hdf(filename, likelihood_cutoff)
         elif ext == ".pickle":
@@ -280,7 +284,7 @@ def read_calms21(filename):
 
 def read_tracklets(filename, min_frames=0, verbose=True):
     if verbose:
-        print("loading the DLC data")
+        print("Loading DeepLabCut data...")
     with open(filename, "rb") as f:
         data_p = pickle.load(f)
     header = data_p["header"]
@@ -860,7 +864,7 @@ def reassign_folder(
         else:
             video_ids.append(video_id)
     if len(unmatched) > 0:
-        print("Unmatched files:")
+        print("List of unmatched files:")
         for file in unmatched:
             print(f"   {file}")
     for video_id in tqdm(video_ids):
@@ -883,7 +887,7 @@ def reassign_folder(
             ),
             mapping_file=mapping_file,
         )
-    print("Reassignment complete")
+    print("Reassignment complete.")
 
 
 def apply_mapping(
