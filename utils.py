@@ -131,7 +131,6 @@ def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0)
     """Open track or tracklet DLC file"""
     if data_type == "dlc":
         ext = os.path.splitext(filename)[1]
-        print(ext)
         if ext == ".h5" or ext == ".hdf5":
             df, index = read_hdf(filename, likelihood_cutoff)
         elif ext == ".pickle":
@@ -248,6 +247,7 @@ def read_hdf(filename, likelihood_cutoff=0):
     temp.iloc[:, temp.columns.get_level_values(2) == "likelihood"] = temp.iloc[
         :, temp.columns.get_level_values(2) == "likelihood"
     ].fillna(0)
+    # df = temp.stack(["individuals", "bodyparts"], future_stack=True)
     df = temp.stack(["individuals", "bodyparts"])
     df.loc[df["likelihood"] < likelihood_cutoff, ["x", "y"]] = 0
     df = df[["x", "y"]]

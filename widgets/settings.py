@@ -289,7 +289,7 @@ class SettingsWindow(QDialog):
         box.setMinimum(minimum)
         if singlestep is not None:
             box.setSingleStep(singlestep)
-        box.setValue(self.settings[field])
+        box.setValue(int(self.settings[field]))
         return box
 
     def set_toggle(self, field):
@@ -306,7 +306,7 @@ class SettingsWindow(QDialog):
         slider = QSlider(Qt.Horizontal)
         slider.setMinimum(minimum)
         slider.setMaximum(maximum)
-        slider.setValue(value)
+        slider.setValue(int(value))
         return slider
 
     def set_multiple_input(self, field, type="single"):
@@ -788,7 +788,7 @@ class SetNewProject(QDialog):
         box.setMinimum(minimum)
         if singlestep is not None:
             box.setSingleStep(singlestep)
-        box.setValue(self.settings[field])
+        box.setValue(int(self.settings[field]))
         return box
 
     def set_toggle(self, field):

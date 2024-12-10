@@ -87,7 +87,7 @@ class Bar(QWidget):
 
             self.colors = [
 
-                list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                list(map(lambda x: int(x), line.split())) for line in f.readlines()
 
             ]
         except:
@@ -97,7 +97,7 @@ class Bar(QWidget):
 
                     self.colors = [
 
-                        list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                        list(map(lambda x: int(x), line.split())) for line in f.readlines()
 
                     ]
                 os.chdir(cwd)
@@ -131,32 +131,32 @@ class Bar(QWidget):
         stop = self.al_end - self.start
 
         if start >= 0:
-            x = start * self.step
-            qp.drawLine(x, 0, x, math.floor(size.height()))
+            x = int(start * self.step)
+            qp.drawLine(x, 0, x, int(math.floor(size.height())))
         if stop <= self.len:
-            x = stop * self.step
-            qp.drawLine(x, 0, x, math.floor(size.height()))
+            x = int(stop * self.step)
+            qp.drawLine(x, 0, x, int(math.floor(size.height())))
         start = max([0, start])
         stop = min([self.len, stop])
         qp.drawLine(
-            start * self.step,
-            math.floor(size.height()) - 1,
-            stop * self.step,
-            math.floor(size.height()) - 1,
+            int(start * self.step),
+            int(math.floor(size.height()) - 1),
+            int(stop * self.step),
+            int(math.floor(size.height()) - 1),
         )
-        qp.drawLine(start * self.step, 0, stop * self.step, 0)
+        qp.drawLine(int(start * self.step), 0, int(stop * self.step), 0)
 
         col = QColor("gray")
         col.setAlphaF(0.25)
         qp.setBrush(col)
         qp.setPen(col)
         if stop > 0 and start < self.len:
-            qp.drawRect(0, 0, start * self.step, math.floor(size.height()) - 1)
+            qp.drawRect(0, 0, int(start * self.step), int(math.floor(size.height()) - 1))
             qp.drawRect(
-                stop * self.step, 0, self.len * self.step, math.floor(size.height()) - 1
+                int(stop * self.step), 0, int(self.len * self.step), int(math.floor(size.height()) - 1)
             )
         else:
-            qp.drawRect(0, 0, (self.len + 1) * self.step, math.floor(size.height()) - 1)
+            qp.drawRect(0, 0, int((self.len + 1) * self.step), int(math.floor(size.height()) - 1))
 
     def drawLines(self, qp):
         qp.setPen(Qt.gray)
@@ -164,14 +164,14 @@ class Bar(QWidget):
         self.step = size.width() / (self.len + 1)
 
         for i in range(self.len + 1):
-            x = i * self.step
-            qp.drawLine(x, 0, x, math.floor(size.height()))
+            x = int(i * self.step)
+            qp.drawLine(x, 0, x, int(math.floor(size.height())))
 
     def drawCursor(self, qp):
         cur = self.local_cur() + 0.5
         qp.setPen(QPen(Qt.gray, self.step))
         qp.drawLine(
-            cur * self.step, 0, cur * self.step, math.floor(self.size().height())
+            int(cur * self.step), 0, int(cur * self.step), int(math.floor(self.size().height()))
         )
 
     def add_rect(self, frame, cat, row, on_shortcut=False):
@@ -306,10 +306,10 @@ class Bar(QWidget):
                 col.setAlphaF(1)
             qp.setBrush(col)
             qp.drawRect(
-                start * self.step,
-                rect.row * self.rowh + self.spacing,
-                (end - start) * self.step,
-                self.rowh - 2 * self.spacing,
+                int(start * self.step),
+                int(rect.row * self.rowh + self.spacing),
+                int((end - start) * self.step),
+                int(self.rowh - 2 * self.spacing),
             )
             text = self.window.catDict["base"][rect.cat]
             pixelsWide = self.fm.width(text)
@@ -320,8 +320,8 @@ class Bar(QWidget):
             ):
                 qp.setPen(Qt.black)
                 qp.drawText(
-                    ((start + end) * self.step - pixelsWide) / 2,
-                    (rect.row + 1 / 2) * self.rowh + pixelsHigh / 3,
+                    int(((start + end) * self.step - pixelsWide) / 2),
+                    int((rect.row + 1 / 2) * self.rowh + pixelsHigh / 3),
                     text,
                 )
                 qp.setPen(Qt.gray)

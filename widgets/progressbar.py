@@ -62,17 +62,17 @@ class ProgressBarWidget(QWidget):
         qp.setBrush(QColor(168, 216, 239))
         self.loaded = self.get_loaded()
         qp.drawRect(
-            self.loaded[0] * self.step,
+            int(self.loaded[0] * self.step),
             0,
-            (self.loaded[1] - self.loaded[0]) * self.step,
-            self.h,
+            int((self.loaded[1] - self.loaded[0]) * self.step),
+            int(self.h),
         )
         qp.setPen(Qt.gray)
         qp.setBrush(Qt.NoBrush)
         qp.drawRect(0, 0, self.width() - 1, self.h)
         cur = self.current_func() + 0.5
         qp.setPen(QPen(Qt.darkGray, max(2, self.step * 3)))
-        qp.drawLine(cur * self.step, 0, cur * self.step, self.h)
+        qp.drawLine(int(cur * self.step), 0, int(cur * self.step), int(self.h))
         qp.end()
 
     def mousePressEvent(self, event):

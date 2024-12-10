@@ -1,12 +1,13 @@
-# install: conda env create -f AnnotationGUI.yaml
-# update:  conda env update -f AnnotationGUI.yaml
-name: dlc2action_gui
+# install: conda env create -f dlc2action_gui.yaml
+# update:  conda env update -f dlc2action_gui.yaml
+
+name: dlc2action_gui2
 channels:
   - conda-forge
   - defaults
 dependencies:
   - pip
-  - python=3.8
+  - python
   - click==7.1
   - dask==2.30.0
   - pandas==1.4.3

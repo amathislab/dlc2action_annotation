@@ -77,7 +77,7 @@ class Console(QWidget):
         self.opacity_slider = QSlider(Qt.Horizontal)
         self.opacity_slider.setMaximum(10)
         self.opacity_slider.setMinimum(0)
-        self.opacity_slider.setValue(self.window.settings["mask_opacity"] * 10)
+        self.opacity_slider.setValue(int(self.window.settings["mask_opacity"] * 10))
         self.opacity_slider.setSingleStep(1)
         self.opacity_slider.valueChanged.connect(self.window.set_mask_opacity)
         self.opacity_label = QLabel("Mask opacity:")
