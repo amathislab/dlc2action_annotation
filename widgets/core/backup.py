@@ -68,7 +68,7 @@ class BackupManager:
                 cat_labels=cat_labels,
                 times=times,
                 human_readable=True,
-                overwrite=False,
+                overwrite=True,
             )
         except IOError as err:
             warnings.warn(f"Failed to back up data: {err}")

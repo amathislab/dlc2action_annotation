@@ -28,7 +28,7 @@ try:
     import msgpack
     from pycocotools.mask import decode, encode
 except ImportError:
-    print("failed segmentation related imports")
+    print("Failed to import segmentation related library (pycocotools).")
     pass
 try:
     import cv2
@@ -130,9 +130,10 @@ def save_hdf(df, metadata, output_file):
 def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0):
     """Open track or tracklet DLC file"""
     if data_type == "dlc":
-        if filename[-3:] == ".h5" or filename[-5:] == ".hdf5":
+        ext = os.path.splitext(filename)[1]
+        if ext == ".h5" or ext == ".hdf5":
             df, index = read_hdf(filename, likelihood_cutoff)
-        else:
+        elif ext == ".pickle":
             df, index = read_tracklets(filename, min_length_frames)
     elif data_type == "calms21":
         df, index = read_calms21(filename)
@@ -173,6 +174,7 @@ def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
 class PointsData:
     def __init__(self, points_df):
         self.points_df = points_df
+        # self.dict_type = isinstance(points_df, dict)
         self.dict_type = type(points_df) is dict
         if self.dict_type:
             self.animals = points_df.pop("animals")
@@ -245,6 +247,7 @@ def read_hdf(filename, likelihood_cutoff=0):
     temp.iloc[:, temp.columns.get_level_values(2) == "likelihood"] = temp.iloc[
         :, temp.columns.get_level_values(2) == "likelihood"
     ].fillna(0)
+    # df = temp.stack(["individuals", "bodyparts"], future_stack=True)
     df = temp.stack(["individuals", "bodyparts"])
     df.loc[df["likelihood"] < likelihood_cutoff, ["x", "y"]] = 0
     df = df[["x", "y"]]
@@ -277,7 +280,7 @@ def read_calms21(filename):
 
 def read_tracklets(filename, min_frames=0, verbose=True):
     if verbose:
-        print("loading the DLC data")
+        print("Loading DeepLabCut data...")
     with open(filename, "rb") as f:
         data_p = pickle.load(f)
     header = data_p["header"]
@@ -307,33 +310,48 @@ def read_tracklets(filename, min_frames=0, verbose=True):
     return dict(coords), index_dict
 
 
-def read_settings(settings_file):
-    with open(settings_file) as f:
+# Reads a YAML file specified by settings_file
+# Parses its content, and returns the configuration settings as a dictionary
+def read_settings(settings_file: str):
+
+    # Read the file if it exists
+    with open(settings_file, "r") as f:
         settings = yaml.load(f, Loader=yaml.FullLoader)
+
     return settings
 
 
-def get_settings(config_file, show_settings):
-    if not os.path.exists(config_file):
-        shutil.copyfile("default_config.yaml", config_file)
-        show_settings = True
-    else:
-        with open(config_file) as f:
-            config = YAML().load(f)
-        with open("default_config.yaml") as f:
-            default_config = YAML().load(f)
-        to_remove = []
-        for key, value in default_config.items():
-            if key in config:
-                to_remove.append(key)
-        for key in to_remove:
-            default_config.pop(key)
-        config.update(default_config)
-        with open(config_file, "w") as f:
-            YAML().dump(config, f)
+def get_settings(config_file: str, show_settings: bool):
+
+    with open(config_file) as f:
+        config = YAML().load(f)
+    with open("default_config.yaml") as f:
+        default_config = YAML().load(f)
+    to_remove = []
+    for key, value in default_config.items():
+        if key in config:
+            to_remove.append(key)
+    for key in to_remove:
+        default_config.pop(key)
+    config.update(default_config)
+    with open(config_file, "w") as f:
+        YAML().dump(config, f)
+
     if show_settings:
         SettingsWindow(config_file).exec_()
+
     return read_settings(config_file)
+
+
+def save_settings(config: dict, config_file: str):
+    """Save the configuration settings to a YAML file"""
+
+    if os.path.exists(config_file):
+        prev_config = read_settings(config_file)
+    prev_config.update(config)
+
+    with open(config_file, "w") as f:
+        YAML().dump(config, f)
 
 
 class WorkerThread(QThread):
@@ -365,6 +383,7 @@ class WorkerThread(QThread):
 
     def do_work(self):
         start, end = self.loading
+        # TODO fix multivideos
         videos = [
             read_stack(stack, start, end, shape, self.backend)
             for stack, shape in zip(self.stacks, self.shapes)
@@ -452,44 +471,6 @@ class BoxLoader:
         del array
         frames = sorted(list(self.boxes.keys()))
         self.boxes = [self.boxes[frame] for frame in range(frames[-1])]
-        # self.count = defaultdict(lambda: 0)
-        # running_dict = {}
-        # self.boxes = []
-        # self.n_ind = 0
-        # for frame_i, frame in enumerate(self.array):
-        #     self.boxes.append(defaultdict(lambda: [-100, -100, 10, 10, -100, -100]))
-        #     updated = set()
-        #     for box_i, box in enumerate(frame):
-        #         y1, x1, y2, x2, id = box
-        #         center_x = (x1 + x2) / 2
-        #         center_y = (y1 + y2) / 2
-        #         w = np.abs(x2 - x1)
-        #         h = np.abs(y2 - y1)
-        #         rect_x = center_x + w / 2
-        #         rect_y = center_y - h / 2
-        #         if id not in running_dict.keys():
-        #             cur = 0
-        #             while cur in [running_dict[x] for x in running_dict]:
-        #                 cur += 1
-        #             running_dict[id] = cur
-        #             if cur + 1 > self.n_ind:
-        #                 self.n_ind = cur + 1
-        #         updated.add(id)
-        #         self.boxes[frame_i][running_dict[id]] = [
-        #             center_x,
-        #             center_y,
-        #             w,
-        #             h,
-        #             rect_x,
-        #             rect_y,
-        #         ]
-        #         self.count[id] = 0
-        #     not_updated = set(running_dict.keys()).difference(updated)
-        #     for id in not_updated:
-        #         self.count[id] += 1
-        #         if self.count[id] > self.lim_count:
-        #             del self.count[id]
-        #             del running_dict[id]
 
     def get_boxes(self):
         return self.boxes
@@ -879,7 +860,7 @@ def reassign_folder(
         else:
             video_ids.append(video_id)
     if len(unmatched) > 0:
-        print("Unmatched files:")
+        print("List of unmatched files:")
         for file in unmatched:
             print(f"   {file}")
     for video_id in tqdm(video_ids):
@@ -902,7 +883,7 @@ def reassign_folder(
             ),
             mapping_file=mapping_file,
         )
-    print("Reassignment complete")
+    print("Reassignment complete.")
 
 
 def apply_mapping(
@@ -984,3 +965,14 @@ def detect_and_remap(
                 )
             p_bar.update(1)
     p_bar.close()
+
+
+def split_consecutive_sequences(input_array: np.ndarray, target_value: float = 1):
+    """Split an array into consecutive subsequences of a target value, input array is a 1D numpy array"""
+    if isinstance(input_array, list):
+        input_array = np.array(input_array)
+    is_target = input_array == target_value
+    changes = np.diff(np.concatenate(([False], is_target, [False])))
+    indices = np.where(changes)[0].reshape(-1, 2)
+    subsequences = [list(range(start, end)) for start, end in indices]
+    return subsequences

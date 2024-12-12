@@ -4,6 +4,7 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import math
+import os
 from collections import defaultdict
 from copy import copy
 
@@ -11,7 +12,7 @@ import numpy as np
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QColor, QPainter, QPen
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QMessageBox
 
 from utils import get_color
 
@@ -79,10 +80,27 @@ class Bar(QWidget):
         self.len = segment_len
         self.setMouseTracking(True)
         self.get_labels()
-        with open("colors.txt") as f:
+        
+        cwd = os.getcwd()
+        try:
+          with open("colors.txt") as f:
+
             self.colors = [
-                list(map(lambda x: float(x), line.split())) for line in f.readlines()
+
+                list(map(lambda x: int(x), line.split())) for line in f.readlines()
+
             ]
+        except:
+            if not cwd.endswith('/Project_Config'):
+                os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+                with open("colors.txt") as f:
+
+                    self.colors = [
+
+                        list(map(lambda x: int(x), line.split())) for line in f.readlines()
+
+                    ]
+                os.chdir(cwd)
 
     def get_color(self, name):
         if isinstance(name, int):
@@ -113,32 +131,32 @@ class Bar(QWidget):
         stop = self.al_end - self.start
 
         if start >= 0:
-            x = start * self.step
-            qp.drawLine(x, 0, x, math.floor(size.height()))
+            x = int(start * self.step)
+            qp.drawLine(x, 0, x, int(math.floor(size.height())))
         if stop <= self.len:
-            x = stop * self.step
-            qp.drawLine(x, 0, x, math.floor(size.height()))
+            x = int(stop * self.step)
+            qp.drawLine(x, 0, x, int(math.floor(size.height())))
         start = max([0, start])
         stop = min([self.len, stop])
         qp.drawLine(
-            start * self.step,
-            math.floor(size.height()) - 1,
-            stop * self.step,
-            math.floor(size.height()) - 1,
+            int(start * self.step),
+            int(math.floor(size.height()) - 1),
+            int(stop * self.step),
+            int(math.floor(size.height()) - 1),
         )
-        qp.drawLine(start * self.step, 0, stop * self.step, 0)
+        qp.drawLine(int(start * self.step), 0, int(stop * self.step), 0)
 
         col = QColor("gray")
         col.setAlphaF(0.25)
         qp.setBrush(col)
         qp.setPen(col)
         if stop > 0 and start < self.len:
-            qp.drawRect(0, 0, start * self.step, math.floor(size.height()) - 1)
+            qp.drawRect(0, 0, int(start * self.step), int(math.floor(size.height()) - 1))
             qp.drawRect(
-                stop * self.step, 0, self.len * self.step, math.floor(size.height()) - 1
+                int(stop * self.step), 0, int(self.len * self.step), int(math.floor(size.height()) - 1)
             )
         else:
-            qp.drawRect(0, 0, (self.len + 1) * self.step, math.floor(size.height()) - 1)
+            qp.drawRect(0, 0, int((self.len + 1) * self.step), int(math.floor(size.height()) - 1))
 
     def drawLines(self, qp):
         qp.setPen(Qt.gray)
@@ -146,14 +164,14 @@ class Bar(QWidget):
         self.step = size.width() / (self.len + 1)
 
         for i in range(self.len + 1):
-            x = i * self.step
-            qp.drawLine(x, 0, x, math.floor(size.height()))
+            x = int(i * self.step)
+            qp.drawLine(x, 0, x, int(math.floor(size.height())))
 
     def drawCursor(self, qp):
         cur = self.local_cur() + 0.5
         qp.setPen(QPen(Qt.gray, self.step))
         qp.drawLine(
-            cur * self.step, 0, cur * self.step, math.floor(self.size().height())
+            int(cur * self.step), 0, int(cur * self.step), int(math.floor(self.size().height()))
         )
 
     def add_rect(self, frame, cat, row, on_shortcut=False):
@@ -288,10 +306,10 @@ class Bar(QWidget):
                 col.setAlphaF(1)
             qp.setBrush(col)
             qp.drawRect(
-                start * self.step,
-                rect.row * self.rowh + self.spacing,
-                (end - start) * self.step,
-                self.rowh - 2 * self.spacing,
+                int(start * self.step),
+                int(rect.row * self.rowh + self.spacing),
+                int((end - start) * self.step),
+                int(self.rowh - 2 * self.spacing),
             )
             text = self.window.catDict["base"][rect.cat]
             pixelsWide = self.fm.width(text)
@@ -302,8 +320,8 @@ class Bar(QWidget):
             ):
                 qp.setPen(Qt.black)
                 qp.drawText(
-                    ((start + end) * self.step - pixelsWide) / 2,
-                    (rect.row + 1 / 2) * self.rowh + pixelsHigh / 3,
+                    int(((start + end) * self.step - pixelsWide) / 2),
+                    int((rect.row + 1 / 2) * self.rowh + pixelsHigh / 3),
                     text,
                 )
                 qp.setPen(Qt.gray)
@@ -464,27 +482,43 @@ class Bar(QWidget):
     def on_shortcut(self, sc):
         add_new = True
         key = self.window.active_list
-        cat = self.window.shortCut[key][sc]
-        rects = self.grow_rects.copy()
-        for rect in rects:
-            if rect.cat == cat:
-                add_new = False
-                if self.minus_rect == rect:
-                    self.move_minus()
-                if self.plus_rect == rect:
-                    self.move_plus()
-                rect.stop()
-                self.grow_rects.remove(rect)
-        if add_new and key not in ["base", "categories"]:
-            cat_key = self.window.catDictInv("categories")[key]
-            for rect in self.grow_rects:
-                if rect.cat == cat_key:
+        if sc in self.window.shortCut[key]:
+            cat = self.window.shortCut[key][sc]
+            rects = self.grow_rects.copy()
+            for rect in rects:
+                if rect.cat == cat:
                     add_new = False
-                    rect.cat = cat
-        if add_new:
-            self.add_rect(self.window.current(), cat, None, on_shortcut=True)
-            self.reorder_rects()
+                    if self.minus_rect == rect:
+                        self.move_minus()
+                    if self.plus_rect == rect:
+                        self.move_plus()
+                    rect.stop()
+                    self.grow_rects.remove(rect)
+            if add_new and key not in ["base", "categories"]:
+                cat_key = self.window.catDictInv("categories")[key]
+                for rect in self.grow_rects:
+                    if rect.cat == cat_key:
+                        add_new = False
+                        rect.cat = cat
+            if add_new:
+                self.add_rect(self.window.current(), cat, None, on_shortcut=True)
+                self.reorder_rects()
+        else:
+            pass
+            # This makes absolutely no sense
+            # warning = QMessageBox()
+            # warning.setText('Shortcut does not exist.')
+            # warning.setWindowTitle('Warning')
+            # warning.exec_()
+            # print('msg = QMessageBox()msg = QMessageBox()')
+            # msg = QMessageBox()
+            # msg.setText(
+            #     "You have chosen more than one video file. Would you like to open them in multiple view mode?"
+            # )
+            # msg.setStandardButtons(QMessageBox.Ok)
+        
         self.window.set_move_mode()
+        
 
     def check_merge(self, move_rect):
         rect_start, rect_end = move_rect.times

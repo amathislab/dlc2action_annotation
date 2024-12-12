@@ -5,6 +5,8 @@
 #
 from collections import defaultdict
 
+import os
+
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont, QPixmap
 from PyQt5.QtWidgets import (
@@ -35,7 +37,20 @@ from PyQt5.QtWidgets import (
 
 from utils import get_color
 
-
+class WarningWindow(QDialog):
+    def __init__(self, parent=None):
+        super(WarningWindow).__init__(parent)
+        self.setWindowTitle('Warning')
+        layout = QVBoxLayout()
+        btn = QPushButton("OK")
+        btn.clicked.connect(self.accept)
+        layout.addWidget(QMessageBox.warning(self, 'warning'))
+        layout.addWidget(btn)
+        self.setLayout(layout)
+        
+    def exec_(self):
+        super().exec_()
+        
 class LineEdit(QLineEdit):
     next_field = pyqtSignal()
     finished = pyqtSignal()
@@ -160,11 +175,35 @@ class CatDialog(QDialog):
         self.cat_list = {}
         self.invisible = invisible
         self.hot_buttons = []
-        with open("colors.txt") as f:
-            self.colors = [
-                list(map(lambda x: float(x), line.split())) for line in f.readlines()
-            ]
-
+        
+        cwd = os.getcwd()
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+                
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
         self.layout = QVBoxLayout()
         self.label = QVBoxLayout()
         if self.key != "base":
@@ -306,6 +345,175 @@ class CatDialog(QDialog):
     def exec_(self):
         super(CatDialog, self).exec_()
         return (self.catDict, self.shortCut, self.invisible, self.actions)
+    
+class ActListDialog(QDialog):
+    def __init__(self, actions, shortCut, invisible, *args, **kwargs):
+        super(CatDialog, self).__init__(*args, **kwargs)
+        self.shortCut = shortCut
+        self.action_list = actions
+        self.cat_list = {}
+        self.invisible = invisible
+        self.hot_buttons = []
+        
+        cwd = os.getcwd()
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.animal_colors = [
+                    list(map(lambda x: float(x) / 255, line.split()))
+                    for line in f.readlines()
+                ]
+                
+        if not cwd.endswith('/Project_Config'):
+            os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
+            os.chdir(cwd)
+        else:
+            with open("colors.txt") as f:
+                self.colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ]
+        self.layout = QVBoxLayout()
+        self.label = QVBoxLayout()
+        self.text = QLabel(
+            "Here you can edit the label names and the shortcuts. \n"
+            "Press Enter to add a new line, Shift+Enter to move on."
+        )
+        self.label.addWidget(self.text)
+        self.layout.addLayout(self.label)
+
+        self.line_layout = QVBoxLayout()
+        self.line_widget = QWidget()
+        self.line_widget.setLayout(self.line_layout)
+        self.line_scroll = QScrollArea()
+        self.line_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.line_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.line_scroll.setWidgetResizable(True)
+        self.line_scroll.setWidget(self.line_widget)
+        scroll_bar = self.line_scroll.verticalScrollBar()
+        scroll_bar.rangeChanged.connect(
+            lambda: scroll_bar.setValue(scroll_bar.maximum())
+        )
+        self.create_lines()
+        self.max_key = max(self.action_list)
+        self.layout.addWidget(self.line_scroll)
+
+        self.new_button = QPushButton("Add label")
+        self.new_button.clicked.connect(self.add_line)
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.finish)
+        self.layout.addWidget(self.new_button)
+        self.layout.addWidget(self.ok_button)
+        self.setLayout(self.layout)
+
+    def show_warning(self, t, value=None):
+        msg = QMessageBox()
+        if t == "used":
+            msg.setText(f"The {value} shortcut is already in use!")
+        elif t == "long":
+            msg.setText("Shortcuts need to be one letter long!")
+        elif t == "line":
+            msg.setText("You need to fill all previous lines first!")
+        elif t == "category":
+            msg.setText(f"You already have a {value} label in a different category!")
+        msg.setWindowTitle("Warning")
+        msg.addButton(QMessageBox.Ok)
+        msg.exec_()
+
+    def add_line(self, ind=None, name="", sc=""):
+        if type(ind) is not int:
+            ind = self.max_key + 1
+            self.max_key += 1
+        if type(name) is not str:
+            name = ""
+            sc = ""
+        col = [255, 255, 255] if name == "" else get_color(self.colors, name)
+        line = CatLine(self, col, name, sc, self.lines, self.hot_buttons, self.colors)
+        line.next_line.connect(self.new_line)
+        line.finished.connect(self.finish)
+        self.lines.append(line)
+        self.line_layout.addWidget(line)
+        line.name_field.setFocus()
+        self.update()
+        # self.cat_list[ind] = line
+
+    def new_line(self, n):
+        if n + 1 < len(self.lines):
+            self.lines[n + 1].name_field.setFocus()
+        else:
+            self.add_line()
+            self.lines[-1].name_field.setFocus()
+
+    def create_lines(self):
+        self.lines = []
+        for action in self.action_list:
+            if action not in self.invisible:
+                sc = ""
+                for key in self.shortCut:
+                    if self.shortCut[key] == action:
+                        sc = key
+                self.add_line(action, action, sc)
+                self.cat_list[action] = self.lines[-1]
+        if len() == 0:
+            self.add_line()
+
+    def keyPressEvent(self, event):
+        if event.modifiers() & Qt.ShiftModifier:
+            shift = True
+        else:
+            shift = False
+        if event.key() == Qt.Key_Enter or event.key() == 16777220:
+            if shift:
+                self.finish()
+        else:
+            super(CatDialog, self).keyPressEvent(event)
+
+    def add_action(self, text, i, sc):
+        self.action_list[i] = text
+        self.actions.append(text)
+        if len(sc) == 1:
+            self.shortCut[sc] = i
+
+    def finish(self, event=None):
+        self.actions = []
+        self.shortCut = {}
+        taken = [""] + self.invisible
+        for i, line in self.cat_list.items():
+            text = line.name_field.text()
+            if text in self.invisible:
+                self.invisible.remove(text)
+            act = self.action_list[i]
+            sc = line.sc_field.text()
+            if text == "":
+                self.invisible.append(act)
+            else:
+                self.add_action(text, i, sc)
+                taken.append(text)
+        max_key = max(self.action_list)
+        for line in self.lines:
+            text = line.name_field.text()
+            if text in self.invisible:
+                self.actions.append(text)
+                self.invisible.remove(text)
+            sc = line.sc_field.text()
+            if text not in taken:
+                max_key += 1
+                self.add_action(text, max_key, sc)
+        self.accept()
+
+    def exec_(self):
+        super(CatDialog, self).exec_()
+        return (self.catDict, self.shortCut, self.invisible, self.actions)
 
 
 class LoadDialog(QDialog):
@@ -374,6 +582,8 @@ class ChoiceDialog(QDialog):
         self.display_cats = None
         self.action_dict = action_dict
         self.button = QPushButton("OK")
+
+        
         self.button.clicked.connect(self.finish)
         self.cats_checkbox = QCheckBox("Nested annotation")
         self.cats_checkbox.setChecked(False)
@@ -396,6 +606,65 @@ class ChoiceDialog(QDialog):
         self.layout.addWidget(self.button)
         self.layout.addWidget(self.cats_checkbox)
         self.setLayout(self.layout)
+    
+    # def add_line(self, ind=None, name="", sc=""):
+    #     if type(ind) is not int:
+    #         ind = self.max_key + 1
+    #         self.max_key += 1
+    #     if type(name) is not str:
+    #         name = ""
+    #         sc = ""
+    #     col = [255, 255, 255] if name == "" else get_color(self.colors, name)
+    #     line = CatLine(self, col, name, sc, self.lines, self.hot_buttons, self.colors)
+    #     line.next_line.connect(self.new_line)
+    #     line.finished.connect(self.finish)
+    #     self.lines.append(line)
+    #     self.line_layout.addWidget(line)
+    #     line.name_field.setFocus()
+    #     self.update()
+    #     # self.cat_list[ind] = line
+
+    # def new_line(self, n):
+    #     if n + 1 < len(self.lines):
+    #         self.lines[n + 1].name_field.setFocus()
+    #     else:
+    #         self.add_line()
+    #         self.lines[-1].name_field.setFocus()
+
+    # def create_lines(self, main_key="base"):
+    #     self.lines = []
+    #     for cat in self.catDict[main_key]:
+    #         if self.catDict[main_key][cat] not in self.invisible:
+    #             sc = ""
+    #             for key in self.shortCut[main_key]:
+    #                 if self.shortCut[main_key][key] == cat:
+    #                     sc = key
+    #             self.add_line(cat, self.catDict[main_key][cat], sc)
+    #             self.cat_list[cat] = self.lines[-1]
+    #     if len(self.catDict[main_key]) == 0:
+    #         self.add_line()
+
+    # def keyPressEvent(self, event):
+    #     if event.modifiers() & Qt.ShiftModifier:
+    #         shift = True
+    #     else:
+    #         shift = False
+    #     if event.key() == Qt.Key_Enter or event.key() == 16777220:
+    #         if shift:
+    #             self.finish()
+    #     else:
+    #         super(CatDialog, self).keyPressEvent(event)
+
+    # def add_action(self, text, i, sc):
+    #     self.catDict[self.key][i] = text
+    #     self.catDict["base"][i] = text
+    #     self.actions.append(text)
+    #     if self.key == "categories" and text not in self.catDict.keys():
+    #         self.catDict[text] = {}
+    #     if len(sc) == 1:
+    #         self.shortCut[self.key][sc] = i
+
+    
 
     def finish(self, event):
         self.actions = []
@@ -549,13 +818,16 @@ class Form(QDialog):
     def __init__(self, videos, parent=None):
         super(Form, self).__init__(parent)
         # Create widgets
-        self.label = QLabel("Which video does this skeleton file relate to?")
         layout = QVBoxLayout()
+        self.label = QLabel("Which video does this skeleton file relate to?")
         layout.addWidget(self.label)
+
         self.buttons = [QRadioButton(video) for video in videos]
         for button in self.buttons:
             layout.addWidget(button)
-        # Set dialog layout
+        
+
+        
         self.setLayout(layout)
         self.videos = videos
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
@@ -567,6 +839,70 @@ class Form(QDialog):
         for i, button in enumerate(self.buttons):
             if button.isChecked():
                 return self.videos[i]
+
+
+class FormInit(QDialog):
+    def __init__(self, videos, skeleton_file, parent=None):
+        super(FormInit, self).__init__(parent)
+        self.skeleton_files =QLabel(f"Skeleton file: {os.path.basename(skeleton_file)}")
+        self.label = QLabel("Which video does this skeleton file relate to?")
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        layout.addWidget(self.skeleton_files)
+        
+        if isinstance(videos, list):
+            self.buttons = [QRadioButton(video) for video in videos]
+            for button in self.buttons:
+                layout.addWidget(button)
+        elif isinstance(videos, str):
+            self.buttons = QRadioButton(videos)
+            layout.addWidget(self.buttons)
+        else:
+            raise TypeError("videos must be a list or a string")
+
+        # Add a radio button for "None"
+        self.none_button = QRadioButton("None")
+        layout.addWidget(self.none_button)
+        self.setLayout(layout)
+        
+        self.videos = videos
+        
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
+        layout.addWidget(self.button_box)
+        self.button_box.setEnabled(False)
+        
+        self.none_button.clicked.connect(self.toggle_accept)
+        if isinstance(videos,list):
+            for button in self.buttons:
+                button.clicked.connect(self.toggle_accept)
+        elif isinstance(videos, str):
+            self.buttons.clicked.connect(self.toggle_accept)
+        else:
+            raise TypeError("videos must be a list or a string")
+        
+        self.button_box.accepted.connect(self.accept)
+        self.none_button.toggled.connect(self.accept)
+        
+
+    def toggle_accept(self):
+        self.button_box.setEnabled(True)
+
+        
+        
+    def exec_(self):
+        super().exec_()
+        # if len(self.videos) > 1:
+        #     for i, button in enumerate(self.buttons):
+        #         if button.isChecked():        
+        #             return self.videos[i]
+        # else: 
+        #     if button.isChecked():
+        #         return self.videos
+            
+        # if self.none_button.isChecked():
+        #     return None
+
+            
 
 
 class EpisodeSelector(QDialog):

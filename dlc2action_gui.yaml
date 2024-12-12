@@ -1,35 +1,34 @@
 # install: conda env create -f dlc2action_gui.yaml
 # update:  conda env update -f dlc2action_gui.yaml
+
 name: dlc2action_gui
 channels:
   - conda-forge
   - defaults
 dependencies:
   - pip
-  - python=3.9
-  - dask
-  - numpy
-  - pandas
-  - pillow
-  - pycocotools
-  - pyqt  # Installs PyQT5
-  - pyqtgraph
-  - pytables
-  - PyYaml
-  - ruamel.yaml
-  - scikit-image
-  - scikit-learn
+  - python
+  - click==7.1
+  - dask==2.30.0
+  - pandas==1.4.3
+  - numpy==1.23.2
+  - PyYaml==5.3.1
+  - nb_conda==2.2.1
+  - pytables==3.7.0
+  - pycocotools==2.0.4
+  - scikit-image==0.19.3
+  - pyqtgraph==0.12.4
+  - scikit-learn==1.1.2
+  - ruamel.yaml==0.17.21
+  - pyqt
+  - av==8.0.3
   - pip:
-    - av
-    - click
-    - matplotlib>=3.7.2
-    - msgpack
-    - opencv-python
-    - PIMS
-    - qtwidgets
-    - QtPy
-    - torch
-    - tqdm
-    - ttf_opensans
-    - statsmodels
-    - vispy
+    - vispy==0.11.0
+    - PIMS==0.5
+    - ttf_opensans==2020.10.30
+    - tqdm==4.64.0
+    - msgpack==1.0.4
+    - qtwidgets==0.18
+    - opencv-python==4.6.0.66
+    - torch==1.12.1
+    - statsmodels==0.13.2

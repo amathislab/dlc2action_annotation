@@ -4,6 +4,7 @@
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
 import os
+import os.path as osp
 import pickle
 import warnings
 from collections import defaultdict
@@ -12,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from random import sample as smp
 from typing import Tuple
+import yaml
 
 import numpy as np
 import pandas as pd
@@ -28,7 +30,13 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from utils import BoxLoader, Segmentation, get_2d_files, read_skeleton
+from utils import (
+    BoxLoader,
+    Segmentation,
+    get_2d_files,
+    read_skeleton,
+    split_consecutive_sequences,
+)
 
 from .actionbar import Bar
 from .canvas import VideoCanvas
@@ -65,11 +73,14 @@ class Viewer(QWidget):
         filenames,
         filepaths,
         current,
+        animal_colors,
         al_mode,
         al_points=None,
     ):
         super(Viewer, self).__init__()
         self.settings = settings
+        self.animal_colors = animal_colors
+        # Filespaths: Path to video files
         self.filepaths = filepaths
         self.filenames = filenames
         self.layout = QHBoxLayout()
@@ -90,14 +101,11 @@ class Viewer(QWidget):
         self.al_points = al_points
         self.displayed_animals = []
         self.sequential = sequential
+        self.loaded_animals = None
         self.animals = None
-        with open("colors.txt") as f:
-            self.animal_colors = [
-                list(map(lambda x: float(x) / 255, line.split()))
-                for line in f.readlines()
-            ]
+
         self.active = True
-        self.display_categories = True
+        self.display_categories = self.settings["is_nested"]
         if self.display_categories:
             self.active_list = "categories"
         else:
@@ -131,29 +139,19 @@ class Viewer(QWidget):
             split = filename.split(sep)
             if len(split) > 1:
                 filename = sep.join(split[1:])
-        self.basename = os.path.join(filepath, filename.split(".")[0])
+        self.basename = osp.join(filepath, filename.split(".")[0])
 
-        if self.labels_file is None and self.settings["suffix"] is not None:
-            self.labels_file = self.basename + self.settings["suffix"]
-            if not os.path.exists(self.labels_file):
-                print(f"{self.labels_file} does not exist")
-                self.labels_file = None
-
-        if self.suggestions_file is None:
-            self.suggestions_file = self.basename + "_suggestion.pickle"
-            if self.suggestions_file == self.labels_file:
-                self.suggestions_file = None
-            elif not os.path.exists(self.suggestions_file):
-                print(f"{self.suggestions_file} does not exist")
-                self.suggestions_file = None
+        if not osp.exists(self.suggestions_file):
+            self.suggestions_file = None
 
         if self.output_file is None:
-            if self.labels_file is not None:
-                self.output_file = self.labels_file
-            elif self.settings["suffix"] is not None:
-                self.output_file = self.basename + self.settings["suffix"]
-            else:
-                raise ValueError("Please set the annotation suffix in settings!")
+            self.output_file = osp.join("Annotations", self.labels_file)
+            # if self.settings["suffix"] is not None:
+            #     self.output_file = osp.join(
+            #         "Annotations", self.basename + self.settings["suffix"]
+            #     )
+            # else:
+            #     raise ValueError("Please set the annotation suffix in settings!")
         self.load_labels()
 
         data_2d = [None for _ in self.filenames]
@@ -163,7 +161,7 @@ class Viewer(QWidget):
                 self.output_file.split(".")[0][: -len(self.settings["suffix"])]
                 + self.settings["3d_suffix"]
             )
-            if os.path.exists(file_3d):
+            if osp.exists(file_3d):
                 data_3d = np.load(file_3d)
                 if self.settings["calibration_path"] is not None:
                     data_2d = get_2d_files(
@@ -192,6 +190,13 @@ class Viewer(QWidget):
             if x is not None:
                 self.draw_segmentation = True
 
+        if self.animals is None:
+            self.animals = ["ind{}".format(i) for i in range(self.n_ind)]
+        self.displayed_animals = (
+            self.animals
+        )  # TODO change to display a subset of animals
+        self.settings["individuals"] = self.animals
+
         self.canvas = VideoCanvas(
             self,
             stacks,
@@ -213,32 +218,13 @@ class Viewer(QWidget):
             self.settings["skeleton"],
             self.settings["3d_bodyparts"],
         )
-        if os.path.exists("../last_action_choice.pickle"):
-            msg = QMessageBox()
-            msg.setText("Load the last label choice?")
-            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            self.load_action_choice = msg.exec_() == QMessageBox.Yes
-        else:
-            self.load_action_choice = False
 
-        success = False
-        if self.load_action_choice:
-            try:
-                with open("../last_action_choice.pickle", "rb") as f:
-                    (
-                        self.settings["actions"],
-                        display_categories,
-                        self.loaded_shortcuts,
-                    ) = pickle.load(f)
-                    self.loaded_shortcuts = defaultdict(
-                        lambda: {}, self.loaded_shortcuts
-                    )
-                    self.set_display_categories(display_categories)
-                    success = True
-            except:
-                pass
-        if not success and (type(self.action_dict) is dict or settings["cat_choice"]):
-            self.choose_cats()
+        # success = False
+
+        # if type(self.action_dict) is dict or settings["cat_choice"]:
+        # Load or create a project window
+
+        # self.choose_cats()
         self.initialize_cats()
 
         self.correct_animal = self.current_animal_name() in self.displayed_animals
@@ -289,13 +275,13 @@ class Viewer(QWidget):
             return segmentation_list
 
         self.segmentation_files = [
-            os.path.join(fp, fn.split(".")[0] + self.settings["segmentation_suffix"])
+            osp.join(fp, fn.split(".")[0] + self.settings["segmentation_suffix"])
             for fp, fn in zip(self.filepaths, self.filenames)
         ]
 
         segmentation_list = []
         for file in self.segmentation_files:
-            if os.path.exists(file):
+            if osp.exists(file):
                 segmentation_list.append(Segmentation(file))
             else:
                 segmentation_list.append(None)
@@ -331,31 +317,27 @@ class Viewer(QWidget):
         self.bar.set_al_point(self.al_current, self.al_end)
 
     def find_skeleton_files(self):
+
         if len(self.settings["detection_files"]) < len(self.filepaths):
             for i in range(len(self.filepaths) - len(self.settings["detection_files"])):
                 self.settings["detection_files"].append(None)
-        if self.settings["DLC_suffix"][0] is not None:
+        if self.settings["DLC_suffix"] is not None:
+            skeleton_files = []
             for i in range(len(self.filepaths)):
-                if (
-                    len(self.settings["skeleton_files"]) <= i
-                    or self.settings["skeleton_files"][i] is None
-                ):
-                    path = None
-                    for suffix in self.settings["DLC_suffix"]:
-                        possible_path = os.path.join(
-                            self.filepaths[i], self.filenames[i].split(".")[0] + suffix
-                        )
-                        if os.path.exists(possible_path):
-                            path = possible_path
-                        else:
-                            print(f"{possible_path} does not exist")
-                    if len(self.settings["skeleton_files"]) <= i:
-                        self.settings["skeleton_files"].append(path)
-                    else:
-                        self.settings["skeleton_files"][i] = path
+                skeleton_file_path = osp.join(
+                    self.filepaths[i],
+                    self.filenames[i].split(".")[0] + self.settings["DLC_suffix"],
+                )
+                if osp.exists(skeleton_file_path):
+                    skeleton_files.append(skeleton_file_path)
+            self.settings["skeleton_files"] = skeleton_files
+        return len(skeleton_files) > 0
 
     def load_skeleton(self, current=None):
-        self.find_skeleton_files()
+        check = self.find_skeleton_files()
+        if not check:
+            return [], defaultdict(lambda: None)
+
         points_df_list = []
         for skeleton_file in self.settings["skeleton_files"]:
             points_df, index_dict, animals = self.load_animals(skeleton_file)
@@ -516,7 +498,7 @@ class Viewer(QWidget):
     def initialize_cats(self):
         self.shortCut = defaultdict(lambda: {})
         self.catDict = defaultdict(lambda: [])
-        self.invisible_actions = []
+        self.invisible_actions = ["actions"]
         taken = defaultdict(lambda: [str(i) for i in range(min(self.n_ind, 10))])
         actions = []
         for key in self.settings["actions"]:
@@ -619,49 +601,61 @@ class Viewer(QWidget):
         except:
             pass
 
+    # FUNCTION TO HANDLE "CHANGE LABELS" ------------------
     def get_cats(self):
+        # When you change labels you want to have all your labels listed
         if self.display_categories:
             dialog = CatDialog(
                 self.catDict, self.shortCut, self.invisible_actions, "categories", self
             )
             self.catDict, self.shortCut, self.invisible_actions, _ = dialog.exec_()
-            keys = [key for key in self.catDict if key not in ["base", "categories"]]
-        else:
-            keys = ["base"]
-        for key in keys:
-            dialog = CatDialog(
-                self.catDict, self.shortCut, self.invisible_actions, key, self
-            )
-            (
-                self.catDict,
-                self.shortCut,
-                self.invisible_actions,
-                actions,
-            ) = dialog.exec_()
-            if key != "base":
-                self.settings["actions"][key] = actions
-            else:
-                for action in actions:
-                    success = False
-                    for category, label_dict in self.catDict.items():
-                        label_list = [v for _, v in label_dict.items()]
-                        if action in label_list and category != "base":
-                            success = True
-                            if category == "categories":
-                                if action not in self.settings["actions"]:
-                                    self.settings["actions"][action] = []
-                            else:
-                                if category not in self.settings["actions"]:
-                                    self.settings["actions"][category] = []
-                                if action not in self.settings["actions"][category]:
-                                    self.settings["actions"][category].append(action)
-                            break
-                    if not success:
-                        if "other" not in self.settings["actions"]:
-                            self.settings["actions"]["other"] = []
-                        if action not in self.settings["actions"]["other"]:
-                            self.settings["actions"]["other"].append(action)
+        keys = [key for key in self.catDict if key not in ["base", "categories"]]
 
+        # else:
+        #     keys = ["base"]
+        # for key in keys:
+
+        # Changed KEY to "BASE"
+        dialog = CatDialog(
+            self.catDict, self.shortCut, self.invisible_actions, "base", self
+        )
+        (
+            self.catDict,
+            self.shortCut,
+            self.invisible_actions,
+            actions,
+        ) = dialog.exec_()
+
+        if not self.display_categories:
+            self.settings["actions"]["actions"] = actions
+        else:
+            for key in keys:
+                if key != "base":
+                    self.settings["actions"][key] = actions
+                else:
+                    for action in actions:
+                        success = False
+                        for category, label_dict in self.catDict.items():
+                            label_list = [v for _, v in label_dict.items()]
+                            if action in label_list and category != "base":
+                                success = True
+                                if category == "categories":
+                                    if action not in self.settings["actions"]:
+                                        self.settings["actions"][action] = []
+                                else:
+                                    if category not in self.settings["actions"]:
+                                        self.settings["actions"][category] = []
+                                    if action not in self.settings["actions"][category]:
+                                        self.settings["actions"][category].append(
+                                            action
+                                        )
+                                break
+                        if not success:
+                            if "other" not in self.settings["actions"]:
+                                self.settings["actions"]["other"] = []
+                            if action not in self.settings["actions"]["other"]:
+                                self.settings["actions"]["other"].append(action)
+        self._save_yaml(osp.join("Project_Config", "config.yaml"))
         self.ncat = len(self.catDict["base"])
         self.get_ncat()
         try:
@@ -671,6 +665,10 @@ class Viewer(QWidget):
             self.update()
         except:
             pass
+
+    def _save_yaml(self, path):
+        with open(path, "w") as f:
+            yaml.dump(self.settings, f)
 
     def current(self):
         return self.canvas.current
@@ -808,7 +806,7 @@ class Viewer(QWidget):
     def save(self, event=None, verbose=True, new_file=False, ask=False):
         if ask:
             msg = QMessageBox()
-            msg.setText("Save the current annotations?")
+            msg.setText("Save te current annotations?")
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             reply = msg.exec_()
             if reply == QMessageBox.No:
@@ -821,37 +819,22 @@ class Viewer(QWidget):
                 self.output_file = None
                 return False
 
-        # TODO: WHY IS THE LAST ACTION CHOICE SAVED HERE
-        with open("../last_action_choice.pickle", "wb") as f:
-            loaded_shortcuts = defaultdict(lambda: {})
-            for k in self.catDict:
-                for i, sc in self.shortCutInv(k).items():
-                    cat = self.catDict[k][i]
-                    loaded_shortcuts[k][cat] = sc
-            pickle.dump(
-                (
-                    self.settings["actions"],
-                    self.display_categories,
-                    dict(loaded_shortcuts),
-                ),
-                f,
-            )
-
         # TODO: SAVING
-        try:
-            save_annotations(
-                output_path=Path(self.output_file),
-                metadata=metadata,
-                animals=animals,
-                cat_labels=cat_labels,
-                times=times,
-                human_readable=True,
-                overwrite=True,
-            )
-            if verbose:
-                self.show_warning("Saved successfully!")
-        except IOError as err:
-            warnings.warn(f"Failed to save annotation data: {err}")
+        save_annotations(
+            output_path=Path(self.output_file),
+            metadata=metadata,
+            animals=animals,
+            cat_labels=cat_labels,
+            times=times,
+            human_readable=True,
+            overwrite=True,
+        )
+
+        # if verbose:
+        #     self.show_warning("Saved successfully!")
+
+        # except IOError as err:
+        # warnings.warn(f"Failed to save annotation data: {err}")
 
         return True
 
@@ -876,9 +859,29 @@ class Viewer(QWidget):
         else:
             return True
 
-    def load_prior(self, file, amb_replace):
-        with open(file, "rb") as f:
-            _, loaded_labels, animals, loaded_times = pickle.load(f)
+    def load_prior(self, filename: str, amb_replace: bool):
+
+        with open(filename, "rb") as f:
+            temp = pickle.load(f)
+            if isinstance(temp, tuple):
+                # Load from DLC annotation formats
+                (metadata, loaded_labels, animals, loaded_times) = temp
+            elif isinstance(temp, dict):
+                # Load from DLC2Action prediction files,
+                if self.settings["n_ind"] == 1:
+                    loaded_times, labels = self.load_from_predictions(
+                        temp, len(self.loaded_labels) == 0
+                    )
+                    loaded_labels = (
+                        labels if len(self.loaded_labels) == 0 else self.loaded_labels
+                    )
+                    animals = self.loaded_animals
+                else:
+                    raise NotImplementedError(
+                        "Multiple individuals not supported for predictions"
+                    )
+            del temp
+
         animals_i = []
         for ind in animals:
             if ind in self.loaded_animals:
@@ -898,7 +901,7 @@ class Viewer(QWidget):
                         cat_list = list(cat_list)
                         if len(self.loaded_times[i][j]) > 0:
                             self.loaded_times[i][j] = np.array(self.loaded_times[i][j])
-                            to_remove = []
+                            # to_remove = []
                             # for k, (start, end, amb) in enumerate(cat_list):
                             #     mask = (self.loaded_times[i][j][:, 0] < end) & (
                             #         self.loaded_times[i][j][:, 1] >= start
@@ -960,7 +963,7 @@ class Viewer(QWidget):
                 del self.loaded_data
 
         except:
-            if self.labels_file is not None and os.path.exists(self.labels_file):
+            if self.labels_file is not None and osp.exists(self.labels_file):
                 print(f"annotation file {self.labels_file} is invalid")
             elif self.labels_file is not None:
                 print(f"annotation file {self.labels_file} does not exist")
@@ -987,34 +990,80 @@ class Viewer(QWidget):
         #         + prior
         #         + ".pickle"
         #     )
-        #     if os.path.exists(file):
+        #     if osp.exists(file):
         #         if self.loaded_times is None:
         #             self.load_annotation(file, amb)
         #         else:
         #             self.load_prior(file, amb)
 
-    def load_annotation(self, file, amb=None):
+    @staticmethod
+    def load_from_predictions(
+        predictions: dict, return_behaviors: bool = False, threshold: float = 0.5
+    ):
+        for video_name in predictions["min_frames"].keys():
+            data = predictions[video_name]
+            data = data.numpy()
+            data = np.roll(
+                data, 1, axis=0
+            )  # TODO find the behavior order and include it in the predicitons
+            preds = (data > threshold) * 1
+            times = []
+            for beh in preds:
+                subseq = split_consecutive_sequences(beh)
+                temp = []
+                for s in subseq:
+                    temp.append([s[0], s[-1], 2])
+                times.append(temp)
+
+            behaviors = None
+            if return_behaviors:
+                behaviors = [f"beh_{i}" for i in range(data.shape[0])]
+            return [times], behaviors
+
+    def load_annotation(self, filename, amb=None):
         if self.settings["data_type"] == "dlc":
-            with open(file, "rb") as f:
+            with open(filename, "rb") as f:
+                temp = pickle.load(f)
+            if isinstance(temp, tuple):
+                # Load from DLC annotation formats
                 (
                     metadata,
                     self.loaded_labels,
                     self.loaded_animals,
                     self.loaded_times,
-                ) = pickle.load(f)
+                ) = temp
+            elif isinstance(temp, dict):
+                # Load from DLC2Action prediction files,
+                self.loaded_animals = []
+                if self.animals is None:
+                    self.loaded_animals = ["ind0"]
+                if self.settings["n_ind"] == 1:
+                    self.loaded_times, labels = self.load_from_predictions(
+                        temp, len(self.loaded_labels) == 0
+                    )
+                    self.loaded_labels = (
+                        labels if len(self.loaded_labels) == 0 else self.loaded_labels
+                    )
+                else:
+                    raise NotImplementedError(
+                        "Multiple individuals not supported for predictions"
+                    )
+            del temp
 
             if self.animals is None:
                 self.animals = self.loaded_animals
             else:
-                self.anmals = list(set(self.animals + self.loaded_animals))
+                self.animals = list(set(self.animals + self.loaded_animals))
+            self.displayed_animals = self.animals
             self.n_ind = len(self.animals)
             if amb is not None:
                 for i, ind_list in enumerate(self.loaded_times):
                     for j, cat_list in enumerate(ind_list):
                         for k in range(len(cat_list)):
                             self.loaded_times[i][j][k][-1] = amb
+
         elif self.settings["data_type"] == "calms21":
-            f = np.load(file, allow_pickle=True).item()
+            f = np.load(filename, allow_pickle=True).item()
             keys = sorted(list(f.keys()))
             seq = keys[0]
             f = f[seq]
@@ -1192,20 +1241,27 @@ class Viewer(QWidget):
         self.on_next()
 
     def next_video_f(self):
-        if self.show_question(message="Save the current annotation?", default="yes"):
-            success = self.save()
-        else:
-            success = True
-        if success:
-            self.next_video.emit()
+
+        # if self.show_question(message="Save the current annotation?", default="yes"):
+        #     success = self.save()
+        # else:
+        #     success = True
+        # if success:
+
+        # Instead of asking users if they want to save the current annotation
+        # we save it automatically
+
+        self.save()
+        self.next_video.emit()
 
     def prev_video_f(self):
-        if self.show_question(message="Save the current annotation?", default="yes"):
-            success = self.save()
-        else:
-            success = True
-        if success:
-            self.prev_video.emit()
+        # if self.show_question(message="Save the current annotation?", default="yes"):
+        #     success = self.save()
+        # else:
+        #     success = True
+        # if success:
+        self.save()
+        self.prev_video.emit()
 
     def next_al_point(self):
         cur_al_point = self.cur_al_point + 1
@@ -1261,6 +1317,16 @@ class Viewer(QWidget):
     def set_active_list(self, key):
         self.active_list = key
         self.console.catlist.set_key(key)
+        # if self.settings["is_nested"]:
+        #     self.console.cat_button.setVisible(True)
+        #     self.console.cat_button.setEnabled(True)
+        #     if (
+        #         self.active_list == "categories" and not self.console.cat_button.isChecked()
+        #     ) or (self.active_list == "base" and self.console.cat_button.isChecked()):
+        #         self.console.cat_button.setChecked(not self.console.cat_button.isChecked())
+        # else:
+        #     self.console.cat_button.setVisible(False)
+        #     self.console.cat_button.setEnabled(False)
         if key == "base":
             self.console.back_button.setVisible(False)
         else:
@@ -1353,45 +1419,47 @@ class Viewer(QWidget):
     def active_shortcuts(self):
         return self.shortCut[self.active_list].keys()
 
-    def set_correct_mode(self, event):
-        self.correct_mode = True
-        for vb in self.canvas.viewboxes:
-            vb.correct_mode = True
-        self.message = 'Click and drag a keypoint to correct a DLC error. Press "Save correction" when you are done'
-        self.status.emit(self.message)
-        self.console.correct_button.setVisible(True)
+    # SAVE CORRECTION WORKFLOW ------------
 
-    def save_correction(self, event):
-        self.correct_mode = False
-        for i, vb in enumerate(self.canvas.viewboxes):
-            if isinstance(vb, VideoViewBox):
-                vb.correct_mode = False
-                corrections = vb.get_keypoints(self.current())
-                if corrections is not None:
-                    fp = self.filepaths[i]
-                    fn = (
-                        os.path.basename(self.filenames[i]).split(".")[0]
-                        + "_corrections.pickle"
-                    )
-                    file = os.path.join(fp, fn)
-                    if os.path.exists(file):
-                        with open(file, "rb") as f:
-                            data = pickle.load(f)
-                            data.update(corrections)
-                            corrections = data
-                    # TODO: DUMPING CORRECTIONS
-                    with open(file, "wb") as f:
-                        pickle.dump(corrections, f)
-                    im = Image.fromarray(vb.get_image(self.current()))
-                    fn = (
-                        os.path.basename(self.filenames[i]).split(".")[0]
-                        + f"_frame{self.current():07}.jpeg"
-                    )
-                    file = os.path.join(fp, fn)
-                    im.save(file)
-        self.message = self.mode_message
-        self.status.emit(self.message)
-        self.console.correct_button.setVisible(False)
+    # def set_correct_mode(self, event):
+    #     self.correct_mode = True
+    #     for vb in self.canvas.viewboxes:
+    #         vb.correct_mode = True
+    #     self.message = 'Click and drag a keypoint to correct a DLC error. Press "Save correction" when you are done'
+    #     self.status.emit(self.message)
+    #     self.console.correct_button.setVisible(True)
+
+    # def save_correction(self, event):
+    #     self.correct_mode = False
+    #     for i, vb in enumerate(self.canvas.viewboxes):
+    #         if isinstance(vb, VideoViewBox):
+    #             vb.correct_mode = False
+    #             corrections = vb.get_keypoints(self.current())
+    #             if corrections is not None:
+    #                 fp = self.filepaths[i]
+    #                 fn = (
+    #                     osp.basename(self.filenames[i]).split(".")[0]
+    #                     + "_corrections.pickle"
+    #                 )
+    #                 file = osp.join(fp, fn)
+    #                 if osp.exists(file):
+    #                     with open(file, "rb") as f:
+    #                         data = pickle.load(f)
+    #                         data.update(corrections)
+    #                         corrections = data
+    #                 # TODO: DUMPING CORRECTIONS
+    #                 with open(file, "wb") as f:
+    #                     pickle.dump(corrections, f)
+    #                 im = Image.fromarray(vb.get_image(self.current()))
+    #                 fn = (
+    #                     osp.basename(self.filenames[i]).split(".")[0]
+    #                     + f"_frame{self.current():07}.jpeg"
+    #                 )
+    #                 file = osp.join(fp, fn)
+    #                 im.save(file)
+    #     self.message = self.mode_message
+    #     self.status.emit(self.message)
+    #     self.console.correct_button.setVisible(False)
 
     def on_bar_clicked(self, cur):
         self.set_current(cur, center=True)
@@ -1516,13 +1584,13 @@ class Viewer(QWidget):
         labels = dlg.exec_()
         cat_labels = [self.catDict["base"][i] for i in self.catDict["base"]]
         num_clips = 5
-        target_dir = os.path.join(
+        target_dir = osp.join(
             QFileDialog.getExistingDirectory(self, "Save File"), "extracted_clips"
         )
-        fps = VideoFileClip(os.path.join(self.filepaths[0], self.filenames[0])).fps
+        fps = VideoFileClip(osp.join(self.filepaths[0], self.filenames[0])).fps
         os.mkdir(target_dir)
         for label in labels:
-            os.mkdir(os.path.join(target_dir, label))
+            os.mkdir(osp.join(target_dir, label))
             cnt = 0
             if label not in cat_labels:
                 continue
@@ -1538,9 +1606,9 @@ class Viewer(QWidget):
                     if amb != 0 or end - start < 2 * fps // 3:
                         continue
                     for fn, fp in zip(self.filenames, self.filepaths):
-                        filename_in = os.path.join(fp, fn)
+                        filename_in = osp.join(fp, fn)
                         name, ext = fn.split(".")
-                        filename_out = os.path.join(
+                        filename_out = osp.join(
                             target_dir, label, f"{name}_{label}_{cnt}.{ext}"
                         )
                         ffmpeg_extract_subclip(

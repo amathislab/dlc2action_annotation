@@ -38,7 +38,9 @@ class Console(QWidget):
 
         self.catlist = CatList(key=self.window.active_list, window=self.window)
         self.catlist.itemClicked.connect(self.window.item_clicked)
+
         self.catlist.itemDoubleClicked.connect(self.window.doubleclick)
+
         self.animallist = AnimalList(
             window=self.window,
             current=self.window.current_animal_name(),
@@ -75,7 +77,7 @@ class Console(QWidget):
         self.opacity_slider = QSlider(Qt.Horizontal)
         self.opacity_slider.setMaximum(10)
         self.opacity_slider.setMinimum(0)
-        self.opacity_slider.setValue(self.window.settings["mask_opacity"] * 10)
+        self.opacity_slider.setValue(int(self.window.settings["mask_opacity"] * 10))
         self.opacity_slider.setSingleStep(1)
         self.opacity_slider.valueChanged.connect(self.window.set_mask_opacity)
         self.opacity_label = QLabel("Mask opacity:")
@@ -85,9 +87,9 @@ class Console(QWidget):
         self.ind_names_tick.stateChanged.connect(self.window.set_display_names)
         self.ind_names_label = QLabel("Display names:")
 
-        self.correct_button = QPushButton("Save correction")
-        self.correct_button.clicked.connect(self.window.save_correction)
-        self.correct_button.setVisible(self.window.correct_mode)
+        # self.correct_button = QPushButton("Save correction")
+        # self.correct_button.clicked.connect(self.window.save_correction)
+        # self.correct_button.setVisible(self.window.correct_mode)
 
         self.speed_form = QFormLayout()
         self.speed_form.addRow(self.speed_label, self.speed_slider)
@@ -126,12 +128,29 @@ class Console(QWidget):
 
         self.back_button = QPushButton("Back to categories")
         self.back_button.clicked.connect(
-            lambda: self.window.set_active_list("categories")
+        lambda: self.window.set_active_list("categories")
         )
+        # TODO: CHANGE THIS TO TOGGLE
         if self.window.active_list == "base":
             self.back_button.setVisible(False)
         elif self.window.active_list == "categories":
             self.back_button.setEnabled(False)
+
+        # if self.window.active_list == "categories":
+        #     self.cat_button = ToggleButton("ON", self)
+        # elif self.window.active_list == "base":
+        #     self.cat_button = ToggleButton("OFF", self)
+
+        # self.cat_button.clicked.connect(
+        #     lambda: self.window.set_active_list(
+        #         ["base", "categories"][self.cat_button.isChecked()]
+        #     )
+        # )
+
+        # Remove button in non nested mode
+        # if not self.window.settings["is_nested"]:
+        #     self.cat_button.setVisible(False)
+        #     self.cat_button.setEnabled(False)
 
         if self.window.draw_segmentation:
             self.layout.addWidget(self.seglabel)
@@ -142,8 +161,9 @@ class Console(QWidget):
         self.layout.addWidget(self.catlabel)
         self.layout.addWidget(self.catlist, 70)
         self.layout.addWidget(self.back_button)
+        # self.layout.addWidget(self.cat_button)
         self.layout.addLayout(self.speed_form)
-        self.layout.addWidget(self.correct_button)
+        # self.layout.addWidget(self.correct_button)
         self.layout.addLayout(self.video_buttons)
         self.layout.addLayout(self.assessment_buttons)
         self.setLayout(self.layout)
@@ -167,3 +187,22 @@ class Console(QWidget):
             else:
                 self.prev_button.clicked.connect(self.window.on_prev)
                 self.next_button.clicked.connect(self.window.on_next)
+
+
+# class ToggleButton(QPushButton):
+#     def __init__(self, text, parent=None):
+#         super().__init__(text, parent)
+#         self.setCheckable(True)
+#         self.toggled.connect(self.on_toggled)
+#         self.update_style()
+
+#     def on_toggled(self, checked):
+#         self.update_style()
+
+#     def update_style(self):
+#         if self.isChecked():
+#             self.setStyleSheet("background-color: lightgreen; color: black;")
+#             self.setText("Categories")
+#         else:
+#             self.setStyleSheet("background-color: lightcoral; color: black;")
+#             self.setText("Actions")

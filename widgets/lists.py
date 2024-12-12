@@ -3,6 +3,7 @@
 #
 # This project and all its files are licensed under GNU AGPLv3 or later version. A copy is included in https://github.com/AlexEMG/DLC2action/LICENSE.AGPL.
 #
+import os 
 from PyQt5.Qt import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QKeySequence, QPixmap
 from PyQt5.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem
@@ -54,7 +55,7 @@ class AnimalList(List):
     def update_list(self, current, visuals):
         self.clear()
         for i, (animal, color) in enumerate(visuals):
-            col = QColor(*[x * 255 for x in color])
+            col = QColor.fromRgb(*[int(x * 255) for x in color])
             pixmap = QPixmap(100, 100)
             pixmap.fill(col)
             item = QListWidgetItem(f"{animal} ({i})")
@@ -85,7 +86,7 @@ class CatList(List):
         for cat in self.window.catDict[cat_key]:
             if self.window.catDict[cat_key][cat] not in self.window.invisible_actions:
                 col = QColor(
-                    *self.window.bar.get_color(self.window.catDict[cat_key][cat])
+                    *[int(i) for i in self.window.bar.get_color(self.window.catDict[cat_key][cat])]
                 )
                 pixmap = QPixmap(100, 100)
                 pixmap.fill(col)
@@ -106,10 +107,28 @@ class SegmentationList(List):
 
     def __init__(self, cats, *args, **kwargs):
         super(SegmentationList, self).__init__(*args, **kwargs)
-        with open("colors.txt") as f:
-            colors = [
-                list(map(lambda x: float(x), line.split())) for line in f.readlines()
-            ][::-1]
+        
+        cwd = os.getcwd()
+        try:
+            with open("colors.txt") as f:
+                colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ][::-1]
+        except:
+            if not cwd.endswith('/Project_Config'):
+                os.chdir(os.path.join(os.getcwd(),'Project_Config'))
+                with open("colors.txt") as f:
+                    colors = [
+                        list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                    ][::-1]
+                os.chdir(cwd)
+            else:
+                with open("colors.txt") as f:
+                    colors = [
+                    list(map(lambda x: float(x), line.split())) for line in f.readlines()
+                ][::-1]
+        
+
 
         for i, cat in enumerate(cats):
             if type(cat) is int:
