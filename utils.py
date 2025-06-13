@@ -89,7 +89,7 @@ class SignalEmitter(QWidget):
     mode_changed = pyqtSignal(bool)
 
 
-def read_video(path, backend="pyav"):
+def read_video(path, backend="pyav_fast"):
     if path is None:
         return 0, 0, 0
     if backend == "cv2":
@@ -141,7 +141,7 @@ def read_skeleton(filename, data_type, likelihood_cutoff=0, min_length_frames=0)
     return PointsData(df), index
 
 
-def read_stack(stack, start, end, shape=None, backend="pyav", fs=1):
+def read_stack(stack, start, end, shape=None, backend="pyav_fast", fs=1):
     if type(stack) is int:
         return None
     if backend == "decord":

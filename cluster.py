@@ -506,6 +506,9 @@ class MainWindow(QWidget):
         dlc2action_name,
         dlc2action_path,
         skip_dlc2action,
+        sampling,
+        clip_length, 
+        hbmae,       
         *args,
         **kwargs,
     ):
@@ -523,6 +526,8 @@ class MainWindow(QWidget):
         self.annotation_folder = annotation_folder
         self.feature_suffix = feature_suffix
         self.feature_folder = feature_folder
+        self.sampling = sampling
+        self.clip_length = clip_length
         if annotation_folder is not None and not os.path.exists(annotation_folder):
             os.mkdir(annotation_folder)
         for fn, fp in zip(self.filenames, self.filepaths):
@@ -533,14 +538,15 @@ class MainWindow(QWidget):
             self.annotation_files.append(ann_path)
         self.skeleton_files = []
         for fn, fp in zip(self.filenames, self.filepaths):
-            sk_folder = skeleton_folder if skeleton_folder is not None else fp
-            sk_path = None
-            for s in self.settings["DLC_suffix"]:
-                path = os.path.join(sk_folder, fn.split(".")[0] + s)
-                if os.path.exists(path):
-                    sk_path = path
-                    break
-            self.skeleton_files.append(sk_path)
+            if skeleton_folder is not None:
+                sk_folder = skeleton_folder if skeleton_folder is not None else fp
+                sk_path = None
+                for s in self.settings["DLC_suffix"]:
+                    path = os.path.join(sk_folder, fn.split(".")[0] + s)
+                    if os.path.exists(path):
+                        sk_path = path
+                        break
+                    self.skeleton_files.append(sk_path)
         self.parameters = [
             filenames,
             filepaths,
@@ -556,7 +562,7 @@ class MainWindow(QWidget):
             skip_dlc2action,
         ]
 
-        
+        self.hbmae = hbmae
         cwd = os.getcwd()
         try:
             with open("colors.txt") as f:
@@ -614,6 +620,9 @@ class MainWindow(QWidget):
         self.layout.addLayout(self.video_layout)
         self.layout.addLayout(self.main_layout)
         self.setLayout(self.layout)
+
+        if self.hbmae:
+            self.open_video("0")
 
     def get_color(self, name):
         return get_color(self.colors, name)
@@ -788,6 +797,28 @@ class MainWindow(QWidget):
             self.label_dict = {i: x for i, x in enumerate(labels)}
             inv_dict = {x: i for i, x in enumerate(labels)}
             self.labels = [inv_dict[x] for x in self.labels]
+
+        elif self.hbmae:
+            self.data = np.load(self.feature_files[0],allow_pickle=True).item()["embeddings"]
+            length = len(self.data)
+            frames = np.arange(0,length)
+            self.data_idx = frames[::self.sampling]
+            self.data = self.data[::self.sampling]
+            k = self.clip_length//2
+            N = self.data_idx[-1]
+            videos = [f.split(".")[0] for f in self.filenames]
+            self.frames = [(videos[0],max(0,n-k),min(n+k,N), 'ind0') for n in self.data_idx]
+            self.labels = []
+            for video in videos:
+                annotation = Annotation( self.annotation_files[0])
+                for v, s, e, clip in self.frames:
+                    main_labels = annotation.main_labels(s, e, clip)
+                    self.labels.append(main_labels)
+            labels = list(set(self.labels))
+            self.label_dict = {i: x for i, x in enumerate(labels)}
+            inv_dict = {x: i for i, x in enumerate(labels)}
+            self.labels = [inv_dict[x] for x in self.labels]
+            self.loading_dict = {"0": [self.filepaths[0], self.filenames[0], None]}
         else:
             self.filenames = [
                 x
@@ -1182,7 +1213,6 @@ def get_file(folder, filename, suffix, filepath):
             res = feature_path
     return res
 
-
 @click.option(
     "--video",
     multiple=True,
@@ -1204,7 +1234,10 @@ def get_file(folder, filename, suffix, filepath):
 )
 @click.option("--dlc2action_path")
 @click.option("--open-settings", "-s", is_flag=True, help="Open settings window")
-@click.option("--config_file", "-c", default="config.yaml", help="The config file path")
+@click.option("--config_file", "-c", default="default_config.yaml", help="The config file path")
+@click.option("--sampling", default=30)
+@click.option("--clip_length", default=300)
+@click.option("--hbmae", is_flag=True)
 @click.command()
 def main(
     video,
@@ -1218,6 +1251,9 @@ def main(
     dlc2action_name,
     skip_dlc2action,
     dlc2action_path,
+    sampling,
+    clip_length,
+    hbmae,
 ):
     app = QApplication(sys.argv)
     filenames = []
@@ -1251,6 +1287,9 @@ def main(
         dlc2action_path=dlc2action_path,
         feature_suffix=feature_suffix,
         feature_folder=feature_folder,
+        sampling=sampling,
+        clip_length=clip_length,
+        hbmae=hbmae,
     )
     window.show()
     app.exec_()
