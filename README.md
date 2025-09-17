@@ -1,6 +1,8 @@
 # DLC2Action: annotation
 
-You can use this program to label a video frame-by-frame, without any fancy algorithms. It was written by [Liza Kozlova](https://github.com/elkoz) in the [Mathis group](https://www.mathislab.org/). Currently we are in developer mode, licensing etc. to follow. 
+You can use this program to label a video frame-by-frame, without any fancy algorithms. It was written by [Liza Kozlova](https://github.com/elkoz) in the [Mathis group for Computational Neuroscience and AI at EPFL](https://www.mathislab.org/). Currently we are in developer mode, licensing etc. to follow. 
+
+Check out the related package [DLC2action](https://github.com/amathislab/DLC2action) for machine learning tools! 
 
 ## Installation: 
 
